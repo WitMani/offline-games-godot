@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GameUI 评分卡 · 三维十二指标 · 实测画像</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ── tokens cloned from the master chart 20260530-gameui-metric-radial.html ── */
+  :root{
+    --bg:#0d1014; --panel:#141923; --panel2:#1b2230; --line:#28303d;
+    --ink:#e8edf3; --mut:#97a3b2; --dim:#5d6878;
+    --d1:#4f8cc9; --d2:#2fa384; --d3:#d29a3f;
+    --grid:#313b48; --axis:#4a5666; --pass:#7d8ea6; --accent:#c3d0e0;
+    --mono:'JetBrains Mono',monospace; --sans:'Inter','PingFang SC',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.7}
+  .wrap{max-width:1000px;margin:0 auto;padding:38px 22px 80px;text-align:center}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.24em;color:var(--mut);text-transform:uppercase}
+  h1{font-weight:700;font-size:25px;letter-spacing:.02em;margin:.45em 0 .12em;color:var(--ink)}
+  .sub{color:var(--mut);font-size:13px;max-width:76ch;margin:0 auto}
+  .artifact{font-family:var(--mono);font-size:12px;color:var(--accent);margin-top:10px}
+  .artifact b{color:var(--ink)}
+  .worldref{max-width:78ch;margin:10px auto 0;font-size:12px;color:var(--mut);background:var(--panel);
+    border:1px solid var(--line);border-left:2px solid var(--d3);border-radius:3px;padding:9px 14px;text-align:left;line-height:1.55}
+  svg{display:block;width:100%;height:auto;max-width:860px;margin:8px auto 0;overflow:visible}
+  .legend{display:flex;gap:14px;justify-content:center;font-family:var(--mono);font-size:11px;color:var(--mut);margin-top:4px;flex-wrap:wrap}
+  .legend i{display:inline-block;width:11px;height:11px;margin-right:6px;vertical-align:-1px;border-radius:2px}
+  .node{cursor:pointer} .node:hover .lbl{fill:#fff}
+  #tip{position:fixed;z-index:100;display:none;max-width:330px;background:#0b0e12;
+    border:1px solid var(--axis);border-left:3px solid var(--pass);border-radius:4px;
+    padding:12px 15px;font-size:12.5px;line-height:1.5;color:var(--ink);
+    box-shadow:0 10px 34px rgba(0,0,0,.72);pointer-events:none;text-align:left}
+  #tip .tt{font-weight:600;color:#fff;font-size:14px;margin-bottom:6px}
+  #tip .tt .id{font-family:var(--mono);font-size:10.5px;color:var(--accent);margin-left:6px}
+  #tip .r{margin:4px 0;color:var(--mut);font-size:12px}
+  #tip .r b{color:var(--ink)}
+  #tip .k{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);margin-right:6px}
+  /* ── readouts panel ── */
+  .scorebar{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:20px auto 0;max-width:840px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:13px 18px;min-width:150px;text-align:left;flex:1}
+  .card .lab{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+  .card .val{font-family:var(--mono);font-size:26px;font-weight:600;color:var(--ink);margin-top:2px;line-height:1}
+  .card .val small{font-size:13px;color:var(--dim)}
+  .card .meta{font-size:11px;color:var(--mut);margin-top:4px}
+  .card.tot{border-left:3px solid var(--accent)}
+  .card.D1{border-left:3px solid var(--d1)} .card.D2{border-left:3px solid var(--d2)} .card.D3{border-left:3px solid var(--d3)}
+  .ach{font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:9px;margin-left:6px;vertical-align:1px}
+  .ach.y{background:rgba(125,142,166,.16);color:var(--accent);border:1px solid var(--axis)}
+  .ach.n{background:rgba(210,154,63,.12);color:var(--d3);border:1px solid #6b5326}
+  .gate{background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:13px 18px;margin:14px auto 0;max-width:840px;text-align:left}
+  .gate h3{margin:0 0 6px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+  .gate p{margin:.35em 0;color:var(--mut);font-size:13px}
+  .gate code{font-family:var(--mono);font-size:.88em;background:var(--panel2);padding:1px 5px;border-radius:2px;color:var(--accent)}
+  .gate .reach{font-family:var(--mono);color:var(--ink);font-weight:600}
+  /* metric table */
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+  th{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);text-align:left;padding:7px 10px;border-bottom:1px solid var(--axis)}
+  td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--ink)}
+  td.lv{font-family:var(--mono);font-weight:600;white-space:nowrap}
+  .s0{color:#6f7a88} .s1{color:#8b9bb3} .s2{color:#aebdd2} .s3{color:#d4e0ee} .sna{color:#566} .snr{color:#7a6a3a}
+  .tbl-wrap{background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:8px 16px 14px;margin:18px auto 0;max-width:840px;text-align:left}
+  .tbl-wrap h3{margin:8px 0 0;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+  .note{color:var(--dim);font-size:12px;margin-top:16px;max-width:80ch;margin-left:auto;margin-right:auto}
+  a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">GameUI · 评分卡 · 三维十二指标 · 实测画像</div>
+  <h1 id="title">三维 · 十二指标 · 实测画像</h1>
+  <div class="sub">同一张评价雷达，<b style="color:var(--ink)">填入这份作品的评级</b>：每片适用的叶落在它达到的<b style="color:var(--ink)">那一环</b>（未达 → 达标 → 良 → 优），连成轮廓即它的画像；<b style="color:var(--mut)">虚线灰点 = 不评（移出计分、重新归一）</b>。</div>
+  <div class="artifact" id="artifactline"></div>
+  <div class="worldref" id="worldrefline"></div>
+  <svg id="radar" viewBox="0 0 900 820" role="img" aria-label="GameUI 评分卡 实测画像"></svg>
+  <div class="legend">
+    <span><i style="background:var(--d1)"></i>功能</span>
+    <span><i style="background:var(--d2)"></i>形式</span>
+    <span><i style="background:var(--d3)"></i>沉浸</span>
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--accent);margin-right:5px"></span>达到的评级</span>
+    <span><span style="display:inline-block;width:11px;height:11px;border-radius:50%;border:1.5px dashed var(--dim);margin-right:5px;vertical-align:-1px"></span>不评 / 未评</span>
+  </div>
+
+  <div class="scorebar" id="scorebar"></div>
+  <div class="gate" id="gatebox"></div>
+  <div class="tbl-wrap" id="tblbox"></div>
+  <div class="note" id="notebox"></div>
+  <div class="note">评分模板见 <a href="../../20260530-gameui-metric-radial.html">空树雷达 ↗</a>（rubric 唯一真相源）。本卡由 /gameui-score 运行时填入。</div>
+</div>
+<div id="tip"></div>
+
+<script>
+/* ============================================================
+ * SCORE — the JSON score record (schema = output-schema.json).
+ * /gameui-score replaces this whole line with the real record.
+ * The default below is a worked DEMO (a hypothetical Persona-5-ish
+ * UI) so the template renders standalone and can be eyeballed.
+ * ============================================================ */
+const SCORE = {
+  "artifact":{"id":"offline-games-snakes-arena-final","desc":"Godot 离线游戏收藏盒中的 Snakes 蛇群竞技最终候选界面","screenshot":"docs/audit/snakes-arena-baseline.webp"},
+  "worldRef":{"form":"concept-art","content":"Offline Games 136_SNAKES 取证横幅：深色连续竞技场、数条高饱和软体蛇、散落发光食物；本项目在该产品形态上采用原创夜航织物、黄铜与珐琅材质。"},
+  "metrics":[
+    {"id":"充分性","name":"信息充分性","dimension":"功能","weight":8,"type":"llm","na":false,"status":"scored","level":2,"levelName":"良","evidence":"玩家、多条命名游蛇、体量、位次、冠首榜、雷达、冲刺、边界和光籽同时成立。","whyNotNext":"仍需读两个边缘 HUD 区才能拼出全局。"},
+    {"id":"可供性","name":"操作可供性","dimension":"功能","weight":7,"type":"llm","na":true,"status":"scored","level":2,"levelName":"良","evidence":"教学签说明任意方向触摸转向；冲刺印章以 HOLD、储备环和按住态表达持续操作。","whyNotNext":"首局仍依赖显式教学签。"},
+    {"id":"反馈","name":"反馈","dimension":"功能","weight":6,"type":"dyn","na":false,"status":"not-run","level":null,"levelName":null,"evidence":null,"whyNotNext":null},
+    {"id":"易辨","name":"易辨性","dimension":"形式","weight":10,"type":"llm","na":false,"status":"scored","level":2,"levelName":"良","evidence":"高对比数字、玩家青色珐琅与 bot 色相在原尺寸均清楚。","whyNotNext":"榜单和雷达英文仍使用小字号。"},
+    {"id":"易寻","name":"易寻性","dimension":"形式","weight":9,"type":"llm","na":false,"status":"scored","level":2,"levelName":"良","evidence":"玩家居中，体量居顶，位次、榜单、雷达、冲刺稳定停靠四角。","whyNotNext":"争食与冠首方向仍需一次短暂搜索。"},
+    {"id":"条理","name":"条理性","dimension":"形式","weight":9,"type":"llm","na":false,"status":"scored","level":2,"levelName":"良","evidence":"世界、赛签、榜单、导航与操作通过位置、共域和材质清楚分组。","whyNotNext":"顶部三组赛签尚未收束成一个天然结构。"},
+    {"id":"抗误读","name":"抗误读","dimension":"形式","weight":8,"type":"llm","na":false,"status":"scored","level":2,"levelName":"良","evidence":"玩家、冠首与冲刺均以文字、位置、颜色或长度作冗余编码。","whyNotNext":"少数 bot 意图主要依靠名字旁短词。"},
+    {"id":"M1","name":"术语","dimension":"沉浸","weight":10,"type":"llm","na":true,"status":"scored","level":2,"levelName":"良","evidence":"体量、位次、冠首、冲刺、光籽、再生、争籽贯穿世界。","whyNotNext":"SNAKES、RADAR、HOLD 与中文词并存。"},
+    {"id":"M2","name":"材质","dimension":"沉浸","weight":10,"type":"llm","na":true,"status":"scored","level":2,"levelName":"良","evidence":"深蓝织物、缝线边界、黄铜钉、植物剪影与珐琅软蛇形成统一材质体系。","whyNotNext":"材质尚未在每项资源数值上持续承担编码。"},
+    {"id":"M3","name":"情绪","dimension":"沉浸","weight":8,"type":"llm","na":false,"status":"scored","level":2,"levelName":"良","evidence":"夜航静谧底色与多蛇逼近、冠首榜和发光光籽形成竞争张力。","whyNotNext":"静态帧不能证明完整循环的情绪呼吸。"},
+    {"id":"M4","name":"身份","dimension":"沉浸","weight":8,"type":"llm","na":true,"status":"scored","level":2,"levelName":"良","evidence":"中心青蛇、你字、位次、专属雷达点与冲刺印章给出明确竞技者身份。","whyNotNext":"身份尚未延伸到局外长期痕迹。"},
+    {"id":"M5","name":"融入","dimension":"沉浸","weight":7,"type":"llm","na":true,"status":"scored","level":2,"levelName":"良","evidence":"榜单、雷达、边界、光籽与冲刺使用同一夜航器物语言。","whyNotNext":"收盒与再生仍保留明显系统按钮轮廓。"},
+    {"id":"M6","name":"世界主次","dimension":"沉浸","weight":8,"type":"llm","na":true,"status":"scored","level":2,"levelName":"良","evidence":"竞技场和蛇群占据画面主体，中央碰撞路径无遮挡，HUD 严格停靠边缘。","whyNotNext":"边缘 HUD 仍持续可见。"}
+  ],
+  "dimensions":[{"key":"功能","rawScore":30,"normalizedScore":66.7,"achieved":true},{"key":"形式","rawScore":72,"normalizedScore":66.7,"achieved":true},{"key":"沉浸","rawScore":102,"normalizedScore":66.7,"achieved":true}],
+  "total":{"weightedRaw":204,"applicableWeight":102,"normalizedScore":66.7},
+  "gateStatus":{"reached":"达沉浸","ceiling":null,"reason":"全部静态适用指标均达到 L2；反馈按静态评分协议标为 not-run。"},
+  "notes":"正式 GAMEUI-SCORE 只裁决静态截图，因此反馈保持 not-run。独立 21 帧动态验收已覆盖转向曲率、吃食、冲刺、bot 争食与冠首易位、死亡、结算和再生，并判定动态反馈 L2。"
+};
+
+/* ── geometry: identical to the master chart ── */
+const cx=450, cy=400, rHub=46, rDim=90, rMax=258, rLab=278;
+const ringR=[130,173,216,rMax];                 // 达标 / 良 / 优 / 满分(ceiling)
+const TONE={'功能':'#4f8cc9','形式':'#2fa384','沉浸':'#d29a3f'};
+const LVKEY={'功能':'D1','形式':'D2','沉浸':'D3'};
+/* achieved level → radius. L0 sits inside the 达标 ring (the 未达 band); L1/L2/L3 land ON their rings. */
+const LEVEL_R=[108, 130, 173, 216];
+const LV_NAME=['未达','达标','良','优'];
+const LV_COL=['#6f7a88','#8b9bb3','#aebdd2','#d4e0ee'];
+
+/* ── structural layout meta (NOT the rubric ladders — those live in the master chart).
+ *    Order here = the 12 spokes, grouped by dimension exactly as the master renders them. ── */
+const LAYOUT=[
+  {id:'充分性',dim:'功能'},{id:'可供性',dim:'功能'},{id:'反馈',dim:'功能'},
+  {id:'易辨',dim:'形式'},{id:'易寻',dim:'形式'},{id:'条理',dim:'形式'},{id:'抗误读',dim:'形式'},
+  {id:'M1',dim:'沉浸'},{id:'M2',dim:'沉浸'},{id:'M3',dim:'沉浸'},{id:'M4',dim:'沉浸'},{id:'M5',dim:'沉浸'},{id:'M6',dim:'沉浸'}
+];
+const DIM_ORDER=['功能','形式','沉浸'];
+
+/* index the score record by metric id */
+const BYID={}; SCORE.metrics.forEach(m=>BYID[m.id]=m);
+const DBYKEY={}; SCORE.dimensions.forEach(d=>DBYKEY[d.key]=d);
+
+/* attach angle to each spoke */
+const NL=LAYOUT.length, STEP=360/NL, HALF=STEP/2;
+LAYOUT.forEach((d,i)=>{ d.a=i*STEP; d.m=BYID[d.id]||{}; });
+const DIM={};
+DIM_ORDER.forEach(k=>{ const as=LAYOUT.filter(x=>x.dim===k).map(x=>x.a);
+  DIM[k]={key:k, wa0:Math.min(...as)-HALF, wa1:Math.max(...as)+HALF, mid:(Math.min(...as)+Math.max(...as))/2}; });
+
+const pos=(a,r)=>[cx+r*Math.sin(a*Math.PI/180), cy-r*Math.cos(a*Math.PI/180)];
+const wedge=(a0,a1,r)=>{const[x0,y0]=pos(a0,r),[x1,y1]=pos(a1,r);const lg=(a1-a0)>180?1:0;
+  return `M${cx} ${cy} L${x0.toFixed(1)} ${y0.toFixed(1)} A${r} ${r} 0 ${lg} 1 ${x1.toFixed(1)} ${y1.toFixed(1)} Z`;};
+const TIP={};
+
+let s='';
+/* dimension wedges */
+DIM_ORDER.forEach(k=>{ const D=DIM[k];
+  s+=`<path d="${wedge(D.wa0,D.wa1,rMax)}" fill="${TONE[k]}" opacity="0.09" stroke="${TONE[k]}" stroke-opacity="0.45" stroke-width="1"/>`; });
+/* level ring bands (low→high brightness = 4 grades), cloned from master LVFILL */
+const LVFILL=[{r0:rHub,r1:130,op:0.34,c:'#0a0e14'},{r0:130,r1:173,op:0.12,c:'#8893a4'},{r0:173,r1:216,op:0.22,c:'#8893a4'},{r0:216,r1:rMax,op:0.32,c:'#8893a4'}];
+LVFILL.forEach(b=>{ const mid=(b.r0+b.r1)/2, w=b.r1-b.r0;
+  s+=`<circle cx="${cx}" cy="${cy}" r="${mid.toFixed(1)}" fill="none" stroke="${b.c}" stroke-opacity="${b.op}" stroke-width="${w}"/>`; });
+/* the 4 level rings */
+ringR.forEach((r,i)=>{ const isPass=(i===0);
+  s+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${isPass?'#9fb2cc':'#46536680'}" stroke-width="${isPass?1.4:1}"/>`; });
+/* ── 12 radial leaf axes: each runs from the hub straight out to the rim at the leaf's own angle, so its grade dot lands ON this line ── */
+LAYOUT.forEach(d=>{ const[ix,iy]=pos(d.a,rHub+2), [ex,ey]=pos(d.a,rMax); const tone=TONE[d.dim]; const dash=d.m.na?' stroke-dasharray="3 3"':'';
+  s+=`<line x1="${ix.toFixed(1)}" y1="${iy.toFixed(1)}" x2="${ex.toFixed(1)}" y2="${ey.toFixed(1)}" stroke="${tone}" stroke-width="1.1" opacity="0.5"${dash}/>`; });
+/* radial level scale labels on the -HALF gap (cloned from master SCALE) */
+const SCALE=[{r:108,t:'未达'},{r:130,t:'达标'},{r:173,t:'良'},{r:216,t:'优'},{r:rMax,t:'满分'}];
+SCALE.forEach(v=>{ const[lx,ly]=pos(-HALF,v.r);
+  s+=`<circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="2" fill="#5d6878"/>`+
+     `<text x="${(lx-6).toFixed(1)}" y="${(ly+3).toFixed(1)}" text-anchor="end" font-family="JetBrains Mono" font-size="9.5" fill="#5d6878">${v.t}</text>`; });
+
+/* ── the FILLED envelope: ONE closed polygon through every scored leaf's achieved-level point, in angular order (skips na / not-run axes) ── */
+const envpts=LAYOUT.filter(d=>d.m.status==='scored' && d.m.level!=null).map(d=>pos(d.a, LEVEL_R[d.m.level]));
+if(envpts.length>=3){ const dpath=envpts.map((p,i)=>`${i?'L':'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ')+' Z';
+  s+=`<path d="${dpath}" fill="#9fb2cc" fill-opacity="0.08" stroke="#9fb2cc" stroke-width="1.8" stroke-opacity="0.78" stroke-linejoin="round"/>`; }
+
+/* ── the per-leaf achieved markers + labels ── */
+LAYOUT.forEach(d=>{ const m=d.m, tone=TONE[d.dim];
+  const[ex,ey]=pos(d.a,rMax);
+  const[lx,ly]=pos(d.a,rLab), sn=Math.sin(d.a*Math.PI/180), cs=Math.cos(d.a*Math.PI/180);
+  const anc= sn>0.25?'start':(sn<-0.25?'end':'middle'); const vy = cs>0.5?-3:(cs<-0.5?13:4);
+  let mark='', labCol='#e8edf3', tag='';
+  if(m.status==='scored' && m.level!=null){
+    const[px,py]=pos(d.a, LEVEL_R[m.level]);
+    mark=`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="5.5" fill="${LV_COL[m.level]}" stroke="#0d1014" stroke-width="1.2"/>`;
+    tag=` <tspan font-family="JetBrains Mono" font-size="8.5" fill="${LV_COL[m.level]}">${LV_NAME[m.level]}</tspan>`;
+  } else {
+    // na or not-run → muted dashed ring at the rim (off the score)
+    mark=`<circle cx="${ex.toFixed(1)}" cy="${ey.toFixed(1)}" r="5" fill="#0d1014" stroke="#5d6878" stroke-width="1.3" stroke-dasharray="2.4 2.4"/>`;
+    labCol='#6c7787';
+    tag=` <tspan font-family="JetBrains Mono" font-size="8" fill="#5d6878">${m.status==='na'?'不评':'未评'}</tspan>`;
+  }
+  s+=`<g class="node" data-k="${d.id}">`+mark+
+     `<text class="lbl" x="${lx.toFixed(1)}" y="${(ly+vy).toFixed(1)}" text-anchor="${anc}" font-family="Inter" font-size="12" font-weight="600" fill="${labCol}">${m.name||d.id}<tspan font-family="JetBrains Mono" font-size="9" font-weight="400" fill="${tone}"> ${m.weight||''}</tspan>${tag}</text>`+
+     `<circle cx="${ex.toFixed(1)}" cy="${ey.toFixed(1)}" r="16" fill="transparent"/></g>`;
+  // tooltip
+  if(m.status==='scored' && m.level!=null){
+    TIP[d.id]=`<div class="tt">${m.name||d.id} · <span style="color:${LV_COL[m.level]}">${LV_NAME[m.level]}</span> 级 <span class="id">${d.dim} · ${m.weight}分</span></div>`+
+      `<div class="r"><span class="k">看到了什么</span>${m.evidence||'—'}</div>`+
+      (m.whyNotNext?`<div class="r"><span class="k">为何不是上一级</span>${m.whyNotNext}</div>`:`<div class="r" style="color:var(--pass)">已达最高级 优</div>`);
+  } else {
+    TIP[d.id]=`<div class="tt">${m.name||d.id} <span class="id">${d.dim} · ${m.weight||''}分</span></div>`+
+      `<div class="r"><span class="k">状态</span>${m.status==='na'?'不评（移出计分、重新归一）':'未评（要跑，本 MVP 不驱动产物）'}</div>`+
+      (m.naReason?`<div class="r"><span class="k">理由</span>${m.naReason}</div>`:'');
+  }
+});
+
+/* dimension nodes + center hub */
+DIM_ORDER.forEach(k=>{ const D=DIM[k]; const[dx,dy]=pos(D.mid,rDim);
+  const dd=DBYKEY[k]||{};
+  s+=`<g class="node" data-k="DIM:${k}"><circle cx="${dx.toFixed(1)}" cy="${dy.toFixed(1)}" r="19" fill="#141923" stroke="${TONE[k]}" stroke-width="2"/>`+
+     `<text x="${dx.toFixed(1)}" y="${(dy-1).toFixed(1)}" text-anchor="middle" font-family="Inter" font-size="11.5" font-weight="700" fill="${TONE[k]}">${k}</text>`+
+     `<text x="${dx.toFixed(1)}" y="${(dy+10).toFixed(1)}" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="${TONE[k]}">${dd.normalizedScore!=null?Math.round(dd.normalizedScore):'–'}</text></g>`;
+  TIP['DIM:'+k]=`<div class="tt">${k}<span class="id">${dd.normalizedScore!=null?dd.normalizedScore.toFixed(1):'–'} / 100</span></div>`+
+    `<div class="r"><span class="k">达成</span>${dd.achieved?'<b style="color:var(--accent)">是</b>（适用叶全 ≥ 达标）':'<b style="color:var(--d3)">否</b>（有叶 < 达标）'}</div>`; });
+const totN = (SCORE.total&&SCORE.total.normalizedScore!=null)?SCORE.total.normalizedScore:null;
+s+=`<circle cx="${cx}" cy="${cy}" r="${rHub}" fill="#141923" stroke="#4a5666" stroke-width="1.5"/>`;
+s+=`<text x="${cx}" y="${cy-4}" text-anchor="middle" font-family="Inter" font-size="17" font-weight="700" fill="#c3d0e0">${totN!=null?Math.round(totN):'–'}</text>`;
+s+=`<text x="${cx}" y="${cy+13}" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#97a3b2">/ 100</text>`;
+document.getElementById('radar').innerHTML=s;
+
+/* ── readouts: artifact line, world ref, score cards, gate, metric table, notes ── */
+document.getElementById('title').textContent = SCORE.artifact && SCORE.artifact.desc ? '评分卡 · '+(SCORE.artifact.id||'') : '三维 · 十二指标 · 实测画像';
+document.getElementById('artifactline').innerHTML = SCORE.artifact ? `<b>${SCORE.artifact.id||''}</b> · ${SCORE.artifact.desc||''}` : '';
+document.getElementById('worldrefline').innerHTML = SCORE.worldRef ? `<b style="color:var(--accent)">世界参照</b>（${SCORE.worldRef.form}）：${SCORE.worldRef.content}` : '';
+
+let cards='';
+DIM_ORDER.forEach((k,i)=>{ const d=DBYKEY[k]||{}; const cls=['D1','D2','D3'][i];
+  cards+=`<div class="card ${cls}"><div class="lab">${k}</div>`+
+    `<div class="val">${d.normalizedScore!=null?d.normalizedScore.toFixed(1):'–'}<small> / 100</small></div>`+
+    `<div class="meta">达成 <span class="ach ${d.achieved?'y':'n'}">${d.achieved?'是':'否'}</span></div></div>`; });
+cards+=`<div class="card tot"><div class="lab">总分</div>`+
+  `<div class="val">${totN!=null?totN.toFixed(1):'–'}<small> / 100</small></div>`+
+  `<div class="meta">${SCORE.total&&SCORE.total.applicableWeight!=null?('计分权重 '+SCORE.total.applicableWeight):''}</div></div>`;
+document.getElementById('scorebar').innerHTML=cards;
+
+const g=SCORE.gateStatus||{};
+document.getElementById('gatebox').innerHTML =
+  `<h3>闯关 · 功能 → 形式 → 沉浸</h3>`+
+  `<p>达到档：<span class="reach">${g.reached||'–'}</span>`+
+  (g.ceiling?` · 天花板：<code>${g.ceiling}</code>（这一维有叶 &lt; 达标，封顶上一档）`:` · <span style="color:var(--pass)">三维皆达成</span>`)+`</p>`+
+  (g.reason?`<p>${g.reason}</p>`:'')+
+  `<p style="color:var(--dim);font-size:12px">闯关规则：某维每条<b>适用</b>叶都 ≥ 达标，本维才"达成"；下一维没达成、上一维再漂亮也不升档（不能拿沉浸补不能交互）。不评的叶跳过。</p>`;
+
+const ORDER=['充分性','可供性','反馈','易辨','易寻','条理','抗误读','M1','M2','M3','M4','M5','M6'];
+let rows='';
+ORDER.forEach(id=>{ const m=BYID[id]; if(!m)return;
+  let lvcell, cls;
+  if(m.status==='scored'&&m.level!=null){ cls='s'+m.level; lvcell=`L${m.level} ${LV_NAME[m.level]}`; }
+  else if(m.status==='na'){ cls='sna'; lvcell='不评'; }
+  else { cls='snr'; lvcell='未评·要跑'; }
+  rows+=`<tr><td><b>${m.name}</b> <span style="color:var(--dim);font-family:var(--mono);font-size:11px">${m.weight}</span> <span style="color:var(--dim);font-family:var(--mono);font-size:10px">${m.dimension}${m.na?' ·可不评':''}</span></td>`+
+    `<td class="lv ${cls}">${lvcell}</td>`+
+    `<td style="color:var(--mut)">${m.status==='na'?(m.naReason||'—'):(m.evidence||'—')}</td>`+
+    `<td style="color:var(--dim);font-size:11.5px">${m.whyNotNext||(m.status==='scored'&&m.level===3?'已达优':'')}</td></tr>`; });
+document.getElementById('tblbox').innerHTML =
+  `<h3>逐指标</h3><table><thead><tr><th>指标</th><th>评级</th><th>证据 / 不评理由</th><th>为何不是上一级</th></tr></thead><tbody>${rows}</tbody></table>`;
+
+document.getElementById('notebox').innerHTML = SCORE.notes ? `<b style="color:var(--mut)">注</b> · ${SCORE.notes}` : '';
+
+/* tooltip wiring (same as master) */
+const tip=document.getElementById('tip'), svg=document.getElementById('radar');
+svg.addEventListener('mousemove',e=>{
+  const gg=e.target.closest('[data-k]');
+  if(!gg){tip.style.display='none';return;}
+  tip.innerHTML=TIP[gg.getAttribute('data-k')]||'';
+  if(!tip.innerHTML){tip.style.display='none';return;}
+  tip.style.display='block';
+  let x=e.clientX+16, y=e.clientY-8;
+  if(x+tip.offsetWidth>window.innerWidth-12) x=e.clientX-tip.offsetWidth-16;
+  if(y+tip.offsetHeight>window.innerHeight-12) y=window.innerHeight-tip.offsetHeight-12;
+  tip.style.left=Math.max(8,x)+'px'; tip.style.top=Math.max(8,y)+'px';
+});
+svg.addEventListener('mouseleave',()=>tip.style.display='none');
+</script>
+</body>
+</html>

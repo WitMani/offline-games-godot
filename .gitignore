@@ -1,0 +1,8 @@
+.godot/
+.vercel/
+core/real
+*.tmp
+*.log
+build/web.next/
+build/web.prev-*/
+audit-temp/

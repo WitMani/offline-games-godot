@@ -1,0 +1,34 @@
+{
+  "artifact": {
+    "id": "offline-games-snakes-arena-final",
+    "desc": "Godot 离线游戏收藏盒中的 Snakes 蛇群竞技最终候选界面",
+    "screenshot": "docs/audit/snakes-arena-baseline.webp"
+  },
+  "worldRef": {
+    "form": "concept-art",
+    "content": "Offline Games 136_SNAKES 取证横幅：深色连续竞技场、数条高饱和软体蛇、散落发光食物；本项目在该产品形态上采用原创夜航织物、黄铜与珐琅材质。"
+  },
+  "metrics": [
+    {"id":"充分性","name":"信息充分性","dimension":"功能","weight":8,"type":"llm","na":false,"status":"scored","level":2,"levelName":"良","evidence":"静态帧同时给出玩家蛇、多条命名游蛇、体量、当前位次、冠首榜、雷达、冲刺储备、边界和光籽，比赛状态完整且没有中央仪表盘堆叠。","whyNotNext":"仍需读两个边缘 HUD 区才能拼出全局，尚未达到一眼零冗余掌握全部局势。"},
+    {"id":"可供性","name":"操作可供性","dimension":"功能","weight":7,"type":"llm","na":true,"status":"scored","level":2,"levelName":"良","evidence":"底部教学签说明任意方向触摸转向，右下冲刺印章以 HOLD、储备环和按住态共同表达持续操作。","whyNotNext":"首局仍依赖一条显式教学签，尚未完全由开场编排自教。"},
+    {"id":"反馈","name":"反馈","dimension":"功能","weight":6,"type":"dyn","na":false,"status":"not-run","level":null,"levelName":null,"evidence":null,"whyNotNext":null},
+    {"id":"易辨","name":"易辨性","dimension":"形式","weight":10,"type":"llm","na":false,"status":"scored","level":2,"levelName":"良","evidence":"骨白与金色数字压在深海蓝底上，玩家珐琅青与 bot 色相明确分离；位次、体量和冲刺在 540×960 原尺寸可直接读取。","whyNotNext":"冠首榜和雷达英文仍使用小字号，未到全图零费眼。"},
+    {"id":"易寻","name":"易寻性","dimension":"形式","weight":9,"type":"llm","na":false,"status":"scored","level":2,"levelName":"良","evidence":"玩家固定在世界视觉中心，体量居顶、位次左上、榜单右上、雷达左下、冲刺右下，关键状态位置稳定且符合边缘 HUD 习惯。","whyNotNext":"争食与冠首方向仍需一次短暂搜索，尚未形成完全自动的单一路径。"},
+    {"id":"条理","name":"条理性","dimension":"形式","weight":9,"type":"llm","na":false,"status":"scored","level":2,"levelName":"良","evidence":"世界、赛签、榜单、导航与操作五组通过位置、共域和材质清楚分组，中央竞技区域保持连续。","whyNotNext":"顶部三组赛签仍是相邻独立组件，尚未达到整体只剩一个天然结构。"},
+    {"id":"抗误读","name":"抗误读","dimension":"形式","weight":8,"type":"llm","na":false,"status":"scored","level":2,"levelName":"良","evidence":"玩家以中心位置、你字、青色、雷达点四重编码；冠首以榜首、金色和边缘指针编码；冲刺以文字、储备长度和按住光环编码。","whyNotNext":"少数 bot 状态主要依靠名字旁短词，尚未让每种竞争意图都实现同等强度的冗余编码。"},
+    {"id":"M1","name":"术语","dimension":"沉浸","weight":10,"type":"llm","na":true,"status":"scored","level":2,"levelName":"良","evidence":"体量、位次、冠首、冲刺、光籽、再生、争籽等词汇贯穿世界，不混入花园蛇的苹果或长度语义。","whyNotNext":"SNAKES、RADAR、HOLD 与中文世界词并存，语言层级尚未完全一体。"},
+    {"id":"M2","name":"材质","dimension":"沉浸","weight":10,"type":"llm","na":true,"status":"scored","level":2,"levelName":"良","evidence":"深蓝织物竞技场、缝线边界、黄铜罗盘钉、植物剪影与厚外缘珐琅蛇形成鲜明统一材质体系。","whyNotNext":"材质主要承担世界身份和层级，尚未在每项资源数值上持续承担编码。"},
+    {"id":"M3","name":"情绪","dimension":"沉浸","weight":8,"type":"llm","na":false,"status":"scored","level":2,"levelName":"良","evidence":"夜航竞技的静谧底色与多蛇逼近、冠首榜和发光光籽形成持续但不刺眼的竞争张力。","whyNotNext":"单张静态帧不能证明情绪随完整循环呼吸，动态峰值另由独立审计验证。"},
+    {"id":"M4","name":"身份","dimension":"沉浸","weight":8,"type":"llm","na":true,"status":"scored","level":2,"levelName":"良","evidence":"中心青蛇上的你、当前位次、专属雷达点与冲刺印章共同给出明确的竞技者身份。","whyNotNext":"身份尚未延伸到局外成长、个性记录或更长周期的角色痕迹。"},
+    {"id":"M5","name":"融入","dimension":"沉浸","weight":7,"type":"llm","na":true,"status":"scored","level":2,"levelName":"良","evidence":"榜单、雷达、边界、光籽和冲刺均使用同一夜航器物语言，HUD 退在边缘且不切断世界。","whyNotNext":"顶部收盒与再生仍保留明显系统按钮轮廓，尚未完全长进世界。"},
+    {"id":"M6","name":"世界主次","dimension":"沉浸","weight":8,"type":"llm","na":true,"status":"scored","level":2,"levelName":"良","evidence":"连续 arena 和蛇群占据绝大多数画面，中央碰撞路径无遮挡，排行榜与操作控件严格停靠边缘。","whyNotNext":"边缘 HUD 仍持续可见，尚未接近完全隐形或叙事化界面。"}
+  ],
+  "dimensions": [
+    {"key":"功能","rawScore":30,"normalizedScore":66.7,"achieved":true},
+    {"key":"形式","rawScore":72,"normalizedScore":66.7,"achieved":true},
+    {"key":"沉浸","rawScore":102,"normalizedScore":66.7,"achieved":true}
+  ],
+  "total": {"weightedRaw":204,"applicableWeight":102,"normalizedScore":66.7},
+  "gateStatus": {"reached":"达沉浸","ceiling":null,"reason":"全部静态适用指标均达到 L2；反馈按正式静态评分协议标为 not-run，不阻断 MVP gate。"},
+  "notes": "正式 GAMEUI-SCORE 只裁决静态截图，因此反馈保持 not-run。另有独立动态验收序列覆盖：转向头部先行与身体曲率传导、吃光籽、冲刺掉籽、bot 死亡后争食与冠首易位、玩家死亡、结算和再生；该动态审计判定反馈 L2、两个 Snake 均无 L0 blocker。"
+}

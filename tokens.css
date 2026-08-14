@@ -1,0 +1,22 @@
+:root {
+  --case-navy: #08131f;
+  --case-leather: #13283a;
+  --aged-brass: #b78a43;
+  --gb-shell: #4b5138;
+  --gb-lcd: #a7b37f;
+  --gb-ink: #26331e;
+  --arena-night: #071b26;
+  --arena-woven: #0e3a43;
+  --arena-contour: #1a6570;
+  --bone-light: #fff1ce;
+  --seed-coral: #ff6b5e;
+  --seed-gold: #ffd166;
+  --seed-mint: #42d6b4;
+  --player-inner: #5be6d0;
+  --player-rim: #167a78;
+  --crown-gold: #f2b84b;
+  --danger-vermilion: #f04f52;
+  --font-display: "Noto Sans CJK SC", sans-serif;
+  --font-body: "Noto Sans CJK SC", sans-serif;
+  --font-number: "DejaVu Sans", sans-serif;
+}
