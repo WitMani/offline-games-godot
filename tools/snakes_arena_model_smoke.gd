@@ -2,7 +2,7 @@ extends SceneTree
 
 const MODEL_PATH := "res://models/snakes_arena_model.gd"
 const TEST_SEED := 1362026
-const EXPECTED_CASES := 17
+const EXPECTED_CASES := 18
 
 var failures: Array[String] = []
 var cases_run := 0
@@ -28,6 +28,7 @@ func _run() -> void:
 	_test_eating_food_grows_mass_and_replenishes()
 	_test_leaderboard_is_sorted_and_ranks_player()
 	_test_body_collision_kills_and_drops_loot()
+	_test_own_body_and_tail_are_nonlethal()
 	_test_bots_scavenge_debris_and_leader_reorders()
 	_test_head_to_head_is_symmetric_and_mass_based()
 	_test_head_collision_chain_is_order_independent()
@@ -211,6 +212,43 @@ func _test_body_collision_kills_and_drops_loot() -> void:
 		and _has_event(events, "debris_dropped")
 	)
 	_record("body_collision_loot", passed, JSON.stringify(death))
+
+
+func _test_own_body_and_tail_are_nonlethal() -> void:
+	var survived_all := true
+	var evidence: Array[Dictionary] = []
+	for overlap_index in [5, 7]:
+		var model = _fresh_model(0, 0)
+		model.target_pellet_count = 0
+		var head := Vector2.ZERO
+		var player: Dictionary = model.snakes[0]
+		var segments: Array[Vector2] = [
+			head,
+			Vector2(-80, 80),
+			Vector2(-160, 80),
+			Vector2(-240, 80),
+			Vector2(-320, 80),
+			Vector2(-400, 80),
+			Vector2(-480, 80),
+			Vector2(-560, 80),
+		]
+		segments[overlap_index] = head
+		player["position"] = head
+		player["previous_position"] = head
+		player["segments"] = segments
+		player["speed_scale"] = 0.0
+		player["invulnerable"] = 0.0
+		model.snakes[0] = player
+		var events: Array[Dictionary] = model.step(1.0 / 60.0)
+		var snapshot: Dictionary = model.snapshot()
+		var survived: bool = (
+			snapshot.get("status") == "playing"
+			and bool(snapshot["player"]["alive"])
+			and not _has_event(events, "player_died")
+		)
+		survived_all = survived_all and survived
+		evidence.append({"segment":overlap_index, "survived":survived, "events":events})
+	_record("own_body_and_tail_nonlethal", survived_all, JSON.stringify(evidence))
 
 
 func _test_bots_scavenge_debris_and_leader_reorders() -> void:

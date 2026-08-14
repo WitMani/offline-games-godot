@@ -214,9 +214,9 @@ func _test_arena_player_death_delays_result_and_regenerates() -> void:
 	var pointer_cleared_on_death: bool = not bool(game.arena_pointer_active)
 	var boost_cleared_on_death: bool = not bool(game.arena_boost_active)
 
-	var regenerate_button := _find_button_with_text("再生")
-	if regenerate_button:
-		regenerate_button.pressed.emit()
+	var restart_button := _find_button_with_text("再来")
+	if restart_button:
+		restart_button.pressed.emit()
 	var regenerated: Dictionary = game.state.duplicate(true)
 	var regenerated_position := _packed_vector(regenerated.get("player", {}).get("position", []))
 	var passed: bool = (
@@ -228,7 +228,7 @@ func _test_arena_player_death_delays_result_and_regenerates() -> void:
 		and boost_cleared_on_death
 		and is_equal_approx(delay, 0.72)
 		and has_death_fx
-		and regenerate_button != null
+		and restart_button != null
 		and regenerated.get("status") == "playing"
 		and bool(regenerated.get("player", {}).get("alive", false))
 		and regenerated_position == Vector2.ZERO

@@ -19,8 +19,11 @@ cartridges and keeps every game playable without network access.
   15×23 grid movement, physical D-pad controls, +1 growth, self/wall collision,
   and a real length-120 clear condition.
 - **Snakes** is a continuous local arena game: free-angle steering, five local
-  bots, glowing seed food, mass-consuming boost, body/boundary collision,
-  debris drops, leaderboard, radar, camera follow, death and respawn.
+  bots, candy food, mass-consuming boost, safe pass-through of its own body
+  and tail, other-snake/boundary collision, debris drops, leaderboard, radar,
+  camera follow, death and respawn.
+
+![Snakes safely crossing its own cartoon body](docs/audit/snakes-arena-self-pass.webp)
 
 Both are separate rulesets and renderers. GB Snake is not a skin on the arena,
 and Snakes is not a wrapping grid variant.

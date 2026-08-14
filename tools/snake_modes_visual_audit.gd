@@ -127,6 +127,43 @@ func _capture_arena_sequence() -> void:
 	await _save("09_arena_steer")
 	game._snakes_arena_end_pointer(Vector2(270, 246))
 
+	# Own-body pass-through proof: the head overlaps a late body segment at the
+	# center of a visible loop. The public step/snapshot contract must remain
+	# playing, and the renderer must layer the head-side path above the tail.
+	await _prepare_arena()
+	game.snakes_arena_model.target_pellet_count = 0
+	game.snakes_arena_model.pellets.clear()
+	var self_path: Array[Vector2] = [
+		Vector2(0, 0), Vector2(-25, 0), Vector2(-50, -10),
+		Vector2(-68, -36), Vector2(-54, -65), Vector2(-22, -78),
+		Vector2(12, -64), Vector2(30, -36), Vector2(22, -12),
+		Vector2(0, 0), Vector2(28, 12), Vector2(58, 19), Vector2(88, 24)
+	]
+	var self_player: Dictionary = game.snakes_arena_model.snakes[0].duplicate(true)
+	self_player["position"] = Vector2.ZERO
+	self_player["previous_position"] = Vector2.ZERO
+	self_player["segments"] = self_path
+	self_player["heading"] = 0.0
+	self_player["desired_point"] = Vector2.RIGHT * 300.0
+	self_player["speed_scale"] = 0.0
+	self_player["invulnerable"] = 0.0
+	game.snakes_arena_model.snakes[0] = self_player
+	for bot_index in range(1, game.snakes_arena_model.snakes.size()):
+		_pose_arena_snake(bot_index, Vector2(720, -620 + bot_index * 48), PI, 24.0 + bot_index, 0.0)
+	var self_events: Array[Dictionary] = game.snakes_arena_model.step(FIXED_DT)
+	game._sync_snakes_arena_state()
+	game.arena_camera = Vector2.ZERO
+	game.arena_camera_previous = Vector2.ZERO
+	var self_player_died := false
+	for event in self_events:
+		if str(event.get("kind", "")) == "player_died":
+			self_player_died = true
+	var self_snapshot: Dictionary = game.snakes_arena_model.snapshot()
+	assert(str(self_snapshot.get("status", "")) == "playing")
+	assert(bool(self_snapshot.get("player", {}).get("alive", false)))
+	assert(not self_player_died)
+	await _save("09c_arena_self_pass")
+
 	# A single fixture pellet is reached during a 0.10 s fixed update.
 	await _prepare_arena()
 	game.snakes_arena_model.target_pellet_count = 1
@@ -254,6 +291,9 @@ func _reset_arena_fixture() -> void:
 	game.arena_camera_shake = Vector2.ZERO
 	game.arena_pointer_screen = Vector2(370, 493)
 	game.arena_tutorial_dismissed = false
+	game.arena_eat_started = -10.0
+	game.arena_eat_world = Vector2.ZERO
+	game.arena_eat_value = 0.0
 	game._sync_snakes_arena_state()
 	game.arena_camera = game._arena_player_world_position()
 	game.arena_camera_previous = game.arena_camera

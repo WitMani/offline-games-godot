@@ -50,7 +50,7 @@ const HOME_COVER_TEXTURES := {
 }
 const SNAKE_GARDEN_TEXTURE: Texture2D = preload("res://assets/art/snake/modern_garden.webp")
 const SNAKE_GB_TEXTURE: Texture2D = preload("res://assets/art/snakes/gb_handheld.webp")
-const SNAKES_ARENA_TEXTURE: Texture2D = preload("res://assets/art/snakes/arena_night.webp")
+const SNAKES_DOODLE_TEXTURE: Texture2D = preload("res://assets/art/snakes/arena_doodles.webp")
 const SNAKE_RULES = preload("res://snake_model.gd")
 const SNAKE_GB_RULES = preload("res://models/snake_gb_model.gd")
 const SNAKES_ARENA_RULES = preload("res://models/snakes_arena_model.gd")
@@ -68,7 +68,7 @@ var catalog: Array = [
 	{"id":"meowdoku", "title":"Meowdoku", "subtitle":"猫咪数独", "group":"数独", "accent":Color("f39ac7"), "desc":"轻松填完九宫格，零网络也能玩"},
 	{"id":"sudoku", "title":"Sudoku", "subtitle":"传统数独", "group":"数独", "accent":Color("a78bfa"), "desc":"经典逻辑推理，支持错误提示"},
 	{"id":"snake_classic", "title":"GB Snake", "subtitle":"掌机贪食蛇", "group":"街机", "accent":Color("a8b883"), "desc":"实体方向键操控，成长到长度 120"},
-	{"id":"snake_io", "title":"Snakes", "subtitle":"蛇群竞技", "group":"街机", "accent":Color("45ead1"), "desc":"自由转向、冲刺截击，争夺竞技场冠首"},
+	{"id":"snake_io", "title":"Snakes", "subtitle":"蛇群竞技", "group":"街机", "accent":Color("06ddea"), "desc":"自由转向、冲刺截击，争夺竞技场第一名"},
 	{"id":"solitaire", "title":"Solitaire", "subtitle":"经典接龙", "group":"纸牌", "accent":Color("ffcf70"), "desc":"翻牌、移动牌列，逐步清空桌面"},
 	{"id":"tripeaks", "title":"TriPeaks", "subtitle":"三峰纸牌", "group":"纸牌", "accent":Color("e89dff"), "desc":"按相邻点数消牌，清掉三座牌峰"},
 	{"id":"mahjong", "title":"Vita Mahjong", "subtitle":"麻将消除", "group":"消除", "accent":Color("6de7c8"), "desc":"配对相同牌面，清空棋盘"},
@@ -180,6 +180,9 @@ var arena_death_started := -10.0
 var arena_death_skin := 0
 var arena_death_mass := 38.0
 var arena_death_heading := 0.0
+var arena_eat_started := -10.0
+var arena_eat_world := Vector2.ZERO
+var arena_eat_value := 0.0
 
 func _ready() -> void:
 	set_process(true)
@@ -379,8 +382,8 @@ func _build_game_buttons() -> void:
 		_add_hardware_button("收盒", Rect2(10, 17, 92, 52), Callable(self, "_build_home"))
 		_add_hardware_button("重开", Rect2(438, 17, 92, 52), Callable(self, "_reset_current"))
 	elif game_id == "snake_io":
-		_add_button("收盒", Rect2(16, 24, 76, 48), Callable(self, "_build_home"), Color("16334d"), 15)
-		_add_button("再生", Rect2(448, 24, 76, 48), Callable(self, "_reset_current"), Color("16334d"), 15)
+		_add_arena_nav_button("收盒", Rect2(12, 18, 88, 54), Callable(self, "_build_home"))
+		_add_arena_nav_button("再来", Rect2(440, 18, 88, 54), Callable(self, "_reset_current"))
 	else:
 		_add_button("首页", Rect2(16, 24, 76, 48), Callable(self, "_build_home"), SURFACE_2, 15)
 		_add_button("重开", Rect2(448, 24, 76, 48), Callable(self, "_reset_current"), SURFACE_2, 15)
@@ -523,6 +526,37 @@ func _add_arena_boost_button() -> Button:
 	button.button_down.connect(Callable(self, "_set_arena_boost").bind(true))
 	button.button_up.connect(Callable(self, "_set_arena_boost").bind(false))
 	button.focus_exited.connect(Callable(self, "_set_arena_boost").bind(false))
+	add_child(button)
+	buttons.append(button)
+	return button
+
+func _add_arena_nav_button(label: String, rect: Rect2, callback: Callable) -> Button:
+	var button := Button.new()
+	button.text = label
+	button.position = rect.position
+	button.size = rect.size
+	button.focus_mode = Control.FOCUS_ALL
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.tooltip_text = label
+	button.add_theme_font_override("font", UI_FONT)
+	button.add_theme_font_size_override("font_size", 14)
+	button.add_theme_color_override("font_color", Color("02101b"))
+	button.add_theme_color_override("font_hover_color", Color("02101b"))
+	button.add_theme_color_override("font_pressed_color", Color("02101b"))
+	var normal := StyleBoxEmpty.new()
+	var hover := StyleBoxFlat.new()
+	hover.bg_color = Color("ffffff", 0.14)
+	hover.border_color = Color("ffffff", 0.48)
+	hover.set_border_width_all(2)
+	hover.set_corner_radius_all(18)
+	var pressed := hover.duplicate()
+	pressed.bg_color = Color("02101b", 0.12)
+	pressed.border_color = Color("02101b", 0.36)
+	button.add_theme_stylebox_override("normal", normal)
+	button.add_theme_stylebox_override("hover", hover)
+	button.add_theme_stylebox_override("focus", hover)
+	button.add_theme_stylebox_override("pressed", pressed)
+	button.pressed.connect(callback)
 	add_child(button)
 	buttons.append(button)
 	return button
@@ -681,7 +715,10 @@ func _publish_web_state() -> void:
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), COAL)
-	_draw_ambient_backdrop()
+	# Snakes paints an opaque full-screen arena. Avoid drawing the collection's
+	# 210-call ambient scanline field underneath pixels that can never be seen.
+	if screen != "game" or game_id != "snake_io":
+		_draw_ambient_backdrop()
 	if screen == "home":
 		_draw_home()
 	else:
@@ -1690,6 +1727,9 @@ func _init_snakes_arena() -> void:
 	arena_tutorial_dismissed = false
 	arena_death_segments.clear()
 	arena_death_started = -10.0
+	arena_eat_started = -10.0
+	arena_eat_world = Vector2.ZERO
+	arena_eat_value = 0.0
 	_sync_snakes_arena_state()
 	arena_rank_previous = int(state.get("rank", -1))
 	var board: Array = state.get("leaderboard", [])
@@ -1758,31 +1798,34 @@ func _snakes_arena_dispatch(events: Array[Dictionary]) -> void:
 			"player_ate":
 				var at := _arena_vector(event.get("at", Vector2.ZERO))
 				var value := float(event.get("value", 1.0))
-				_snakes_arena_emit_fx("eat", at, Color("ffe28a"), 10)
-				arena_float_labels.append({"world":at, "started":elapsed, "text":"+%.1f" % value, "color":Color("fff2b8")})
+				arena_eat_started = elapsed
+				arena_eat_world = at
+				arena_eat_value = value
+				_snakes_arena_emit_fx("eat", at, Color("ffd92f"), 12)
+				arena_float_labels.append({"world":at, "started":elapsed, "text":"+%.1f 体量" % value, "color":Color("fff1ce")})
 				_play_sfx(SFX_SNAKE_EAT, -9.0, 1.02 + minf(0.18, value * 0.035))
 				_haptic(14)
 				_log_event("snakes_seed", {"mass":float(state.get("mass", 0.0))})
 			"boost_started":
 				if int(event.get("id", -1)) == 0:
-					_snakes_arena_emit_fx("boost", _arena_player_world_position(), Color("45ead1"), 7)
+					_snakes_arena_emit_fx("boost", _arena_player_world_position(), Color("06ddea"), 7)
 					_play_sfx(SFX_SNAKE_KEY, -13.0, 1.42)
 					_haptic(10)
 			"boost_rejected":
 				if int(event.get("id", -1)) == 0:
 					_clear_arena_boost_requests()
-					arena_float_labels.append({"world":_arena_player_world_position(), "started":elapsed, "text":"体量不足", "color":Color("f79a86")})
+					arena_float_labels.append({"world":_arena_player_world_position(), "started":elapsed, "text":"还吃不动！", "color":Color("ffb09e")})
 					_play_sfx(SFX_SNAKE_REJECT, -9.0, 0.92)
 					_haptic(16)
 			"boost_shed":
 				if int(event.get("id", -1)) == 0:
-					_snakes_arena_emit_fx("shed", _arena_vector(event.get("at", Vector2.ZERO)), Color("45ead1"), 2)
+					_snakes_arena_emit_fx("shed", _arena_vector(event.get("at", Vector2.ZERO)), Color("06ddea"), 2)
 			"bot_died":
 				var bot_at := _arena_vector(event.get("at", Vector2.ZERO))
 				arena_competition_world = bot_at
 				arena_competition_until = elapsed + 1.24
-				_snakes_arena_emit_fx("debris", bot_at, Color("ffbd55"), 20)
-				arena_float_labels.append({"world":bot_at, "started":elapsed, "text":"光籽散落", "color":Color("ffe28a")})
+				_snakes_arena_emit_fx("debris", bot_at, Color("ffd92f"), 20)
+				arena_float_labels.append({"world":bot_at, "started":elapsed, "text":"彩豆散开！", "color":Color("fff1ce")})
 				_play_sfx(SFX_SNAKE_CRASH, -13.0, 1.18)
 			"bot_ate":
 				var forage_at := _arena_vector(event.get("at", Vector2.ZERO))
@@ -1801,7 +1844,7 @@ func _snakes_arena_dispatch(events: Array[Dictionary]) -> void:
 				_clear_arena_boost_requests()
 				arena_pointer_active = false
 				arena_result_ready_at = elapsed + 0.72
-				_snakes_arena_emit_fx("death", player_at, Color("ff735f"), 28)
+				_snakes_arena_emit_fx("death", player_at, Color("ff3341"), 28)
 				arena_camera_shake = Vector2(10.0, 6.0)
 				_play_sfx(SFX_SNAKE_CRASH, -4.5, 0.92)
 				_haptic(62)
@@ -1809,6 +1852,8 @@ func _snakes_arena_dispatch(events: Array[Dictionary]) -> void:
 
 func _snakes_arena_emit_fx(kind: String, world: Vector2, color: Color, count: int) -> void:
 	for index in range(count):
+		while arena_fx.size() >= 120:
+			arena_fx.pop_front()
 		var angle := TAU * float(index) / maxf(1.0, float(count)) + rng.randf_range(-0.10, 0.10)
 		var speed := 38.0 + float(index % 7) * 15.0
 		arena_fx.append({
@@ -2346,25 +2391,31 @@ func _draw_snake_gb_terminal(won: bool) -> void:
 
 func _arena_visual_scale() -> float:
 	var mass := maxf(1.0, float(state.get("mass", 38.0)))
-	return clampf(0.46 - log(mass / 38.0) * 0.026, 0.39, 0.46)
+	return clampf(0.69 - log(mass / 38.0) * 0.030, 0.61, 0.69)
 
 func _arena_world_to_screen(world: Vector2, scale_value: float, shake := Vector2.ZERO) -> Vector2:
-	return Vector2(270, 493) + (world - arena_camera) * scale_value + shake
+	var look_ahead := arena_aim_direction * 52.0
+	return Vector2(270, 505) + (world - arena_camera - look_ahead) * scale_value + shake
 
 func _arena_skin_palette(skin: int) -> Dictionary:
 	match posmod(skin, 8):
-		0: return {"outer":Color("14545b"), "inner":Color("45ead1"), "light":Color("baffef"), "mark":Color("ffe28a")}
-		1: return {"outer":Color("853b3e"), "inner":Color("ff735f"), "light":Color("ffd0b8"), "mark":Color("ffbd55")}
-		2: return {"outer":Color("826226"), "inner":Color("ffbd55"), "light":Color("fff2b8"), "mark":Color("ff735f")}
-		3: return {"outer":Color("3f7334"), "inner":Color("8dde62"), "light":Color("eaffac"), "mark":Color("45ead1")}
-		4: return {"outer":Color("245983"), "inner":Color("55b9ef"), "light":Color("c9efff"), "mark":Color("ffe28a")}
-		5: return {"outer":Color("87502d"), "inner":Color("f58b4a"), "light":Color("ffd6a8"), "mark":Color("8dde62")}
-		6: return {"outer":Color("7b3e63"), "inner":Color("ef6fa9"), "light":Color("ffd1e7"), "mark":Color("55b9ef")}
-		_: return {"outer":Color("49606f"), "inner":Color("9dc4cf"), "light":Color("effcff"), "mark":Color("ff735f")}
+		0: return {"outline":Color("02101b"), "head":Color("b8ff00"), "bands":[Color("06ddea"), Color("0879f2"), Color("00e86a"), Color("b8ff00"), Color("ffd92f"), Color("ff711a"), Color("ff3341")], "cheek":Color("ff711a"), "eye_gap":0.48}
+		1: return {"outline":Color("260c18"), "head":Color("ff3341"), "bands":[Color("ff3341"), Color("ff711a"), Color("ffd92f")], "cheek":Color("ffd92f"), "eye_gap":0.44}
+		2: return {"outline":Color("05142d"), "head":Color("0879f2"), "bands":[Color("0879f2"), Color("06ddea"), Color("00e86a")], "cheek":Color("b8ff00"), "eye_gap":0.52}
+		3: return {"outline":Color("1e0828"), "head":Color("f33be8"), "bands":[Color("f33be8"), Color("c58bff"), Color("ff8ee8")], "cheek":Color("ffd92f"), "eye_gap":0.40}
+		4: return {"outline":Color("092315"), "head":Color("00e86a"), "bands":[Color("00e86a"), Color("b8ff00"), Color("ffd92f")], "cheek":Color("06ddea"), "eye_gap":0.55}
+		5: return {"outline":Color("301106"), "head":Color("ff711a"), "bands":[Color("ff711a"), Color("ffd92f"), Color("ff3341")], "cheek":Color("b8ff00"), "eye_gap":0.46}
+		6: return {"outline":Color("171135"), "head":Color("c58bff"), "bands":[Color("c58bff"), Color("f33be8"), Color("0879f2")], "cheek":Color("ffb1e9"), "eye_gap":0.50}
+		_: return {"outline":Color("062431"), "head":Color("06ddea"), "bands":[Color("06ddea"), Color("00e86a"), Color("fff1ce")], "cheek":Color("ff711a"), "eye_gap":0.42}
+
+func _draw_snakes_cartoon_background() -> void:
+	# The clean-room doodle field is pre-baked into one imported texture. This
+	# preserves the cartoon identity while replacing ~240 per-frame Canvas calls
+	# with one Web-safe draw.
+	draw_texture_rect(SNAKES_DOODLE_TEXTURE, Rect2(Vector2.ZERO, VIEW_SIZE), false)
 
 func _draw_snakes_arena_experience() -> void:
-	var parallax := -arena_camera * 0.004
-	draw_texture_rect(SNAKES_ARENA_TEXTURE, Rect2(parallax - Vector2(3, 3), VIEW_SIZE + Vector2(6, 6)), false, Color(0.92, 0.94, 0.96, 1.0))
+	_draw_snakes_cartoon_background()
 	var shake_force := arena_camera_shake.length()
 	var shake := Vector2.ZERO
 	if shake_force > 0.1:
@@ -2374,30 +2425,40 @@ func _draw_snakes_arena_experience() -> void:
 	_draw_snakes_arena_fx(scale_value, shake)
 	_draw_snakes_arena_hud()
 	if arena_pointer_active and state.get("status", "playing") == "playing":
-		var pulse := 12.0 + sin(elapsed * 9.0) * 2.5
-		draw_arc(arena_pointer_screen, pulse, -0.8, 0.8, 12, Color("baffef", 0.72), 2.0)
-		draw_arc(arena_pointer_screen, pulse, PI - 0.8, PI + 0.8, 12, Color("baffef", 0.72), 2.0)
+		var pulse := 11.0 + sin(elapsed * 9.0) * 2.0
+		draw_circle(arena_pointer_screen + Vector2(2, 3), pulse + 3.0, Color("01050d", 0.38))
+		draw_arc(arena_pointer_screen, pulse + 2.0, 0, TAU, 28, Color("02101b", 0.82), 3.5)
+		for dot_index in range(4):
+			var dot_angle := elapsed * 1.8 + float(dot_index) * TAU / 4.0
+			draw_circle(arena_pointer_screen + Vector2.from_angle(dot_angle) * (pulse + 5.0), 2.8, Color("ffd92f", 0.86))
 	var status := str(state.get("status", "playing"))
 	if status != "playing" and arena_result_ready_at > 0.0 and elapsed >= arena_result_ready_at:
 		_draw_snakes_arena_terminal()
-	if elapsed - arena_reset_started < 0.42:
-		var reset_progress := clampf((elapsed - arena_reset_started) / 0.42, 0.0, 1.0)
-		draw_circle(Vector2(270, 493), lerpf(430.0, 0.0, reset_progress), Color("45ead1", 0.13 * (1.0 - reset_progress)))
+	if elapsed - arena_reset_started < 0.65:
+		var reset_progress := clampf((elapsed - arena_reset_started) / 0.65, 0.0, 1.0)
+		var spawn_center := _arena_world_to_screen(_arena_player_world_position(), scale_value, shake)
+		var ring_radius := lerpf(18.0, 86.0, reset_progress)
+		draw_arc(spawn_center, ring_radius, 0, TAU, 48, Color("ffffff", (1.0 - reset_progress) * 0.72), 4.0)
+		for star_index in range(8):
+			var star_angle := float(star_index) * TAU / 8.0 + reset_progress * 1.6
+			var star_position := spawn_center + Vector2.from_angle(star_angle) * ring_radius
+			var star_color := Color("ffd92f") if star_index % 2 == 0 else Color("06ddea")
+			draw_circle(star_position, lerpf(5.0, 1.0, reset_progress), Color(star_color, 1.0 - reset_progress))
 
 func _draw_snakes_arena_world(scale_value: float, shake: Vector2) -> void:
 	var arena_radius := float(state.get("arena_radius", 920.0)) * scale_value
 	var arena_origin := _arena_world_to_screen(Vector2.ZERO, scale_value, shake)
-	draw_circle(arena_origin + Vector2(0, 9), arena_radius, Color("050c18", 0.08))
-	for ring in range(3):
-		draw_arc(arena_origin, arena_radius - float(ring) * 3.0, 0, TAU, 160, Color("c8a95f", 0.38 - float(ring) * 0.09), 2.0)
-	for stitch in range(40):
-		var start := float(stitch) / 40.0 * TAU + elapsed * 0.008
-		draw_arc(arena_origin, arena_radius - 8.0, start, start + 0.045, 3, Color("e0c779", 0.28), 2.0)
+	draw_arc(arena_origin + Vector2(4, 7), arena_radius, 0, TAU, 180, Color("01050d", 0.78), 14.0)
+	draw_arc(arena_origin, arena_radius, 0, TAU, 180, Color("1c4560", 0.74), 8.0)
+	for marker in range(28):
+		var marker_angle := float(marker) / 28.0 * TAU + elapsed * 0.012
+		var marker_center := arena_origin + Vector2.from_angle(marker_angle) * arena_radius
+		draw_circle(marker_center, 2.6, Color("fff1ce", 0.34))
 	var player_position := _arena_player_world_position()
 	var edge_ratio := player_position.length() / maxf(1.0, float(state.get("arena_radius", 920.0)))
 	if edge_ratio > 0.74:
 		var danger_alpha := clampf((edge_ratio - 0.74) / 0.24, 0.0, 1.0)
-		draw_arc(arena_origin, arena_radius - 2.0, 0, TAU, 160, Color("ff735f", danger_alpha * (0.42 + sin(elapsed * 7.0) * 0.12)), 5.0)
+		draw_arc(arena_origin, arena_radius - 2.0, 0, TAU, 180, Color("ff3341", danger_alpha * (0.68 + sin(elapsed * 7.0) * 0.14)), 10.0)
 	var pellets: Array = state.get("pellets", [])
 	for pellet in pellets:
 		_draw_snakes_arena_pellet(pellet, scale_value, shake)
@@ -2422,95 +2483,192 @@ func _draw_snakes_arena_world(scale_value: float, shake: Vector2) -> void:
 func _draw_snakes_arena_pellet(pellet: Dictionary, scale_value: float, shake: Vector2) -> void:
 	var world := _arena_vector(pellet.get("position", Vector2.ZERO))
 	var p := _arena_world_to_screen(world, scale_value, shake)
-	if p.x < -18.0 or p.x > 558.0 or p.y < 78.0 or p.y > 936.0:
+	if p.x < -24.0 or p.x > 564.0 or p.y < 76.0 or p.y > 944.0:
 		return
 	var palette_index := int(pellet.get("palette", 0))
-	var colors := [Color("45ead1"), Color("ffbd55"), Color("8dde62"), Color("ff735f"), Color("55b9ef")]
+	var colors := [Color("06ddea"), Color("ffd92f"), Color("00e86a"), Color("ff3341"), Color("f33be8")]
 	var color: Color = colors[posmod(palette_index, colors.size())]
 	var value := float(pellet.get("value", 1.0))
-	var radius := 2.6 + minf(2.8, value * 0.72)
-	var pulse := 1.0 + sin(elapsed * 5.2 + float(int(pellet.get("id", 0)) % 13)) * 0.10
-	draw_circle(p, radius * 2.5 * pulse, Color(color, 0.075))
-	draw_circle(p + Vector2(1.2, 1.8), radius * pulse, Color("020811", 0.32))
-	draw_circle(p, radius * pulse, color)
-	draw_circle(p - Vector2(radius * 0.28, radius * 0.30), maxf(0.8, radius * 0.28), Color("fff4c6", 0.86))
-	var leaf_dir := Vector2.from_angle(float(int(pellet.get("id", 0)) % 17) * 0.37 + elapsed * 0.8)
-	draw_line(p + leaf_dir * radius * 0.45, p + leaf_dir * radius * 1.35, Color("d9fff7", 0.64), 1.1)
+	var source := str(pellet.get("source", "ambient"))
+	var radius := clampf(4.8 + sqrt(maxf(0.0, value)) * 1.55, 6.0, 10.5)
+	if source == "debris":
+		radius += 2.0
+	elif source == "boost":
+		radius -= 1.0
+	var pulse := 1.0 + sin(elapsed * 4.8 + float(int(pellet.get("id", 0)) % 13)) * 0.075
+	var draw_radius := radius * pulse
+	draw_circle(p, draw_radius * 2.25, Color(color, 0.11))
+	if source == "debris":
+		var outer_star := PackedVector2Array()
+		var inner_star := PackedVector2Array()
+		for point_index in range(12):
+			var point_angle := float(point_index) / 12.0 * TAU + elapsed * 0.34
+			var point_radius := draw_radius * (1.22 if point_index % 2 == 0 else 0.62)
+			outer_star.append(p + Vector2.from_angle(point_angle) * (point_radius + 2.0))
+			inner_star.append(p + Vector2.from_angle(point_angle) * point_radius)
+		draw_colored_polygon(outer_star, Color("02101b"))
+		draw_colored_polygon(inner_star, color)
+	else:
+		draw_circle(p, draw_radius + 2.0, Color("02101b"))
+		draw_circle(p, draw_radius, color)
+	draw_circle(p - Vector2(draw_radius * 0.32, draw_radius * 0.34), maxf(1.4, draw_radius * 0.30), Color("ffffff", 0.92))
 
 func _draw_snakes_arena_snake(snake: Dictionary, scale_value: float, shake: Vector2, player: bool) -> void:
 	var segments: Array = snake.get("segments", [])
 	if segments.size() < 2:
 		return
 	var palette := _arena_skin_palette(int(snake.get("skin", 0)))
-	var outer: Color = palette.outer
-	var inner: Color = palette.inner
-	var light: Color = palette.light
-	var mark: Color = palette.mark
+	var outline: Color = palette.get("outline", Color("02101b"))
+	var bands: Array = palette.get("bands", [Color("06ddea")])
 	var points := PackedVector2Array()
-	for segment in segments:
-		points.append(_arena_world_to_screen(_arena_vector(segment), scale_value, shake))
+	var source_count: int = segments.size()
+	var sample_stride: int = maxi(1, ceili(float(source_count - 1) / 47.0))
+	# Remote bots are half-step sampled: their source joints are only ~10 px
+	# apart on screen while their candy body is 20–30 px wide, so every second
+	# joint remains fully overlapping and visually smooth at half the draw cost.
+	if not player:
+		sample_stride = maxi(2, sample_stride)
+	var source_index := 0
+	while source_index < source_count:
+		points.append(_arena_world_to_screen(_arena_vector(segments[source_index]), scale_value, shake))
+		source_index += sample_stride
+	if points[points.size() - 1] != _arena_world_to_screen(_arena_vector(segments[source_count - 1]), scale_value, shake):
+		points.append(_arena_world_to_screen(_arena_vector(segments[source_count - 1]), scale_value, shake))
+	var screen_bounds := Rect2(points[0], Vector2.ZERO)
+	for point in points:
+		screen_bounds = screen_bounds.expand(point)
+	if not screen_bounds.grow(64.0).intersects(Rect2(-64.0, 44.0, 668.0, 980.0)):
+		return
 	var mass := float(snake.get("mass", 30.0))
-	var body_width := (22.0 + minf(11.0, sqrt(maxf(0.0, mass)) * 0.90)) * scale_value
+	var body_radius := clampf((17.0 + sqrt(maxf(0.0, mass)) * 0.72) * scale_value, 9.5, 14.8)
+	var outline_width := maxf(3.0, body_radius * 0.30)
 	var scavenging := not player and str(snake.get("state", "")) == "scavenging"
-	if scavenging:
-		_draw_snakes_arena_scavenge_intent(points[0], _arena_vector(snake.get("position", Vector2.ZERO)), scale_value, shake)
+	var last_index := points.size() - 1
+	var tail_segment_start := maxi(1, last_index - 5)
+	var main_points := PackedVector2Array()
+	for index in range(tail_segment_start + 1):
+		main_points.append(points[index])
+	if main_points.size() >= 2:
+		var main_shadow := PackedVector2Array()
+		for point in main_points:
+			main_shadow.append(point + Vector2(3.2, 5.0))
+		draw_polyline(main_shadow, Color("01050d", 0.52), body_radius * 2.0 + outline_width * 2.0, true)
+		draw_polyline(main_points, outline, body_radius * 2.0 + outline_width * 2.0, true)
+	for index in range(last_index, 0, -1):
+		var from_tail := float(last_index - index)
+		var taper_t := clampf(from_tail / 5.0, 0.0, 1.0)
+		taper_t = taper_t * taper_t * (3.0 - 2.0 * taper_t)
+		var disc_radius := body_radius * lerpf(0.30, 1.0, taper_t)
+		var next_from_tail := float(last_index - (index - 1))
+		var next_taper_t := clampf(next_from_tail / 5.0, 0.0, 1.0)
+		next_taper_t = next_taper_t * next_taper_t * (3.0 - 2.0 * next_taper_t)
+		var next_radius := body_radius * lerpf(0.30, 1.0, next_taper_t)
+		var segment_radius := (disc_radius + next_radius) * 0.5
+		var band_index := posmod(int(floor(float(index) / 2.15)) + int(snake.get("skin", 0)), bands.size())
+		var band: Color = bands[band_index]
+		# Only the last five capsules need individual tapered under-paint. The
+		# rest share two continuous rails, cutting dozens of Web Canvas calls
+		# without losing the rounded candy-band silhouette.
+		if index >= tail_segment_start:
+			var tail_outline := outline_width * clampf(segment_radius / body_radius, 0.48, 1.0)
+			draw_line(points[index] + Vector2(3.2, 5.0), points[index - 1] + Vector2(3.2, 5.0), Color("01050d", 0.52), segment_radius * 2.0 + tail_outline * 2.0, true)
+			draw_line(points[index], points[index - 1], outline, segment_radius * 2.0 + tail_outline * 2.0, true)
+		draw_line(points[index], points[index - 1], band, segment_radius * 2.0, true)
+		# A single round cap per segment restores the overlapping soft-candy bead
+		# silhouette; the shared rails still avoid repeating its expensive underlay.
+		draw_circle(points[index], disc_radius, band)
+		if index % 3 == 0 and disc_radius > body_radius * 0.72:
+			var highlight_position := points[index] - Vector2(disc_radius * 0.26, disc_radius * 0.34)
+			draw_circle(highlight_position, maxf(1.2, disc_radius * 0.34), Color("ffffff", 0.12))
+		if index % 6 == 0 and disc_radius > body_radius * 0.8:
+			draw_circle(points[index] - Vector2(disc_radius * 0.42, disc_radius * 0.48), maxf(0.8, disc_radius * 0.10), Color("ffffff", 0.58))
 	if bool(snake.get("boosting", false)):
-		for trail_index in range(3, 0, -1):
-			var trail_points := PackedVector2Array()
-			for point in points:
-				trail_points.append(point - Vector2.from_angle(float(snake.get("heading", 0.0))) * float(trail_index) * 5.0)
-			draw_polyline(trail_points, Color(inner, 0.055 + float(3 - trail_index) * 0.035), body_width + float(trail_index) * 4.0, true)
-	var shadow_points := PackedVector2Array()
-	for point in points:
-		shadow_points.append(point + Vector2(3.5, 5.0))
-	draw_polyline(shadow_points, Color("01050b", 0.52), body_width + 6.0, true)
-	draw_polyline(points, outer, body_width + 4.0, true)
-	draw_polyline(points, inner, body_width, true)
-	var highlight_points := PackedVector2Array()
-	for point in points:
-		highlight_points.append(point - Vector2(1.8, 2.4))
-	draw_polyline(highlight_points, Color(light, 0.34), maxf(2.0, body_width * 0.22), true)
-	for index in range(2, points.size(), 3):
-		var pattern_radius := maxf(1.1, body_width * 0.12)
-		draw_circle(points[index] - Vector2(1, 1), pattern_radius, Color(mark, 0.76 if index % 2 == 0 else 0.46))
-	var tail := points[points.size() - 1]
-	var before_tail := points[points.size() - 2]
-	var tail_direction := (tail - before_tail).normalized()
-	if tail_direction == Vector2.ZERO:
-		tail_direction = Vector2.LEFT
-	var tail_side := Vector2(-tail_direction.y, tail_direction.x)
-	draw_colored_polygon(PackedVector2Array([tail + tail_side * body_width * 0.45, tail + tail_direction * body_width * 1.05, tail - tail_side * body_width * 0.45]), outer)
-	draw_colored_polygon(PackedVector2Array([tail + tail_side * body_width * 0.30, tail + tail_direction * body_width * 0.88, tail - tail_side * body_width * 0.30]), inner)
+		_draw_snakes_arena_cartoon_boost(points, body_radius, bands, int(snake.get("id", 0)))
 	var head := points[0]
 	var heading := float(snake.get("heading", 0.0))
-	var head_radius := body_width * (0.72 if player else 0.68)
+	var head_radius := body_radius * (1.36 if player else 1.30)
 	var steer_intensity := 0.0
 	if player and elapsed < arena_steer_until:
 		steer_intensity = clampf((arena_steer_until - elapsed) / 0.26, 0.0, 1.0) * clampf(absf(arena_steer_turn) / 0.045, 0.28, 1.0)
-	draw_set_transform(head, heading, Vector2(1.14 + steer_intensity * 0.08, 1.0 - steer_intensity * 0.055))
-	draw_circle(Vector2(2.8, 4.4), head_radius + 2.0, Color("01050b", 0.45))
-	draw_circle(Vector2.ZERO, head_radius + 2.2, outer)
-	draw_circle(Vector2(-1.8, -1.8), head_radius, inner)
-	draw_arc(Vector2(-2.0, -2.4), head_radius * 0.72, 3.55, 5.78, 18, Color(light, 0.58), maxf(1.2, head_radius * 0.18))
+	var eat_intensity := 0.0
+	if player:
+		var eat_age := elapsed - arena_eat_started
+		if eat_age >= 0.0 and eat_age < 0.28:
+			eat_intensity = sin(clampf(eat_age / 0.28, 0.0, 1.0) * PI)
+	var boost_intensity := 1.0 if bool(snake.get("boosting", false)) else 0.0
+	var head_scale := Vector2(1.10 + steer_intensity * 0.13 + eat_intensity * 0.20 + boost_intensity * 0.08, 1.04 - steer_intensity * 0.09 - eat_intensity * 0.14 - boost_intensity * 0.05)
+	draw_set_transform(head, heading, head_scale)
+	draw_circle(Vector2(3.2, 5.0), head_radius + outline_width + 1.0, Color("01050d", 0.48))
+	draw_circle(Vector2.ZERO, head_radius + outline_width, outline)
+	var head_color: Color = palette.get("head", bands[0])
+	draw_circle(Vector2.ZERO, head_radius, head_color)
+	draw_circle(Vector2(-head_radius * 0.28, -head_radius * 0.35), head_radius * 0.52, Color("ffffff", 0.13))
+	var eye_radius := head_radius * 0.32
+	var eye_gap := float(palette.get("eye_gap", 0.48))
+	var blink_period := 3.15 + float(posmod(int(snake.get("id", 0)) * 7, 13)) * 0.10
+	var blinking := fposmod(elapsed + float(int(snake.get("id", 0))) * 0.71, blink_period) < 0.105
+	var mood := str(snake.get("state", "relaxed"))
 	for eye_sign in [-1.0, 1.0]:
-		var eye_center := Vector2(head_radius * 0.37, eye_sign * head_radius * 0.43)
-		draw_circle(eye_center, head_radius * 0.29, Color("fffaf0"))
-		draw_circle(eye_center + Vector2(head_radius * 0.12, 0), head_radius * 0.13, Color("06121d"))
-		draw_circle(eye_center + Vector2(head_radius * 0.16, -head_radius * 0.05), maxf(0.8, head_radius * 0.045), Color("ffffff"))
-	draw_circle(Vector2(head_radius * 0.74, head_radius * 0.18), maxf(0.8, head_radius * 0.055), outer.darkened(0.42))
-	draw_circle(Vector2(head_radius * 0.74, -head_radius * 0.18), maxf(0.8, head_radius * 0.055), outer.darkened(0.42))
+		var asymmetry: float = 1.0 + float(eye_sign) * float(posmod(int(snake.get("id", 0)), 3) - 1) * 0.035
+		var eye_center := Vector2(head_radius * 0.26, eye_sign * head_radius * eye_gap)
+		if blinking:
+			draw_line(eye_center - Vector2(eye_radius * 0.78, 0), eye_center + Vector2(eye_radius * 0.78, 0), outline, maxf(2.4, eye_radius * 0.28), true)
+		else:
+			draw_circle(eye_center, eye_radius * asymmetry + 2.2, outline)
+			draw_circle(eye_center, eye_radius * asymmetry, Color("ffffff"))
+			var look_offset := Vector2(eye_radius * (0.28 if boost_intensity > 0.0 else 0.20), eye_sign * eye_radius * (0.05 if mood == "scavenging" else 0.0))
+			var pupil_radius := eye_radius * (0.48 if mood == "scavenging" else 0.43)
+			draw_circle(eye_center + look_offset, pupil_radius, Color("02101b"))
+			draw_circle(eye_center + look_offset - Vector2(pupil_radius * 0.26, pupil_radius * 0.32), maxf(0.9, pupil_radius * 0.24), Color("ffffff"))
+	var cheek: Color = palette.get("cheek", Color("ff711a"))
+	draw_circle(Vector2(head_radius * 0.48, head_radius * 0.73), head_radius * 0.13, Color(cheek, 0.72))
+	draw_circle(Vector2(head_radius * 0.48, -head_radius * 0.73), head_radius * 0.13, Color(cheek, 0.72))
+	var smile := PackedVector2Array([
+		Vector2(head_radius * 0.61, -head_radius * 0.16),
+		Vector2(head_radius * 0.70, 0),
+		Vector2(head_radius * 0.61, head_radius * 0.16)
+	])
+	draw_polyline(smile, outline, maxf(1.8, head_radius * 0.10), true)
+	if mood == "chasing":
+		for eye_sign in [-1.0, 1.0]:
+			var brow_center := Vector2(head_radius * 0.06, eye_sign * head_radius * eye_gap)
+			draw_line(brow_center + Vector2(-2, eye_sign * 3), brow_center + Vector2(eye_radius * 0.9, -eye_sign * 2), outline, 2.2, true)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	var invulnerable := float(snake.get("invulnerable", 0.0))
 	if player and invulnerable > 0.0:
 		var shield_alpha := clampf(invulnerable / 1.15, 0.0, 1.0)
-		for shield_arc in range(4):
-			var shield_start := elapsed * 1.8 + float(shield_arc) * TAU * 0.25
-			draw_arc(head, head_radius + 8.0, shield_start, shield_start + 0.74, 10, Color("baffef", 0.32 + shield_alpha * 0.42), 2.0)
-	if player and steer_intensity > 0.01:
-		_draw_snakes_arena_steer_wake(head, heading, head_radius, steer_intensity)
-	var label := "你" if player else ((str(snake.get("name", "BOT")) + " · 抢食") if scavenging else str(snake.get("name", "BOT")))
-	var label_color := Color("fff2b8") if player else Color("e5f5f0", 0.82)
-	_draw_center(label, head + Vector2(0, -head_radius - 13.0), 11 if player else 9, label_color)
+		draw_circle(head, head_radius + 11.0, Color("ffffff", 0.08 + shield_alpha * 0.08))
+		draw_arc(head, head_radius + 11.0, 0, TAU, 44, Color("ffffff", 0.42 + shield_alpha * 0.22), 2.6)
+		for star_index in range(3):
+			var star_angle := elapsed * 2.2 + float(star_index) * TAU / 3.0
+			var star_position := head + Vector2.from_angle(star_angle) * (head_radius + 14.0)
+			draw_line(star_position - Vector2(3, 0), star_position + Vector2(3, 0), Color("ffd92f", shield_alpha), 2.0, true)
+			draw_line(star_position - Vector2(0, 3), star_position + Vector2(0, 3), Color("ffd92f", shield_alpha), 2.0, true)
+	var label := "你" if player else ((str(snake.get("name", "BOT")) + " · 抢豆") if scavenging else str(snake.get("name", "BOT")))
+	var label_color := Color("fff1ce") if player else Color("ffffff", 0.92)
+	_draw_center(label, head + Vector2(0, -head_radius - 16.0), 13 if player else 12, label_color)
+
+func _draw_snakes_arena_cartoon_boost(points: PackedVector2Array, body_radius: float, bands: Array, snake_id: int) -> void:
+	if points.size() < 3:
+		return
+	for index in range(2, mini(points.size() - 1, 16), 3):
+		var forward := (points[index - 1] - points[index + 1]).normalized()
+		if forward == Vector2.ZERO:
+			continue
+		var side := Vector2(-forward.y, forward.x)
+		var side_sign := -1.0 if posmod(index / 3 + snake_id, 2) == 0 else 1.0
+		var wobble := sin(elapsed * 9.0 + float(index + snake_id)) * body_radius * 0.16
+		var side_offset := side * (side_sign * (body_radius + 4.0) + wobble)
+		var line_start := points[index] - forward * body_radius * 0.45 + side_offset
+		var line_end := points[index] - forward * (body_radius * 2.65 + float(index % 3) * 4.0) + side_offset
+		var streak_color: Color = bands[posmod(index + snake_id, bands.size())]
+		draw_line(line_start, line_end, Color(streak_color, 0.72), maxf(2.4, body_radius * 0.22), true)
+	var tail := points[points.size() - 1]
+	for star_index in range(3):
+		var angle := elapsed * 3.2 + float(star_index) * TAU / 3.0 + float(snake_id)
+		var star := tail + Vector2.from_angle(angle) * (body_radius * 1.2 + float(star_index) * 4.0)
+		draw_line(star - Vector2(3, 0), star + Vector2(3, 0), Color("fff1ce", 0.76), 2.0, true)
+		draw_line(star - Vector2(0, 3), star + Vector2(0, 3), Color("fff1ce", 0.76), 2.0, true)
 
 
 func _draw_snakes_arena_steer_wake(head: Vector2, heading: float, head_radius: float, intensity: float) -> void:
@@ -2559,32 +2717,40 @@ func _draw_snakes_arena_death_trace(scale_value: float, shake: Vector2) -> void:
 	var age := elapsed - arena_death_started
 	if arena_death_segments.size() < 2 or age < 0.0 or age > 0.70:
 		return
-	var progress := clampf(age / 0.70, 0.0, 1.0)
 	var palette := _arena_skin_palette(arena_death_skin)
-	var inner: Color = palette.inner
-	var outer: Color = palette.outer
+	var outline: Color = palette.get("outline", Color("02101b"))
+	var bands: Array = palette.get("bands", [Color("06ddea")])
 	var points := PackedVector2Array()
 	for segment in arena_death_segments:
 		points.append(_arena_world_to_screen(_arena_vector(segment), scale_value, shake))
-	var width := (22.0 + minf(11.0, sqrt(maxf(0.0, arena_death_mass)) * 0.90)) * scale_value
-	for strand in range(3):
-		var broken := PackedVector2Array()
-		for index in range(points.size()):
-			if posmod(index, 5) != strand:
-				broken.append(points[index])
-			elif broken.size() >= 2:
-				draw_polyline(broken, Color(outer, (1.0 - progress) * 0.48), width + 2.0, true)
-				broken = PackedVector2Array()
-		if broken.size() >= 2:
-			draw_polyline(broken, Color(inner, (1.0 - progress) * 0.46), width, true)
+	var body_radius := clampf((17.0 + sqrt(maxf(0.0, arena_death_mass)) * 0.72) * scale_value, 9.5, 14.8)
+	for index in range(points.size() - 1, 0, -1):
+		var local_progress := clampf((age - float(index) * 0.012) / 0.48, 0.0, 1.0)
+		var pop := 1.0 + sin(local_progress * PI) * 0.24
+		var fly_angle := float(index * 17 + arena_death_skin * 23) * 0.37
+		var fly := Vector2.from_angle(fly_angle) * local_progress * body_radius * 1.8
+		var disc_radius := body_radius * pop * (1.0 - local_progress * 0.82)
+		var band: Color = bands[posmod(int(floor(float(index) / 2.15)) + arena_death_skin, bands.size())]
+		draw_circle(points[index] + fly + Vector2(2, 3), disc_radius + 2.6, Color("01050d", (1.0 - local_progress) * 0.54))
+		draw_circle(points[index] + fly, disc_radius + 2.0, Color(outline, 1.0 - local_progress))
+		draw_circle(points[index] + fly, disc_radius, Color(band, 1.0 - local_progress))
+		if local_progress > 0.18:
+			var sparkle := points[index] + fly + Vector2.from_angle(fly_angle + 1.2) * (disc_radius + 4.0)
+			draw_line(sparkle - Vector2(3, 0), sparkle + Vector2(3, 0), Color("ffffff", 1.0 - local_progress), 1.8, true)
+			draw_line(sparkle - Vector2(0, 3), sparkle + Vector2(0, 3), Color("ffffff", 1.0 - local_progress), 1.8, true)
 	var head := points[0]
 	var squash := sin(minf(1.0, age / 0.18) * PI) * 0.24
-	draw_set_transform(head, arena_death_heading, Vector2(0.72 + squash, 1.24 - squash * 0.35))
-	draw_circle(Vector2.ZERO, width * 0.75, Color(outer, 1.0 - progress))
-	draw_circle(Vector2(-1.5, -1.5), width * 0.63, Color(inner, 1.0 - progress))
+	var head_fade := clampf(1.0 - maxf(0.0, age - 0.34) / 0.36, 0.0, 1.0)
+	var head_radius := body_radius * 1.36
+	draw_set_transform(head, arena_death_heading, Vector2(0.66 + squash, 1.34 - squash * 0.38))
+	draw_circle(Vector2(3, 5), head_radius + 3.0, Color("01050d", head_fade * 0.48))
+	draw_circle(Vector2.ZERO, head_radius + 2.6, Color(outline, head_fade))
+	draw_circle(Vector2.ZERO, head_radius, Color(palette.get("head", bands[0]), head_fade))
 	for eye_sign in [-1.0, 1.0]:
-		var eye := Vector2(width * 0.25, eye_sign * width * 0.30)
-		draw_line(eye - Vector2(0, 2.4), eye + Vector2(0, 2.4), Color("fffaf0", 1.0 - progress), 1.7)
+		var eye := Vector2(head_radius * 0.28, eye_sign * head_radius * 0.46)
+		var cross_size := head_radius * 0.20
+		draw_line(eye - Vector2(cross_size, cross_size), eye + Vector2(cross_size, cross_size), Color("ffffff", head_fade), 2.4, true)
+		draw_line(eye - Vector2(cross_size, -cross_size), eye + Vector2(cross_size, -cross_size), Color("ffffff", head_fade), 2.4, true)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func _draw_snakes_arena_near_miss(scale_value: float, shake: Vector2) -> void:
@@ -2601,8 +2767,11 @@ func _draw_snakes_arena_near_miss(scale_value: float, shake: Vector2) -> void:
 	if nearest >= 34.0 and nearest < 76.0:
 		var danger := 1.0 - (nearest - 34.0) / 42.0
 		var head := _arena_world_to_screen(player_position, scale_value, shake)
-		for side in [-1.0, 1.0]:
-			draw_arc(head, 19.0 + danger * 6.0, -0.72 + (PI if side < 0.0 else 0.0), 0.72 + (PI if side < 0.0 else 0.0), 12, Color("ff735f", danger * 0.82), 2.5)
+		var alert := head + Vector2(22.0, -27.0 - sin(elapsed * 12.0) * 3.0)
+		draw_circle(alert + Vector2(2, 3), 12.0, Color("01050d", danger * 0.48))
+		draw_circle(alert, 12.0, Color("02101b", danger))
+		draw_circle(alert, 9.0, Color("ffd92f", danger))
+		_draw_center_font(LATIN_FONT, "!", alert + Vector2(0, 5), 15, Color("02101b", danger))
 
 func _draw_snakes_arena_leader_pointer(scale_value: float, shake: Vector2) -> void:
 	var board: Array = state.get("leaderboard", [])
@@ -2632,9 +2801,13 @@ func _draw_snakes_arena_leader_pointer(scale_value: float, shake: Vector2) -> vo
 	var distance_y := (safe.size.y * 0.5 - 12.0) / maxf(0.001, absf(direction.y))
 	var pointer := center + direction * minf(distance_x, distance_y)
 	var side := Vector2(-direction.y, direction.x)
-	draw_colored_polygon(PackedVector2Array([pointer + direction * 10.0, pointer - direction * 8.0 + side * 7.0, pointer - direction * 8.0 - side * 7.0]), Color("ffe28a", 0.92))
-	draw_circle(pointer, 3.0, Color("fff7cf"))
-	_draw_center("冠首", pointer - direction * 18.0, 9, Color("ffe28a"))
+	var arrow := PackedVector2Array([pointer + direction * 12.0, pointer - direction * 9.0 + side * 9.0, pointer - direction * 9.0 - side * 9.0])
+	draw_colored_polygon(arrow, Color("02101b"))
+	var inner_arrow := PackedVector2Array([pointer + direction * 8.0, pointer - direction * 5.0 + side * 5.0, pointer - direction * 5.0 - side * 5.0])
+	draw_colored_polygon(inner_arrow, Color("ffd92f"))
+	for crown_dot in [-1.0, 0.0, 1.0]:
+		draw_circle(pointer - direction * 15.0 + side * crown_dot * 5.0, 2.4, Color("ffd92f"))
+	_draw_center("第一名", pointer - direction * 25.0, 9, Color("fff1ce"))
 
 func _draw_snakes_arena_fx(scale_value: float, shake: Vector2) -> void:
 	for fx in arena_fx:
@@ -2646,103 +2819,155 @@ func _draw_snakes_arena_fx(scale_value: float, shake: Vector2) -> void:
 		var color: Color = fx.get("color", Color("ffe28a"))
 		var size_value := float(fx.get("size", 3.0)) * (1.0 - progress * 0.52)
 		var kind := str(fx.get("kind", "eat"))
-		if kind == "death" or kind == "debris":
-			var shard := Vector2.from_angle(float(int(size_value * 17.0)) + age * 3.0) * size_value
-			draw_colored_polygon(PackedVector2Array([p - shard, p + Vector2(shard.y, -shard.x) * 0.7, p + shard]), Color(color, 1.0 - progress))
+		if kind == "death" or kind == "debris" or kind == "eat":
+			var star_points := PackedVector2Array()
+			var point_count := 10 if kind == "death" else 8
+			for point_index in range(point_count):
+				var point_angle := float(point_index) / float(point_count) * TAU + age * 2.6
+				var point_radius := size_value * (1.65 if point_index % 2 == 0 else 0.58)
+				star_points.append(p + Vector2.from_angle(point_angle) * point_radius)
+			draw_colored_polygon(star_points, Color("02101b", 1.0 - progress))
+			var inner_size := maxf(1.0, size_value * 0.58)
+			draw_circle(p, inner_size, Color(color, 1.0 - progress))
+			if kind == "eat":
+				draw_circle(p - Vector2(inner_size * 0.28, inner_size * 0.34), maxf(0.7, inner_size * 0.28), Color("ffffff", 1.0 - progress))
 		else:
-			draw_circle(p, size_value * 2.0, Color(color, (1.0 - progress) * 0.09))
+			draw_circle(p + Vector2(1.5, 2.2), size_value + 2.0, Color("01050d", (1.0 - progress) * 0.48))
+			draw_circle(p, size_value + 1.6, Color("02101b", 1.0 - progress))
 			draw_circle(p, size_value, Color(color, 1.0 - progress))
 	for label in arena_float_labels:
 		var age := elapsed - float(label.get("started", elapsed))
 		var progress := clampf(age / 0.86, 0.0, 1.0)
-		var p := _arena_world_to_screen(_arena_vector(label.get("world", Vector2.ZERO)), scale_value, shake) + Vector2(0, -24.0 - progress * 30.0)
+		var p := _arena_world_to_screen(_arena_vector(label.get("world", Vector2.ZERO)), scale_value, shake) + Vector2(0, -48.0 - progress * 34.0)
 		var label_color: Color = label.get("color", Color("fff2b8"))
-		_draw_center(str(label.get("text", "+1")), p, 14, Color(label_color, 1.0 - progress))
+		_draw_center(str(label.get("text", "+1")), p + Vector2(2, 3), 15, Color("02101b", (1.0 - progress) * 0.88))
+		_draw_center(str(label.get("text", "+1")), p, 15, Color(label_color, 1.0 - progress))
+
+func _draw_snakes_cartoon_sticker(rect: Rect2, fill: Color, radius: int = 18) -> void:
+	_draw_panel(Rect2(rect.position + Vector2(3, 5), rect.size), Color("01050d", 0.58), Color.TRANSPARENT, radius, 0)
+	_draw_panel(rect, fill, Color("02101b"), radius, 4)
+	draw_line(rect.position + Vector2(radius, 7), Vector2(rect.end.x - radius, rect.position.y + 7), Color("ffffff", 0.34), 2.0, true)
 
 func _draw_snakes_arena_hud() -> void:
-	_draw_panel(Rect2(12, 18, 88, 54), Color("071729", 0.88), Color("c8a95f", 0.42), 18, 1)
-	_draw_panel(Rect2(440, 18, 88, 54), Color("071729", 0.88), Color("c8a95f", 0.42), 18, 1)
-	_draw_center("收盒", Vector2(56, 46), 14, Color("f4e5b8"))
-	_draw_center("再生", Vector2(484, 46), 14, Color("f4e5b8"))
-	_draw_panel(Rect2(176, 17, 188, 58), Color("071729", 0.91), Color("45ead1", 0.44), 22, 2)
-	_draw_center_font(LATIN_FONT, "SNAKES", Vector2(270, 38), 18, Color("baffef"))
-	_draw_center("体量 %.1f" % float(state.get("mass", 0.0)), Vector2(270, 61), 13, Color("fff2b8"))
+	_draw_snakes_cartoon_sticker(Rect2(12, 18, 88, 54), Color("fff1ce"), 18)
+	_draw_snakes_cartoon_sticker(Rect2(440, 18, 88, 54), Color("ffd92f"), 18)
+	_draw_snakes_cartoon_sticker(Rect2(176, 17, 188, 62), Color("06ddea"), 22)
+	_draw_center_font(LATIN_FONT, "SNAKES", Vector2(270, 40), 19, Color("02101b"))
+	_draw_center("体量 %.1f" % float(state.get("mass", 0.0)), Vector2(270, 65), 13, Color("02101b"))
 	var rank := int(state.get("rank", -1))
 	var display_rank: int = rank if rank > 0 else maxi(1, arena_rank_previous)
 	var rank_scale := 1.0 + 0.18 * clampf((arena_rank_bump_until - elapsed) / 0.58, 0.0, 1.0)
-	_draw_panel(Rect2(18, 91, 112, 58), Color("071729", 0.84), Color("ffbd55", 0.48), 18, 1)
-	_draw_text("当前位次", Vector2(33, 110), 10, Color("c9d7d6"))
-	_draw_center_font(NUMBER_FONT, "#%d" % display_rank, Vector2(86, 137), int(22 * rank_scale), Color("ffe28a"))
+	_draw_snakes_cartoon_sticker(Rect2(18, 94, 112, 62), Color("ffd92f"), 19)
+	_draw_text("我的位次", Vector2(32, 116), 10, Color("3b2605"))
+	_draw_center_font(NUMBER_FONT, "#%d" % display_rank, Vector2(76, 146), int(23 * rank_scale), Color("02101b"))
 	var board: Array = state.get("leaderboard", [])
-	var board_height := 36.0 + float(mini(5, board.size())) * 23.0
-	_draw_panel(Rect2(362, 91, 160, board_height), Color("071729", 0.84), Color("c8a95f", 0.34), 17, 1)
-	_draw_text("冠首榜", Vector2(377, 112), 11, Color("f4e5b8"))
-	for index in range(mini(5, board.size())):
-		var entry: Dictionary = board[index]
-		var is_player := int(entry.get("id", -1)) == int(state.get("player_id", 0))
-		var row_y := 134.0 + float(index) * 23.0
+	var display_entries: Array[Dictionary] = []
+	var player_id := int(state.get("player_id", 0))
+	var player_in_top := false
+	for index in range(mini(3, board.size())):
+		var top_entry: Dictionary = board[index]
+		display_entries.append(top_entry)
+		if int(top_entry.get("id", -1)) == player_id:
+			player_in_top = true
+	if not player_in_top:
+		for entry_value in board:
+			var candidate: Dictionary = entry_value
+			if int(candidate.get("id", -1)) == player_id:
+				display_entries.append(candidate)
+				break
+	var board_height := 42.0 + float(display_entries.size()) * 28.0
+	_draw_snakes_cartoon_sticker(Rect2(354, 94, 168, board_height), Color("fff1ce"), 18)
+	_draw_text("排行榜", Vector2(372, 119), 13, Color("02101b"))
+	for index in range(display_entries.size()):
+		var entry: Dictionary = display_entries[index]
+		var is_player := int(entry.get("id", -1)) == player_id
+		var entry_rank := 1
+		for board_index in range(board.size()):
+			if int(board[board_index].get("id", -1)) == int(entry.get("id", -1)):
+				entry_rank = board_index + 1
+				break
+		var row_y := 145.0 + float(index) * 28.0
 		if is_player:
-			draw_rect(Rect2(370, row_y - 13, 144, 20), Color("45ead1", 0.10))
-		_draw_text("%d" % (index + 1), Vector2(376, row_y), 9, Color("c8a95f"))
-		_draw_text("你" if is_player else str(entry.get("name", "BOT")), Vector2(397, row_y), 10, Color("baffef") if is_player else Color("d9e4e1"))
+			_draw_panel(Rect2(365, row_y - 16, 146, 24), Color("06ddea", 0.32), Color("02101b", 0.20), 10, 1)
+		var entry_palette := _arena_skin_palette(int(entry.get("skin", 0)))
+		var avatar_color: Color = entry_palette.get("head", Color("06ddea"))
+		draw_circle(Vector2(378, row_y - 4), 7.0, Color("02101b"))
+		draw_circle(Vector2(378, row_y - 4), 5.0, avatar_color)
+		draw_circle(Vector2(379.5, row_y - 6.0), 1.2, Color("ffffff"))
+		_draw_text("%d" % entry_rank, Vector2(390, row_y), 11, Color("5a3c0b"))
+		_draw_text("你" if is_player else str(entry.get("name", "BOT")), Vector2(407, row_y), 12, Color("02101b"))
 		var mass_text := "%02d" % roundi(float(entry.get("mass", 0.0)))
-		var mass_width := NUMBER_FONT.get_string_size(mass_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 9).x
-		_draw_text_font(NUMBER_FONT, mass_text, Vector2(505 - mass_width, row_y), 9, Color("fff2b8"))
+		var mass_width := NUMBER_FONT.get_string_size(mass_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x
+		_draw_text_font(NUMBER_FONT, mass_text, Vector2(503 - mass_width, row_y), 11, Color("02101b"))
 	if elapsed < arena_leader_change_until and not arena_leader_change_name.is_empty():
 		var change_alpha := clampf((arena_leader_change_until - elapsed) / 1.18, 0.0, 1.0)
-		_draw_panel(Rect2(172, 154, 196, 34), Color("071729", 0.82 * change_alpha), Color("ffe28a", 0.58 * change_alpha), 16, 1)
-		_draw_center("冠首易位 · %s" % arena_leader_change_name, Vector2(270, 177), 11, Color("fff2b8", change_alpha))
+		_draw_snakes_cartoon_sticker(Rect2(172, 164, 196, 38), Color("ffd92f", change_alpha), 17)
+		_draw_center("新的第一名 · %s" % arena_leader_change_name, Vector2(270, 190), 11, Color("02101b", change_alpha))
 	if state.get("status", "playing") == "playing":
 		_draw_snakes_arena_radar()
 		_draw_snakes_arena_boost()
 		if not arena_tutorial_dismissed:
-			_draw_panel(Rect2(130, 891, 280, 38), Color("071729", 0.78), Color("45ead1", 0.28), 17, 1)
-			_draw_center("触摸任意方向转向 · 按住右下冲刺", Vector2(270, 915), 11, Color("d9f4ee"))
+			_draw_snakes_cartoon_sticker(Rect2(122, 888, 296, 42), Color("fff1ce", 0.96), 18)
+			_draw_center("指向任意方向 · 按住右下冲刺", Vector2(270, 916), 11, Color("02101b"))
 
 func _draw_snakes_arena_radar() -> void:
 	var center := Vector2(68, 870)
 	var radius := 39.0
-	draw_circle(center, radius + 4.0, Color("030b16", 0.72))
-	draw_circle(center, radius, Color("0b2435", 0.72))
-	draw_arc(center, radius, 0, TAU, 48, Color("c8a95f", 0.44), 2.0)
-	draw_arc(center, radius * 0.52, 0, TAU, 32, Color("c8a95f", 0.14), 1.0)
+	draw_circle(center + Vector2(3, 5), radius + 5.0, Color("01050d", 0.56))
+	draw_circle(center, radius + 5.0, Color("02101b"))
+	draw_circle(center, radius, Color("fff1ce"))
+	draw_circle(center, radius - 5.0, Color("0b2232"))
+	draw_arc(center, radius - 5.0, 0, TAU, 42, Color("ffffff", 0.20), 2.0)
 	var arena_radius := maxf(1.0, float(state.get("arena_radius", 920.0)))
+	var board: Array = state.get("leaderboard", [])
+	var leader_id := int(board[0].get("id", -1)) if not board.is_empty() else -1
+	var player_id := int(state.get("player_id", 0))
 	for snake in state.get("snakes", []):
 		if not bool(snake.get("alive", false)):
 			continue
+		var snake_id := int(snake.get("id", -1))
+		if snake_id != player_id and snake_id != leader_id:
+			continue
 		var relative := _arena_vector(snake.get("position", Vector2.ZERO)) / arena_radius * radius
 		var palette := _arena_skin_palette(int(snake.get("skin", 0)))
-		var dot_color: Color = palette.inner
-		var dot_radius := 3.7 if int(snake.get("id", -1)) == int(state.get("player_id", 0)) else 2.4
+		var dot_color: Color = palette.get("head", Color("06ddea"))
+		var dot_radius := 4.8 if snake_id == player_id else 3.6
+		draw_circle(center + relative, dot_radius + 1.8, Color("02101b"))
 		draw_circle(center + relative, dot_radius, dot_color)
-	_draw_center_font(LATIN_FONT, "RADAR", center + Vector2(0, 57), 8, Color("c8a95f", 0.72))
+		if snake_id == leader_id and snake_id != player_id:
+			draw_line(center + relative + Vector2(-4, -7), center + relative + Vector2(0, -11), Color("ffd92f"), 2.0, true)
+			draw_line(center + relative + Vector2(0, -11), center + relative + Vector2(4, -7), Color("ffd92f"), 2.0, true)
 
 func _draw_snakes_arena_boost() -> void:
-	var center := Vector2(472, 874)
+	var pressed_offset := Vector2(0, 5) if arena_boost_active else Vector2.ZERO
+	var center := Vector2(472, 874) + pressed_offset
 	var mass := float(state.get("mass", 0.0))
 	var reserve := clampf((mass - 22.0) / 28.0, 0.0, 1.0)
-	var pulse := 1.0 + (sin(elapsed * 13.0) * 0.04 if arena_boost_active else 0.0)
-	draw_circle(center, 44.0 * pulse, Color("020913", 0.82))
-	draw_circle(center, 37.0 * pulse, Color("0b2c39", 0.92))
-	draw_arc(center, 42.0, -PI * 0.5, -PI * 0.5 + TAU * reserve, 48, Color("45ead1") if reserve > 0.04 else Color("ff735f"), 5.0)
+	var pulse := 1.0 + (sin(elapsed * 13.0) * 0.035 if arena_boost_active else 0.0)
+	draw_circle(center + Vector2(3, 6), 45.0 * pulse, Color("01050d", 0.58))
+	draw_circle(center, 45.0 * pulse, Color("02101b"))
+	draw_circle(center, 39.0 * pulse, Color("06ddea") if reserve > 0.04 else Color("ff3341"))
+	draw_circle(center - Vector2(8, 11), 13.0, Color("ffffff", 0.18))
+	for segment in range(8):
+		var start_angle := -PI * 0.5 + float(segment) * TAU / 8.0 + 0.05
+		var lit := float(segment + 1) / 8.0 <= reserve + 0.001
+		draw_arc(center, 43.0, start_angle, start_angle + TAU / 8.0 - 0.10, 8, Color("ffd92f") if lit else Color("3a2941"), 5.5)
 	if arena_boost_active:
-		draw_arc(center, 31.0 + sin(elapsed * 16.0) * 2.0, 0, TAU, 40, Color("fff2b8", 0.68), 2.0)
-	_draw_center("冲刺", center + Vector2(0, 4), 14, Color("fff2b8"))
-	_draw_center_font(LATIN_FONT, "HOLD", center + Vector2(0, 21), 8, Color("a9c9c8"))
+		draw_arc(center, 31.0 + sin(elapsed * 16.0) * 2.0, 0, TAU, 40, Color("ffffff", 0.72), 3.0)
+	_draw_center("冲刺", center + Vector2(0, 5), 15, Color("02101b"))
 
 func _draw_snakes_arena_terminal() -> void:
 	var reason_key := str(state.get("terminal_reason", "body"))
-	var reason := "越出竞技场边界" if reason_key == "boundary" else ("撞上自己的轨迹" if reason_key == "self" else ("正面相撞" if reason_key == "head" else "轨迹被截断"))
+	var reason := "撞到竞技场边缘" if reason_key == "boundary" else ("和游蛇撞了个满怀" if reason_key == "head" else "撞到其他游蛇")
 	var panel := Rect2(72, 752, 396, 154)
-	_draw_panel(Rect2(panel.position + Vector2(0, 8), panel.size), Color("01050b", 0.48), Color.TRANSPARENT, 25, 0)
-	_draw_panel(panel, Color("071729", 0.95), Color("ff735f", 0.72), 25, 2)
-	_draw_center("航线终止", Vector2(270, 785), 25, Color("ff9b83"))
-	_draw_center(reason, Vector2(270, 815), 13, Color("d9e4e1"))
+	_draw_snakes_cartoon_sticker(panel, Color("fff1ce"), 26)
+	_draw_center("撞到了！", Vector2(270, 791), 27, Color("ff3341"))
+	_draw_center(reason, Vector2(270, 821), 13, Color("02101b"))
 	var final_rank := int(state.get("rank", -1))
 	if final_rank <= 0:
 		final_rank = maxi(1, arena_rank_previous)
-	_draw_center("体量 %.1f  ·  最终位次 #%d" % [float(state.get("mass", 0.0)), final_rank], Vector2(270, 846), 15, Color("fff2b8"))
-	_draw_center("点右上角“再生”返回竞技场", Vector2(270, 879), 11, Color("9fc6c4"))
+	_draw_center("体量 %.1f  ·  最终位次 #%d" % [float(state.get("mass", 0.0)), final_rank], Vector2(270, 852), 15, Color("3b2605"))
+	_draw_center("点右上角“再来”回到蛇群", Vector2(270, 883), 11, Color("534027"))
 
 func _draw_snake_classic_experience() -> void:
 	var garden_drift := Vector2(sin(elapsed * 0.34), cos(elapsed * 0.27)) * 1.6

@@ -316,7 +316,7 @@ func _resolve_collisions() -> Array[Dictionary]:
 		if not bool(snake.get("alive", false)) or float(snake.get("invulnerable", 0.0)) > 0.0:
 			continue
 		var head: Vector2 = snake["position"]
-		if head.length() > arena_radius:
+		if head.length() > arena_radius - _head_radius(float(snake["mass"])):
 			pending_reason[snake_index] = "boundary"
 	for first_index in range(snakes.size()):
 		var first: Dictionary = snakes[first_index]
@@ -360,16 +360,17 @@ func _resolve_collisions() -> Array[Dictionary]:
 		var head_radius := _head_radius(float(snake["mass"]))
 		var collided := false
 		for other_index in range(snakes.size()):
+			if other_index == snake_index:
+				continue
 			var other: Dictionary = snakes[other_index]
 			if not bool(other.get("alive", false)) or float(other.get("invulnerable", 0.0)) > 0.0:
 				continue
 			var segments: Array = other["segments"]
-			var start_index := 5 if other_index == snake_index else 2
-			for segment_index in range(start_index, segments.size()):
+			for segment_index in range(2, segments.size()):
 				var body_point: Vector2 = segments[segment_index]
 				var body_radius := _body_radius(float(other["mass"]))
 				if _swept_point_distance(snake["previous_position"], head, body_point) <= head_radius + body_radius * 0.78:
-					body_reason[snake_index] = "self" if other_index == snake_index else "body"
+					body_reason[snake_index] = "body"
 					body_killer[snake_index] = int(other["id"])
 					collided = true
 					break
@@ -510,11 +511,11 @@ func _segment_spacing(mass: float) -> float:
 
 
 func _head_radius(mass: float) -> float:
-	return 12.5 + minf(7.5, sqrt(maxf(0.0, mass)) * 0.55)
+	return 22.0 + minf(10.0, sqrt(maxf(0.0, mass)) * 0.90)
 
 
 func _body_radius(mass: float) -> float:
-	return _head_radius(mass) * 0.78
+	return _head_radius(mass) * 0.75
 
 
 func snapshot() -> Dictionary:
