@@ -6,6 +6,13 @@ cartridges and keeps every game playable without network access.
 
 ![Offline Games case, GB Snake, and Snakes Arena](docs/preview.webp)
 
+## Play
+
+- [Play the production Web build](https://offline-games-godot.vercel.app/)
+- [Browse the source on GitHub](https://github.com/WitMani/offline-games-godot)
+- [Play through Tailscale](https://desktop-youyuan-wsl.tail17a64.ts.net:9443/)
+  (members of the configured tailnet only)
+
 ## Two different Snake games
 
 - **GB Snake** is a dedicated monochrome handheld game: one food, non-wrapping
