@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+GODOT_BIN="${GODOT_BIN:-/srv/ccm/runtime/godot}"
+REMOTE="${OFFLINE_GAMES_ALIYUN_REMOTE:-root@100.65.90.91}"
+REMOTE_ROOT="${OFFLINE_GAMES_ALIYUN_ROOT:-/srv/offline-games-dev}"
+PUBLIC_URL="${OFFLINE_GAMES_ALIYUN_URL:-https://aliyun-ecs.tail17a64.ts.net:8788}"
+STAGING_DIR="$(mktemp -d /tmp/offline-games-aliyun.XXXXXX)"
+CANDIDATE_DIR="$STAGING_DIR/web"
+
+cleanup() {
+	rm -rf -- "$STAGING_DIR"
+}
+trap cleanup EXIT
+
+mkdir -p "$CANDIDATE_DIR"
+"$GODOT_BIN" --headless --path "$ROOT_DIR" --export-release "Web Evaluator" "$CANDIDATE_DIR/index.html"
+
+required=(index.html index.js index.wasm index.pck)
+for name in "${required[@]}"; do
+	if [ ! -s "$CANDIDATE_DIR/$name" ]; then
+		echo "Missing exported file: $name" >&2
+		exit 1
+	fi
+done
+if ! grep -Fq 'const GODOT_THREADS_ENABLED = false;' "$CANDIDATE_DIR/index.html"; then
+	echo "Refusing deployment: Web threads are enabled" >&2
+	exit 1
+fi
+
+python3 "$ROOT_DIR/tools/fingerprint_web_bundle.py" "$CANDIDATE_DIR"
+PACK_FILE="$(find "$CANDIDATE_DIR" -maxdepth 1 -type f -name 'index.*.pck' -printf '%f\n')"
+PACK_TOKEN="${PACK_FILE#index.}"
+PACK_TOKEN="${PACK_TOKEN%.pck}"
+RELEASE_ID="$(date -u +%Y%m%dT%H%M%SZ)-$PACK_TOKEN"
+REMOTE_RELEASE="$REMOTE_ROOT/releases/$RELEASE_ID"
+
+ssh -o BatchMode=yes "$REMOTE" "install -d -m 0755 '$REMOTE_RELEASE'"
+if ssh -o BatchMode=yes "$REMOTE" "test -e '$REMOTE_ROOT/current'"; then
+	CURRENT_RELEASE="$(ssh -o BatchMode=yes "$REMOTE" "readlink -f '$REMOTE_ROOT/current'")"
+	ssh -o BatchMode=yes "$REMOTE" "cp -al '$CURRENT_RELEASE/.' '$REMOTE_RELEASE/'"
+fi
+# Fingerprinted names are content identities, so equal name + size can safely reuse
+# the prior release even though Godot refreshes export mtimes on every build.
+rsync -a --size-only --delete -e 'ssh -o BatchMode=yes' "$CANDIDATE_DIR/" "$REMOTE:$REMOTE_RELEASE/"
+PREVIOUS_RELEASE="$(ssh -o BatchMode=yes "$REMOTE" "readlink -f '$REMOTE_ROOT/current' 2>/dev/null || true")"
+ssh -o BatchMode=yes "$REMOTE" "test -s '$REMOTE_RELEASE/index.html' && test -s '$REMOTE_RELEASE/$PACK_FILE' && ln -sfn '$REMOTE_RELEASE' '$REMOTE_ROOT/current.next' && mv -Tf '$REMOTE_ROOT/current.next' '$REMOTE_ROOT/current'"
+
+HTTP_CODE="$(curl --noproxy '*' -ksS -o /dev/null -w '%{http_code}' "$PUBLIC_URL/?release=$RELEASE_ID")"
+if [ "$HTTP_CODE" != "200" ]; then
+	if [ -n "$PREVIOUS_RELEASE" ]; then
+		ssh -o BatchMode=yes "$REMOTE" "ln -sfn '$PREVIOUS_RELEASE' '$REMOTE_ROOT/current.next' && mv -Tf '$REMOTE_ROOT/current.next' '$REMOTE_ROOT/current'"
+	fi
+	echo "Deployment health check failed: HTTP $HTTP_CODE" >&2
+	exit 1
+fi
+
+echo "Deployed release: $RELEASE_ID"
+echo "Play: $PUBLIC_URL/"
