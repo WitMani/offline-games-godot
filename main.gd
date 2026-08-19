@@ -54,6 +54,7 @@ const SNAKES_DOODLE_TEXTURE: Texture2D = preload("res://assets/art/snakes/arena_
 const SNAKE_RULES = preload("res://snake_model.gd")
 const SNAKE_GB_RULES = preload("res://models/snake_gb_model.gd")
 const SNAKES_ARENA_RULES = preload("res://models/snakes_arena_model.gd")
+const MERGE2248_RULES = preload("res://models/merge2248_model.gd")
 const SFX_CASE_OPEN: AudioStream = preload("res://assets/audio/ui/case_open.wav")
 const SFX_SNAKE_KEY: AudioStream = preload("res://assets/audio/snake/key.wav")
 const SFX_SNAKE_REJECT: AudioStream = preload("res://assets/audio/snake/reject.wav")
@@ -62,7 +63,7 @@ const SFX_SNAKE_CRASH: AudioStream = preload("res://assets/audio/snake/crash.wav
 const SFX_SNAKE_WIN: AudioStream = preload("res://assets/audio/snake/win.wav")
 
 var catalog: Array = [
-	{"id":"merge2248", "title":"2248", "subtitle":"能量合并", "group":"数字", "accent":Color("56d6c9"), "desc":"滑动合并同值节点，积攒 2248 能量"},
+	{"id":"merge2248", "title":"2248", "subtitle":"数字连线", "group":"数字", "accent":Color("ffbf2f"), "desc":"八方向连接数字，把相邻数合成到 2048"},
 	{"id":"merge2048", "title":"2048", "subtitle":"滑动合成", "group":"数字", "accent":Color("f4b860"), "desc":"用四个方向合成更大的数字"},
 	{"id":"watermelon", "title":"2048 Balls", "subtitle":"合成大西瓜", "group":"数字", "accent":Color("ff6b8a"), "desc":"落下水果，让相同水果合体"},
 	{"id":"meowdoku", "title":"Meowdoku", "subtitle":"猫咪数独", "group":"数独", "accent":Color("f39ac7"), "desc":"轻松填完九宫格，零网络也能玩"},
@@ -124,6 +125,8 @@ var sfx_cursor := 0
 var snake_model = SNAKE_RULES.new()
 var snake_gb_model = SNAKE_GB_RULES.new()
 var snakes_arena_model = SNAKES_ARENA_RULES.new()
+var merge2248_model = MERGE2248_RULES.new()
+var merge2248_drag_active := false
 var snake_ghosts: Array[Dictionary] = []
 var snake_pixels: Array[Dictionary] = []
 var snake_fx_kind := ""
@@ -312,13 +315,19 @@ func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			pointer_down = event.position
-			if screen == "game" and game_id == "snake_io":
+			if screen == "game" and game_id == "merge2248" and _merge2248_begin_at(event.position):
+				merge2248_drag_active = true
+			elif screen == "game" and game_id == "snake_io":
 				_snakes_arena_begin_pointer(event.position)
 		else:
 			var swipe_delta: Vector2 = event.position - pointer_down
-			if game_id == "snake_io":
+			if game_id == "merge2248" and merge2248_drag_active:
+				_merge2248_extend_at(event.position)
+				_merge2248_release()
+				merge2248_drag_active = false
+			elif game_id == "snake_io":
 				_snakes_arena_end_pointer(event.position)
-			elif pointer_down.x >= 0.0 and swipe_delta.length() > 42.0 and (game_id == "merge2248" or game_id == "merge2048"):
+			elif pointer_down.x >= 0.0 and swipe_delta.length() > 42.0 and game_id == "merge2048":
 				if abs(swipe_delta.x) > abs(swipe_delta.y):
 					_merge_move(Vector2i.RIGHT if swipe_delta.x > 0 else Vector2i.LEFT)
 				else:
@@ -326,21 +335,33 @@ func _gui_input(event: InputEvent) -> void:
 			else:
 				_handle_tap(event.position)
 			pointer_down = Vector2(-1, -1)
-	elif event is InputEventMouseMotion and arena_pointer_active and game_id == "snake_io":
-		_snakes_arena_aim_at_screen(event.position)
+	elif event is InputEventMouseMotion:
+		if merge2248_drag_active and game_id == "merge2248":
+			_merge2248_extend_at(event.position)
+		elif arena_pointer_active and game_id == "snake_io":
+			_snakes_arena_aim_at_screen(event.position)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch and event.pressed:
 		pointer_down = event.position
-		if screen == "game" and game_id == "snake_io":
+		if screen == "game" and game_id == "merge2248" and _merge2248_begin_at(event.position):
+			merge2248_drag_active = true
+		elif screen == "game" and game_id == "snake_io":
 			_snakes_arena_begin_pointer(event.position)
 	elif event is InputEventScreenTouch and not event.pressed:
-		if game_id == "snake_io":
+		if game_id == "merge2248" and merge2248_drag_active:
+			_merge2248_extend_at(event.position)
+			_merge2248_release()
+			merge2248_drag_active = false
+		elif game_id == "snake_io":
 			_snakes_arena_end_pointer(event.position)
 		else:
 			_handle_tap(event.position)
-	elif event is InputEventScreenDrag and game_id == "snake_io":
-		_snakes_arena_aim_at_screen(event.position)
+	elif event is InputEventScreenDrag:
+		if game_id == "merge2248" and merge2248_drag_active:
+			_merge2248_extend_at(event.position)
+		elif game_id == "snake_io":
+			_snakes_arena_aim_at_screen(event.position)
 
 func _build_home() -> void:
 	if game_id == "snake_io":
@@ -388,7 +409,7 @@ func _build_game_buttons() -> void:
 		_add_button("首页", Rect2(16, 24, 76, 48), Callable(self, "_build_home"), SURFACE_2, 15)
 		_add_button("重开", Rect2(448, 24, 76, 48), Callable(self, "_reset_current"), SURFACE_2, 15)
 	match game_id:
-		"merge2248", "merge2048":
+		"merge2048":
 			_add_button("左", Rect2(170, 826, 58, 52), Callable(self, "_merge_move").bind(Vector2i.LEFT), SURFACE_2, 16)
 			_add_button("下", Rect2(241, 878, 58, 52), Callable(self, "_merge_move").bind(Vector2i.DOWN), SURFACE_2, 16)
 			_add_button("上", Rect2(241, 826, 58, 52), Callable(self, "_merge_move").bind(Vector2i.UP), SURFACE_2, 16)
@@ -611,7 +632,7 @@ func _add_button(label: String, rect: Rect2, callback: Callable, accent: Color =
 
 func _game_control_fill() -> Color:
 	match game_id:
-		"merge2248": return Color("123c3b")
+		"merge2248": return Color("315872")
 		"merge2048": return Color("3a2d25")
 		"watermelon": return Color("3b2237")
 		"meowdoku": return Color("37243b")
@@ -654,7 +675,7 @@ func _handle_tap(pos: Vector2) -> void:
 		"solitaire": _solitaire_tap(pos)
 
 func _direction_input(direction: Vector2i) -> void:
-	if game_id == "merge2248" or game_id == "merge2048":
+	if game_id == "merge2048":
 		_merge_move(direction)
 	elif game_id == "snake_classic" or game_id == "snake_io":
 		_set_snake_direction(direction)
@@ -857,7 +878,8 @@ func _draw_game() -> void:
 	_draw_status_badge("离线", Vector2(382, 34), GREEN, true, 58)
 	_draw_score_panel()
 	match game_id:
-		"merge2248", "merge2048": _draw_merge()
+		"merge2248": _draw_merge2248()
+		"merge2048": _draw_merge()
 		"watermelon": _draw_watermelon()
 		"sudoku", "meowdoku": _draw_sudoku()
 		"snake_io": pass
@@ -900,7 +922,7 @@ func _draw_score_panel() -> void:
 
 func _objective_status() -> String:
 	match game_id:
-		"merge2248": return "能量 %d / 2248" % mini(2248, int(state.get("score", 0)))
+		"merge2248": return "最高 %s / 2048" % _merge2248_highest_label()
 		"merge2048": return "目标 2048"
 		"watermelon": return "下个 %s" % _fruit_name(int(state.get("next", 1)))
 		"snake_classic": return "长度 %d / %d" % [int(state.get("score", 4)), int(state.get("target_length", 120))]
@@ -1112,7 +1134,8 @@ func _start_game_state() -> void:
 	selected_cell = Vector2i(-1, -1)
 	snake_clock = 0.0
 	match game_id:
-		"merge2248", "merge2048": _init_merge()
+		"merge2248": _init_merge2248()
+		"merge2048": _init_merge()
 		"watermelon": _init_watermelon()
 		"sudoku", "meowdoku": _init_sudoku()
 		"snake_classic": _init_snake_gb()
@@ -1134,7 +1157,115 @@ func _new_grid(width: int, height: int, value: Variant = 0) -> Array:
 	return result
 
 # -----------------------------------------------------------------------------
-# 2048 / 2248
+# Number Connect / 2248
+# -----------------------------------------------------------------------------
+
+func _init_merge2248() -> void:
+	merge2248_model.reset(abs(game_id.hash()) + 17, 8)
+	merge2248_drag_active = false
+	_sync_merge2248_state()
+
+func _sync_merge2248_state() -> void:
+	state.merge2248 = merge2248_model.snapshot()
+	state.board = state.merge2248.board
+	state.selected = state.merge2248.selected
+	state.score = state.merge2248.score
+	state.moves = state.merge2248.moves
+	state.status = state.merge2248.status
+	state.preview = state.merge2248.preview
+
+func _merge2248_board_rect() -> Rect2:
+	return Rect2(50, 224, 440, 640)
+
+func _merge2248_cell_at(screen_pos: Vector2) -> Vector2i:
+	var rect := _merge2248_board_rect()
+	if not rect.has_point(screen_pos):
+		return Vector2i(-1, -1)
+	var cell_size := Vector2(rect.size.x / 5.0, rect.size.y / float(merge2248_model.height))
+	return Vector2i(int((screen_pos.x - rect.position.x) / cell_size.x), int((screen_pos.y - rect.position.y) / cell_size.y))
+
+func _merge2248_begin_at(screen_pos: Vector2) -> bool:
+	var began := merge2248_model.begin(_merge2248_cell_at(screen_pos))
+	if began:
+		_sync_merge2248_state()
+		queue_redraw()
+	return began
+
+func _merge2248_extend_at(screen_pos: Vector2) -> void:
+	if merge2248_model.extend(_merge2248_cell_at(screen_pos)):
+		_sync_merge2248_state()
+		queue_redraw()
+
+func _merge2248_release() -> void:
+	var outcome: Dictionary = merge2248_model.release()
+	_sync_merge2248_state()
+	if bool(outcome.get("changed", false)):
+		var gained := int(outcome.gained)
+		_flash_feedback("连接 +%d · 合成 %d" % [gained, int(outcome.result)], GOLD)
+		_log_event("merge2248_connect", {"length":outcome.path.size(), "gained":gained, "result":outcome.result})
+		if state.status != "playing":
+			_capture("win_merge2248" if state.status == "won" else "game_over_merge2248")
+	queue_redraw()
+
+func _merge2248_highest_label() -> String:
+	var highest := 0
+	for row in merge2248_model.board:
+		for value in row:
+			highest = maxi(highest, int(value))
+	return str(highest)
+
+func _merge2248_color(value: int) -> Color:
+	match value:
+		2: return Color("ff7777")
+		4: return Color("a876f3")
+		8: return Color("ffc801")
+		16: return Color("82cd64")
+		32: return Color("64c7fe")
+		64: return Color("ffb177")
+		128: return Color("598cdd")
+		256: return Color("aa8364")
+		512: return Color("00ddaa")
+		1024: return Color("8787f9")
+		2048: return Color("77faff")
+		_: return Color("8290ab")
+
+func _draw_merge2248() -> void:
+	var rect := _merge2248_board_rect()
+	var rows: int = merge2248_model.height
+	var cell := Vector2(rect.size.x / 5.0, rect.size.y / float(rows))
+	var selected_cells: Array = merge2248_model.selected
+	_draw_section_heading("数字连线", "八方向拖动 · 同值起步", Color("ffbf2f"))
+	_draw_panel(rect.grow(7), Color("324853"), Color("ffffff", 0.20), 12, 2)
+	for y in range(rows):
+		for x in range(5):
+			var center := rect.position + Vector2((x + 0.5) * cell.x, (y + 0.5) * cell.y)
+			var value := int(merge2248_model.board[y][x])
+			var selected_now := Vector2i(x, y) in selected_cells
+			var radius := minf(cell.x, cell.y) * (0.38 if selected_now else 0.34)
+			draw_circle(center + Vector2(0, 3), radius, Color(0, 0, 0, 0.22))
+			draw_circle(center, radius, _merge2248_color(value))
+			if selected_now:
+				draw_arc(center, radius + 4, 0, TAU, 30, Color.WHITE, 3.0)
+			_draw_center_font(NUMBER_FONT, str(value), center + Vector2(0, 7), 19 if value < 1000 else 15, Color("424952"))
+	if selected_cells.size() > 1:
+		for i in range(1, selected_cells.size()):
+			var a: Vector2i = selected_cells[i - 1]
+			var b: Vector2i = selected_cells[i]
+			var pa := rect.position + Vector2((a.x + 0.5) * cell.x, (a.y + 0.5) * cell.y)
+			var pb := rect.position + Vector2((b.x + 0.5) * cell.x, (b.y + 0.5) * cell.y)
+			draw_line(pa, pb, Color("fff0c8", 0.94), 6.0, true)
+		for selected_cell_pos in selected_cells:
+			var p: Vector2i = selected_cell_pos
+			var pc := rect.position + Vector2((p.x + 0.5) * cell.x, (p.y + 0.5) * cell.y)
+			draw_circle(pc, minf(cell.x, cell.y) * 0.15, Color("fff8e6"))
+	var preview := merge2248_model.preview_result()
+	var helper := "连接相邻的两个相同数字，然后接同值或双倍数字"
+	if preview > 0:
+		helper = "释放后合成为 %d" % preview
+	_draw_center(helper, Vector2(270, 900), 12, Color("e8edf0", 0.88))
+
+# -----------------------------------------------------------------------------
+# 2048
 # -----------------------------------------------------------------------------
 
 func _init_merge() -> void:
