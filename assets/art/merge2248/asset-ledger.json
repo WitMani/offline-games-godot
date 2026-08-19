@@ -1,0 +1,21 @@
+{
+  "schema": "gamedevsuite.asset-ledger/v1",
+  "assets": [
+    {
+      "path": "energy_vault_bg.webp",
+      "role": "2248 portrait playfield background",
+      "origin": "generated-original",
+      "generator": "OpenAI built-in image generation (GAG-compatible managed delivery fallback)",
+      "generated_at": "2026-08-19",
+      "source_delivery": "/home/ubuntu/.codex/generated_images/01a01920-0e77-7c41-bbe0-7d1001a763fb/exec-af2bfdeb-d0bc-4de5-839e-fe39db2abb26.png",
+      "transform": "ffmpeg scale/crop to 540x960; WebP runtime encoding",
+      "prompt_summary": "Premium midnight energy-vault background with cyan/violet edge auroras, restrained gold crown glow, and a quiet high-legibility center.",
+      "constraints": [
+        "original artwork",
+        "no text or logo",
+        "no game pieces",
+        "central play area remains low contrast"
+      ]
+    }
+  ]
+}

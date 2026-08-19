@@ -48,6 +48,7 @@ const HOME_COVER_TEXTURES := {
 	"arrow_go": preload("res://assets/art/covers/arrow_go.webp"),
 	"amaze": preload("res://assets/art/covers/amaze.webp")
 }
+const MERGE2248_BG_TEXTURE: Texture2D = preload("res://assets/art/merge2248/energy_vault_bg.webp")
 const SNAKE_GARDEN_TEXTURE: Texture2D = preload("res://assets/art/snake/modern_garden.webp")
 const SNAKE_GB_TEXTURE: Texture2D = preload("res://assets/art/snakes/gb_handheld.webp")
 const SNAKES_DOODLE_TEXTURE: Texture2D = preload("res://assets/art/snakes/arena_doodles.webp")
@@ -127,6 +128,9 @@ var snake_gb_model = SNAKE_GB_RULES.new()
 var snakes_arena_model = SNAKES_ARENA_RULES.new()
 var merge2248_model = MERGE2248_RULES.new()
 var merge2248_drag_active := false
+var merge2248_pointer := Vector2.ZERO
+var merge2248_fx: Array[Dictionary] = []
+var merge2248_chain_pulse := -10.0
 var snake_ghosts: Array[Dictionary] = []
 var snake_pixels: Array[Dictionary] = []
 var snake_fx_kind := ""
@@ -955,9 +959,11 @@ func _draw_result_overlay(won: bool) -> void:
 func _draw_game_world(accent: Color) -> void:
 	match game_id:
 		"merge2248":
-			for i in range(7):
-				var p := Vector2(42 + i * 79, 220 + fposmod(float(i * 113), 520.0))
-				_draw_panel(Rect2(p, Vector2(38, 38)), Color(accent, 0.035), Color(accent, 0.06), 9, 1)
+			draw_texture_rect(MERGE2248_BG_TEXTURE, Rect2(Vector2.ZERO, VIEW_SIZE), false, Color(0.72, 0.78, 0.92, 0.92))
+			draw_rect(Rect2(0, 112, 540, 848), Color("020714", 0.28))
+			for i in range(5):
+				var orbit_radius := 126.0 + float(i) * 54.0 + sin(elapsed * 0.34 + float(i)) * 3.0
+				draw_arc(Vector2(270, 548), orbit_radius, -2.8, 0.18, 64, Color("73e7ff", 0.025), 1.5, true)
 		"merge2048":
 			draw_rect(Rect2(0, 112, 540, 848), Color("241b16"))
 			for y in range(112, 960, 16):
@@ -1163,6 +1169,8 @@ func _new_grid(width: int, height: int, value: Variant = 0) -> Array:
 func _init_merge2248() -> void:
 	merge2248_model.reset(abs(game_id.hash()) + 17, 8)
 	merge2248_drag_active = false
+	merge2248_fx.clear()
+	merge2248_chain_pulse = -10.0
 	_sync_merge2248_state()
 
 func _sync_merge2248_state() -> void:
@@ -1187,12 +1195,20 @@ func _merge2248_cell_at(screen_pos: Vector2) -> Vector2i:
 func _merge2248_begin_at(screen_pos: Vector2) -> bool:
 	var began := merge2248_model.begin(_merge2248_cell_at(screen_pos))
 	if began:
+		merge2248_pointer = screen_pos
+		merge2248_chain_pulse = elapsed
+		_play_sfx(SFX_SNAKE_KEY, -18.0, 1.12)
 		_sync_merge2248_state()
 		queue_redraw()
 	return began
 
 func _merge2248_extend_at(screen_pos: Vector2) -> void:
+	merge2248_pointer = screen_pos
 	if merge2248_model.extend(_merge2248_cell_at(screen_pos)):
+		merge2248_chain_pulse = elapsed
+		var chain_pitch := 1.0 + minf(float(merge2248_model.selected.size()), 9.0) * 0.055
+		_play_sfx(SFX_SNAKE_KEY, -17.0, chain_pitch)
+		_haptic(7)
 		_sync_merge2248_state()
 		queue_redraw()
 
@@ -1201,11 +1217,22 @@ func _merge2248_release() -> void:
 	_sync_merge2248_state()
 	if bool(outcome.get("changed", false)):
 		var gained := int(outcome.gained)
+		var path_points: Array[Vector2] = []
+		for path_cell in outcome.path:
+			path_points.append(_merge2248_cell_center(path_cell))
+		merge2248_fx.append({"started":elapsed, "points":path_points, "result":int(outcome.result), "color":_merge2248_color(int(outcome.result))})
+		_play_sfx(SFX_SNAKE_EAT, -8.0, 0.92 + minf(float(outcome.path.size()), 8.0) * 0.035)
+		_haptic(18 + mini(outcome.path.size() * 3, 22))
 		_flash_feedback("连接 +%d · 合成 %d" % [gained, int(outcome.result)], GOLD)
 		_log_event("merge2248_connect", {"length":outcome.path.size(), "gained":gained, "result":outcome.result})
 		if state.status != "playing":
 			_capture("win_merge2248" if state.status == "won" else "game_over_merge2248")
 	queue_redraw()
+
+func _merge2248_cell_center(cell_position: Vector2i) -> Vector2:
+	var rect := _merge2248_board_rect()
+	var cell := Vector2(rect.size.x / 5.0, rect.size.y / float(merge2248_model.height))
+	return rect.position + Vector2((cell_position.x + 0.5) * cell.x, (cell_position.y + 0.5) * cell.y)
 
 func _merge2248_highest_label() -> String:
 	var highest := 0
@@ -1234,35 +1261,80 @@ func _draw_merge2248() -> void:
 	var rows: int = merge2248_model.height
 	var cell := Vector2(rect.size.x / 5.0, rect.size.y / float(rows))
 	var selected_cells: Array = merge2248_model.selected
-	_draw_section_heading("数字连线", "八方向拖动 · 同值起步", Color("ffbf2f"))
-	_draw_panel(rect.grow(7), Color("324853"), Color("ffffff", 0.20), 12, 2)
+	_draw_section_heading("能量序列", "同值起步 · 八向连接", Color("66e6ff"))
+	# Layered glass board: shadow, energy rim, translucent well, and subtle lanes.
+	_draw_panel(rect.grow(12), Color("020817", 0.70), Color("000000", 0.46), 24, 3)
+	_draw_panel(rect.grow(7), Color("0a1830", 0.86), Color("65e9ff", 0.34), 20, 2)
+	_draw_panel(rect.grow(2), Color("071225", 0.78), Color("b8f7ff", 0.09), 17, 1)
+	for lane in range(1, 5):
+		var lane_x := rect.position.x + float(lane) * cell.x
+		draw_line(Vector2(lane_x, rect.position.y + 14), Vector2(lane_x, rect.end.y - 14), Color("80dfff", 0.035), 1.0)
+	# The chain is rendered before nodes, in three layers, so it appears to flow
+	# through their energy cores while preserving number legibility.
+	if selected_cells.size() > 1:
+		for i in range(1, selected_cells.size()):
+			var pa := _merge2248_cell_center(selected_cells[i - 1])
+			var pb := _merge2248_cell_center(selected_cells[i])
+			draw_line(pa, pb, Color("2edcff", 0.14), 18.0, true)
+			draw_line(pa, pb, Color("6cecff", 0.68), 9.0, true)
+			draw_line(pa, pb, Color("fff4c7", 0.98), 3.0, true)
+			var travel := fposmod(elapsed * 2.2 + float(i) * 0.19, 1.0)
+			draw_circle(pa.lerp(pb, travel), 4.5, Color("ffffff", 0.92))
+	if merge2248_drag_active and not selected_cells.is_empty():
+		var tail_from := _merge2248_cell_center(selected_cells[-1])
+		var tail_to := tail_from.lerp(merge2248_pointer, 0.78)
+		draw_line(tail_from, tail_to, Color("6cecff", 0.22), 7.0, true)
 	for y in range(rows):
 		for x in range(5):
 			var center := rect.position + Vector2((x + 0.5) * cell.x, (y + 0.5) * cell.y)
 			var value := int(merge2248_model.board[y][x])
 			var selected_now := Vector2i(x, y) in selected_cells
-			var radius := minf(cell.x, cell.y) * (0.38 if selected_now else 0.34)
-			draw_circle(center + Vector2(0, 3), radius, Color(0, 0, 0, 0.22))
-			draw_circle(center, radius, _merge2248_color(value))
+			var selection_index := selected_cells.find(Vector2i(x, y))
+			var pulse := sin(elapsed * 7.0 - float(maxi(selection_index, 0)) * 0.55) * 1.4 if selected_now else sin(elapsed * 1.8 + float(x + y)) * 0.35
+			var radius := minf(cell.x, cell.y) * (0.365 if selected_now else 0.325) + pulse
+			var color := _merge2248_color(value)
+			draw_circle(center + Vector2(0, 6), radius + 3, Color("00030b", 0.52))
+			draw_circle(center, radius + (10.0 if selected_now else 5.0), Color(color, 0.10 if selected_now else 0.045))
+			draw_circle(center, radius + 2, color.darkened(0.44))
+			draw_circle(center, radius, color)
+			draw_circle(center + Vector2(-4, 5), radius * 0.78, color.darkened(0.13))
+			draw_arc(center - Vector2(2, 2), radius * 0.72, 3.55, 5.72, 18, Color("ffffff", 0.52), 2.4, true)
 			if selected_now:
-				draw_arc(center, radius + 4, 0, TAU, 30, Color.WHITE, 3.0)
-			_draw_center_font(NUMBER_FONT, str(value), center + Vector2(0, 7), 19 if value < 1000 else 15, Color("424952"))
-	if selected_cells.size() > 1:
-		for i in range(1, selected_cells.size()):
-			var a: Vector2i = selected_cells[i - 1]
-			var b: Vector2i = selected_cells[i]
-			var pa := rect.position + Vector2((a.x + 0.5) * cell.x, (a.y + 0.5) * cell.y)
-			var pb := rect.position + Vector2((b.x + 0.5) * cell.x, (b.y + 0.5) * cell.y)
-			draw_line(pa, pb, Color("fff0c8", 0.94), 6.0, true)
-		for selected_cell_pos in selected_cells:
-			var p: Vector2i = selected_cell_pos
-			var pc := rect.position + Vector2((p.x + 0.5) * cell.x, (p.y + 0.5) * cell.y)
-			draw_circle(pc, minf(cell.x, cell.y) * 0.15, Color("fff8e6"))
+				draw_arc(center, radius + 5, -PI * 0.5, PI * 1.5, 36, Color("d9fbff", 0.95), 2.5, true)
+			var number_size := 20 if value < 1000 else (16 if value < 10000 else 13)
+			_draw_center_font(NUMBER_FONT, str(value), center + Vector2(0, 7), number_size, Color("07101e", 0.42))
+			_draw_center_font(NUMBER_FONT, str(value), center + Vector2(0, 5), number_size, Color("ffffff", 0.96))
 	var preview := merge2248_model.preview_result()
-	var helper := "连接相邻的两个相同数字，然后接同值或双倍数字"
+	var helper := "连接相邻同值数字，继续追踪同值或双倍能量"
 	if preview > 0:
-		helper = "释放后合成为 %d" % preview
-	_draw_center(helper, Vector2(270, 900), 12, Color("e8edf0", 0.88))
+		helper = "释放生成  %d" % preview
+		_draw_panel(Rect2(183, 878, 174, 42), Color("101d37", 0.96), Color(_merge2248_color(preview), 0.76), 21, 2)
+	_draw_center(helper, Vector2(270, 900), 12, Color("effcff", 0.92))
+	_draw_merge2248_fx()
+
+func _draw_merge2248_fx() -> void:
+	var active: Array[Dictionary] = []
+	for effect in merge2248_fx:
+		var age := elapsed - float(effect.started)
+		if age > 0.72:
+			continue
+		active.append(effect)
+		var points: Array = effect.points
+		if points.is_empty():
+			continue
+		var origin: Vector2 = points[-1]
+		var color: Color = effect.color
+		var progress := clampf(age / 0.72, 0.0, 1.0)
+		var alpha := 1.0 - progress
+		draw_circle(origin, 18.0 + progress * 45.0, Color(color, 0.11 * alpha))
+		draw_arc(origin, 22.0 + progress * 52.0, 0, TAU, 48, Color(color, 0.82 * alpha), 3.0, true)
+		for i in range(12):
+			var angle := float(i) / 12.0 * TAU + float(effect.result % 7) * 0.17
+			var distance := 12.0 + progress * (30.0 + float(i % 4) * 9.0)
+			var particle := origin + Vector2(cos(angle), sin(angle)) * distance
+			draw_circle(particle, 3.2 * alpha + 0.8, Color(color.lightened(0.35), alpha))
+		_draw_center_font(NUMBER_FONT, str(effect.result), origin + Vector2(0, -26.0 - progress * 32.0), 18, Color("ffffff", alpha))
+	merge2248_fx = active
 
 # -----------------------------------------------------------------------------
 # 2048
