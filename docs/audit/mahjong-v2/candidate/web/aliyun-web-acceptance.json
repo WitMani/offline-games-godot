@@ -1,0 +1,104 @@
+{
+  "result": "PASS",
+  "release": "20260820T131532Z-f68621696ea9",
+  "url": "https://aliyun-ecs.tail17a64.ts.net:8788/?release=20260820T131532Z-f68621696ea9",
+  "source_commit": "dc500de",
+  "ready_seconds_cold_ec2_to_aliyun": 220.57,
+  "secure_context": true,
+  "webassembly": true,
+  "canvas_count": 1,
+  "probe_error": null,
+  "initial": {
+    "game_id": "mahjong",
+    "state": {
+      "removed": [],
+      "selected": -1,
+      "score": 0,
+      "moves": 0,
+      "status": "playing"
+    },
+    "tiles": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  "actual_action": {
+    "name": "select matching East tiles at indices 0 and 10",
+    "before": {
+      "removed": [],
+      "selected": -1,
+      "score": 0,
+      "moves": 0,
+      "status": "playing"
+    },
+    "after": {
+      "removed": [
+        0,
+        10
+      ],
+      "selected": -1,
+      "score": 50,
+      "moves": 1,
+      "status": "playing"
+    }
+  },
+  "artifacts": {
+    "pck": {
+      "name": "index.f68621696ea9.pck",
+      "sha256": "f68621696ea93b9072dd7d0cfd881098cb44c3d89541e2ff64935a7fdf960afb",
+      "bytes": 13201900,
+      "gzip_bytes": 13059313,
+      "http_status": 200,
+      "cache_control": "public, max-age=31536000, immutable",
+      "content_encoding": "gzip"
+    },
+    "engine": {
+      "name": "index.2b558bdb3c3a.wasm",
+      "sha256": "2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137",
+      "bytes": 37686550,
+      "gzip_bytes": 9392911,
+      "http_status": 200,
+      "cache_control": "public, max-age=31536000, immutable",
+      "content_encoding": "gzip"
+    },
+    "pck_contains": [
+      "res://assets/art/catalog/tile_games/gag/mahjong_tile_blank_gag_v1.png",
+      "res://assets/art/catalog/tile_games/mahjong_tile_base.svg",
+      "res://assets/audio/catalog/tile_games/gag/jade_pair_resonance_gag_v1.ogg"
+    ],
+    "source_master_scan": "PASS",
+    "tileclub_gag_scan": "PASS",
+    "previous_pack_retained": "index.3d190f988def.pck"
+  },
+  "console_errors": [],
+  "request_failures": [],
+  "bad_responses": [],
+  "screenshots": {
+    "stable": {
+      "path": "mahjong-aliyun-stable.png",
+      "sha256": "19b41a66b0cff2e70017dce7a444ddfe84530fd52cee9b316a40f68f1441029c"
+    },
+    "after_pair": {
+      "path": "mahjong-aliyun-after-pair.png",
+      "sha256": "8432845a4da6ff6e6f336bc24b6a65a788535f672585ce94cda0965896443a5e"
+    }
+  }
+}

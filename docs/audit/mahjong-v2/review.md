@@ -65,7 +65,22 @@ console error, request failure or bad response. It entered Mahjong and performed
 one real pair: removed indices became `[0, 10]`, score `0→50`, moves `0→1`, and
 status remained `playing`.
 
-Exact Aliyun release fingerprints are recorded after merge and atomic deploy.
+## Exact deployed artifact
+
+- Release: `20260820T131532Z-f68621696ea9`
+- PCK: `index.f68621696ea9.pck`, SHA-256
+  `f68621696ea93b9072dd7d0cfd881098cb44c3d89541e2ff64935a7fdf960afb`
+- Engine: `index.2b558bdb3c3a.wasm`, SHA-256
+  `2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137`
+- Both immutable artifacts return HTTP 200 with gzip and long-lived immutable
+  caching. The deployed PCK content scan passed, and the prior Sudoku pack
+  `index.3d190f988def.pck` remains available through the atomic switch.
+
+Fresh remote Chromium loaded this exact Aliyun release in a secure context,
+entered Mahjong, and paired the matching East tiles at indices 0 and 10. The
+removed list became `[0, 10]`, score `0→50`, moves `0→1`, selected returned to
+`-1`, and status stayed `playing`. Console errors, failed requests and bad
+responses: 0. Cold EC2-to-Aliyun ready time was 220.57 seconds.
 
 Primary evidence:
 
@@ -73,5 +88,7 @@ Primary evidence:
 - `candidate/performance.json`
 - `candidate/continuous/mahjong-clear.webm`
 - `candidate/web/local-web-acceptance.json`
+- `candidate/web/aliyun-web-acceptance.json`
+- `gates.json`
 - `stable-comparison.webp`
 - `../../art-direction/mahjong-v2.gag-asset-ledger.json`

@@ -1,0 +1,106 @@
+{
+  "result": "PASS",
+  "scope": "mahjong only",
+  "source": {
+    "feature_commit": "f2301d6b22daaf34c1fa8fdf15028a2fe26e51a5",
+    "clean_web_acceptance_commit": "dc500deabf0eb49aaded1774217c7d27d498016c",
+    "deployed_source_commit": "dc500deabf0eb49aaded1774217c7d27d498016c",
+    "gameplay_rules_changed": false,
+    "other_game_rules_changed": false,
+    "tileclub_changed": false
+  },
+  "gag": {
+    "mode": "HOME-WSL MCP pure API",
+    "server_version_reported": "0.2.0",
+    "image": {
+      "path": "assets/art/catalog/tile_games/gag/mahjong_tile_blank_gag_v1.png",
+      "sha256": "7ddfb512f1bde4c9c46447d92121b2e3c766e19e6d13a5a332cc52ba0ed1cdbc",
+      "dimensions": [275, 408],
+      "first_visible_beat": "stable opening board before input",
+      "stable_instances": 20,
+      "runtime_roles": ["stable tile body", "selection", "mismatch", "pair gather", "terminal result badge"],
+      "result": "PASS"
+    },
+    "audio": {
+      "path": "assets/audio/catalog/tile_games/gag/jade_pair_resonance_gag_v1.ogg",
+      "sha256": "fe213b4ff0241ff6b3936adc02cd1830f2b9ff7563161b1ce25d85fc0a511472",
+      "duration_seconds": 0.699625,
+      "runtime_events": ["jade_pair grade 2", "jade_pair grade 4"],
+      "result": "PASS"
+    },
+    "source_masters_in_repository": 0,
+    "rejected_candidates_in_repository": 0
+  },
+  "automated": {
+    "mahjong_art": {"assertions": 116, "result": "PASS"},
+    "sudoku_regression": {"assertions": 103, "result": "PASS"},
+    "meowdoku_regression": {"assertions": 88, "result": "PASS"},
+    "solitaire_regression": {"assertions": 67, "result": "PASS"},
+    "tripeaks_regression": {"assertions": 62, "result": "PASS"},
+    "rules": {"assertions": 6, "result": "PASS"},
+    "font_coverage": {"assertions": 60, "result": "PASS"},
+    "font_subset": {"required_glyphs": 3874, "bytes": 1815112, "result": "PASS"},
+    "catalog_art": {"assertions": 10, "result": "PASS"},
+    "cover_assets": {"games": 14, "result": "PASS"},
+    "home_buttons": {"games": 14, "result": "PASS"},
+    "all_games": {"games": 14, "result": "PASS"}
+  },
+  "visual": {
+    "viewport": [540, 960],
+    "candidate_frames": 18,
+    "baseline_frames": 2,
+    "events": ["stable", "selection", "mismatch", "ordinary pair", "terminal clear", "result"],
+    "continuous_peak": {
+      "path": "candidate/continuous/mahjong-clear.webm",
+      "frames": 36,
+      "fps": 30,
+      "duration_seconds": 1.2,
+      "sha256": "72d4ca5e38e4b7ec76160a3ae577d731d497ae20ba177066d361f5d2ad1e8f58"
+    },
+    "generated_text_present": false,
+    "font_role_review": "PASS",
+    "stable_material_review": "PASS",
+    "result_contrast_review": "PASS"
+  },
+  "performance": {
+    "renderer": "llvmpipe (LLVM 21.1.8, 256 bits)",
+    "stable": {"sample_count": 120, "average_frame_ms": 7.08994166666667, "p95_frame_ms": 8.483, "max_frame_ms": 10.824},
+    "busy": {"sample_count": 180, "average_frame_ms": 7.84474444444445, "p95_frame_ms": 10.472, "max_frame_ms": 21.28},
+    "active_effect_cap": 6,
+    "note": "Comparative software-renderer trace; not a physical-device FPS claim",
+    "result": "PASS"
+  },
+  "clean_export": {
+    "source": "git archive of feature commit f2301d6b22daaf34c1fa8fdf15028a2fe26e51a5",
+    "pck": "index.1b6f0673a41c.pck",
+    "pck_sha256": "1b6f0673a41c6ae5d5fd98894507a39f2f50c69ae218c86015e64e3749ebe894",
+    "engine": "index.2b558bdb3c3a.wasm",
+    "engine_sha256": "2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137",
+    "pck_contains": [
+      "res://assets/art/catalog/tile_games/gag/mahjong_tile_blank_gag_v1.png",
+      "res://assets/art/catalog/tile_games/mahjong_tile_base.svg",
+      "res://assets/audio/catalog/tile_games/gag/jade_pair_resonance_gag_v1.ogg"
+    ],
+    "source_master_scan": "PASS",
+    "tileclub_gag_scan": "PASS",
+    "browser_actual_action": "PASS",
+    "console_errors": 0,
+    "request_failures": 0,
+    "result": "PASS"
+  },
+  "aliyun": {
+    "release": "20260820T131532Z-f68621696ea9",
+    "url": "https://aliyun-ecs.tail17a64.ts.net:8788/?release=20260820T131532Z-f68621696ea9",
+    "pck": "index.f68621696ea9.pck",
+    "pck_sha256": "f68621696ea93b9072dd7d0cfd881098cb44c3d89541e2ff64935a7fdf960afb",
+    "engine": "index.2b558bdb3c3a.wasm",
+    "engine_sha256": "2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137",
+    "previous_pack_retained": "index.3d190f988def.pck",
+    "ready_seconds_cold_ec2_to_aliyun": 220.57,
+    "actual_action": {"removed": [0, 10], "score": 50, "moves": 1, "status": "playing"},
+    "console_errors": 0,
+    "request_failures": 0,
+    "bad_responses": 0,
+    "result": "PASS"
+  }
+}
