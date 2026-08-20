@@ -1,0 +1,35 @@
+{
+  "checked_utc": "2026-08-20T11:35:49Z",
+  "url": "https://aliyun-ecs.tail17a64.ts.net:8788/?release=20260820T113001Z-be40306deae5",
+  "release": "20260820T113001Z-be40306deae5",
+  "http_status": 200,
+  "secure_context": true,
+  "wasm": true,
+  "canvas_count": 1,
+  "canvas_rect": {
+    "x": 0,
+    "y": 0,
+    "width": 540,
+    "height": 960
+  },
+  "resources": [
+    "https://aliyun-ecs.tail17a64.ts.net:8788/index.2b558bdb3c3a.js",
+    "https://aliyun-ecs.tail17a64.ts.net:8788/index.2b558bdb3c3a.wasm",
+    "https://aliyun-ecs.tail17a64.ts.net:8788/index.be40306deae5.pck"
+  ],
+  "expected_pack": "index.be40306deae5.pck",
+  "expected_engine": "index.2b558bdb3c3a",
+  "interaction": {
+    "opened_game": "meowdoku",
+    "selected": [
+      2,
+      0
+    ],
+    "placed": 4,
+    "moves": 1,
+    "board_0_2": 4
+  },
+  "console_errors": [],
+  "request_failures": [],
+  "screenshot": "docs/audit/meowdoku-v2/runtime/web-online.png"
+}

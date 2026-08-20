@@ -1,0 +1,85 @@
+{
+  "schema": "offline-games.runtime-art-gates.v1",
+  "game": "meowdoku",
+  "source_commit": "a417d08d05da4303d5b6e1fbd10da657bed7a8ed",
+  "checked_utc": "2026-08-20T11:35:49Z",
+  "mechanics_frozen": true,
+  "tests": {
+    "meowdoku_art_smoke": {"assertions": 88, "result": "PASS"},
+    "all_games_smoke": {"games": 14, "result": "PASS"},
+    "rules_smoke": {"assertions": 6, "result": "PASS"},
+    "catalog_art_smoke": {"assertions": 10, "result": "PASS"},
+    "font_coverage_smoke": {"assertions": 56, "result": "PASS"},
+    "font_subset_gate": {"required_codepoints": 3873, "bytes": 1815048, "result": "PASS"},
+    "cover_assets_smoke": {"assets": 14, "result": "PASS"},
+    "home_buttons_smoke": {"buttons": 14, "result": "PASS"}
+  },
+  "gag_runtime": {
+    "image": {
+      "path": "assets/art/logic/gag-v1/meowdoku_paw_reward.png",
+      "sha256": "1816f55ef6f6a5cff536ebb494fc881c939a4238d6881b4d7462efb18abbceaf",
+      "dimensions": [331, 297],
+      "runtime_reference_verified": true
+    },
+    "audio": {
+      "path": "assets/audio/logic/gag-v1/meowdoku_complete_reward.ogg",
+      "sha256": "34911284fe47fd7ebfcb3f4df0c07642d1e63f3e37159fc269532d2f1ebeac18",
+      "duration_seconds": 0.948625,
+      "grade_4_route_verified": true
+    },
+    "source_masters_in_repo": 0
+  },
+  "continuous_evidence": {
+    "stable": "runtime/01_stable.webp",
+    "intent": "runtime/02_selection_intent.webp",
+    "routine_impact": "runtime/04_correct_impact.webp",
+    "boundary_impact": "runtime/08_block_impact.webp",
+    "peak_impact": "runtime/10_complete_impact.webp",
+    "peak_settle": "runtime/11_complete_settle.webp",
+    "result": "runtime/12_complete_result.webp",
+    "continuous_30_frame_video": "runtime/complete-motion.webm",
+    "contact_sheet": "runtime/contact.webp"
+  },
+  "performance": {
+    "environment": "Xvfb / llvmpipe (LLVM 21.1.8, 256 bits)",
+    "sample_frames": 180,
+    "busy_case": "grade-4 full-board completion retriggered every 60 frames",
+    "average_frame_ms": 17.2745222222222,
+    "p95_frame_ms": 21.129,
+    "max_frame_ms": 23.339,
+    "claim_scope": "regression trace only; not a physical-device FPS claim"
+  },
+  "clean_web_export": {
+    "result": "PASS",
+    "threads_enabled": false,
+    "runtime_paths_present_in_pck": true,
+    "index_sha256": "8a2c9e771dcaa96248a838af6ff83f41ed77b9e7814b1e435afb01b0568df135",
+    "pack": "index.a2e159833780.pck",
+    "pack_sha256": "a2e1598337803ea73b577c0c2e28c54ece11979043adc3bf7ac8d75f1ec51203",
+    "engine": "index.2b558bdb3c3a",
+    "wasm_sha256": "2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137"
+  },
+  "aliyun_release": {
+    "release": "20260820T113001Z-be40306deae5",
+    "url": "https://aliyun-ecs.tail17a64.ts.net:8788/?release=20260820T113001Z-be40306deae5",
+    "deployed_pack": "index.be40306deae5.pck",
+    "deployed_engine": "index.2b558bdb3c3a",
+    "atomic_symlink_switch": true,
+    "previous_fingerprinted_assets_retained": true,
+    "gzip_static_health_check": "PASS"
+  },
+  "online_chromium": {
+    "result": "PASS",
+    "http_status": 200,
+    "secure_context": true,
+    "webassembly": true,
+    "canvas_count": 1,
+    "opened_game": "meowdoku",
+    "placed_value": 4,
+    "moves_after_place": 1,
+    "console_errors": 0,
+    "request_failures": 0,
+    "screenshot": "runtime/web-online.png"
+  },
+  "result": "PASS"
+}

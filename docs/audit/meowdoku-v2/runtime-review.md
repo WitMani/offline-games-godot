@@ -18,6 +18,7 @@
 | `runtime/11_complete_settle.webp` | 连锁衰减中仍保持数字清晰，无峰值素材永久遮盘 |
 | `runtime/12_complete_result.webp` | 结果卡沿用纸艺和猫爪语言，不回落到通用深色弹窗 |
 | `runtime/complete-motion.webm` | 30 帧连续序列证明 anticipation → impact → settle，不是挑一张峰值图冒充完整表现 |
+| `runtime/web-online.png` | Aliyun 最终指纹包的 Chromium 实机画面；标题、说明与页脚均使用深梅子色，纸面可读 |
 
 `runtime/contact.webp` 的六格顺序为稳定、正确、错误、九宫、整局、结果，便于直接比较层级。
 
@@ -30,3 +31,5 @@
 ## 性能
 
 `performance.json` 是 Xvfb + llvmpipe 下 180 帧、每 60 帧重触发一次 G4 的忙态回归：平均 17.275 ms、P95 21.129 ms、最大 23.339 ms。它只作同环境回归证据，不冒充真实手机帧率。
+
+最终线上版本为 `20260820T113001Z-be40306deae5`。HTTPS secure context、WebAssembly、单 Canvas、精确 PCK/WASM 指纹均通过；实际进入 Meowdoku 并填入一个正确数字后 `moves=1`、`board[0][2]=4`，控制台错误和请求失败均为 0。完整机器可读结果见 `web-acceptance.json` 与 `gates.json`。
