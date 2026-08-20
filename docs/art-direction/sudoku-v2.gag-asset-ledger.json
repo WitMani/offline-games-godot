@@ -1,0 +1,108 @@
+{
+  "schema_version": "offline-games-gag-ledger/v1",
+  "generated_at": "2026-08-20",
+  "scope": ["sudoku"],
+  "starting_commit": "f402cd3e8e89b0b83e972f9a55a046e7f45877df",
+  "gag": {
+    "endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+    "server": "game-assets-generator",
+    "server_version": "1.29.0",
+    "transport": "MCP Streamable HTTP",
+    "execution_mode": "pure API; server reported no GPU or PyTorch runtime",
+    "configured_providers_used": ["gemini", "removebg", "elevenlabs"]
+  },
+  "semantic_searches": [
+    {
+      "id": "sudoku_image_search",
+      "query": "无文字、透明背景的黄铜圆规、铅笔或制图印章徽章，暖纸张与蓝紫墨水，适合经典数独完成奖励主体，PNG",
+      "top_candidates": [
+        {"name": "20260109_003821_project_type_icons_s_gemini.png", "score": 0.41302448283158777},
+        {"name": "reward-new-badge.png", "score": 0.4015790342093911},
+        {"name": "ring_2.png", "score": 0.39971871507598866}
+      ],
+      "decision": "reject and generate",
+      "reason": "Retrieved project icons, generic badge, and ring lacked the brass drafting-tool identity."
+    },
+    {
+      "id": "sudoku_audio_search",
+      "query": "short pencil mark, brass drafting stamp and elegant logic puzzle completion chime, dry UI game SFX",
+      "top_candidates": [
+        {"name": "sfx_20251213_092835_sword_slash_whoosh_i_1.wav", "score": 0.728004265762016},
+        {"name": "music_20260330_002207_peaceful_ambient_exploration_m_loop.mp3", "score": 0.7275565612246961},
+        {"name": "warning.wav", "score": 0.7224581663566325}
+      ],
+      "decision": "reject and generate",
+      "reason": "Sword, ambient music, and warning cues conflicted with a restrained drafting-folio completion."
+    }
+  ],
+  "image_generation": {
+    "provider": "gemini",
+    "model": "gemini-3.1-flash-image",
+    "requested_size": "1024x1024",
+    "media_resolution": "medium",
+    "seed": null,
+    "seed_note": "The MCP image tool did not expose or return a seed for this provider.",
+    "selected": {
+      "gag_asset_id": "generated_images__20260820_183633_Gemini.png",
+      "prompt": "Single isolated game reward emblem, no text, no letters, no numbers. A polished brass drafting compass crossed with a short indigo-blue pencil over a warm ivory layered-paper medallion, one violet ink registration arc, strong geometric silhouette, restrained highlights and paper fibers. Front-facing handcrafted 2.5D editorial cartoon asset for a classic logic puzzle, readable at 96 pixels, transparent background, ample padding. No UI panel, no grid, no typography, no photorealistic desk.",
+      "source_master_remote": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/logic_games/gag-v1/masters/generated_images__20260820_183633_Gemini.png",
+      "source_content": "JPEG/JFIF despite .png filename, 1408x768",
+      "source_sha256": "b68c4431b5a5bf0c124f7cfa395fec094fb1da216e6f1c315fedfb6689bf07f6",
+      "decision": "selected",
+      "critique": "The brass compass and crossed indigo pencils preserve a compact, legible drafting identity at runtime scale."
+    },
+    "rejected": {
+      "gag_asset_id": "generated_images__20260820_183644_Gemini.png",
+      "source_sha256": "9d97dec9371e5a38076ef598d2206773d066afdfbc522b9f289a4a68df49b378",
+      "reason": "Fine folded-paper details fragmented at runtime scale and several flourishes resembled unwanted glyphs."
+    },
+    "derivation": [
+      {"tool": "remove_background", "provider": "removebg", "output_dimensions": "677x369 RGBA"},
+      {"tool": "crop_image", "mode": "auto_trim", "padding": 12, "output_dimensions": "341x344 RGBA"}
+    ],
+    "runtime_asset": "res://assets/art/logic/gag-v1/sudoku_compass_reward.png",
+    "runtime_bytes": 161536,
+    "runtime_sha256": "a8980a0667e547c8c8b7486f29a65905126cac2da2af41bfca5ab96afe526c97",
+    "runtime_references": [
+      "presentation/logic_game_presenter.gd::SUDOKU_REWARD_TEXTURE",
+      "draw_header_badge stable beat",
+      "logic_block_complete 76px stamp",
+      "logic_complete 122px ceremony",
+      "draw_result_badge"
+    ]
+  },
+  "audio_generation": {
+    "asset_id": "offline_games_sudoku_compass_complete_gag",
+    "version": "v1",
+    "provider": "elevenlabs",
+    "model": "eleven_text_to_sound_v2",
+    "preset": "collect",
+    "prompt": "A precise graphite pencil tick and polished brass drafting compass stamp on warm paper, followed by a restrained ascending two-note glass chime. Elegant classic logic puzzle completion reward, clean and dry, short, no voice, no music bed, no ambience, no cartoon explosion.",
+    "delivery_digest": "f2d55d0df16201e763fbf92a376f996428b9d1ac1dcb7188ef608904193347fb",
+    "rejected_variation": {
+      "variation": 1,
+      "source_sha256": "973b7d12a596cec15787f1f922be9183b7375581fcb56454564b1c3f78db5c61",
+      "reason": "A conspicuous middle gap split the drafting impact from its reward tail."
+    },
+    "selected_variation": {
+      "variation": 2,
+      "source_master_remote": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/logic_games/gag-v1/masters/sfx/offline_games_sudoku_compass_complete_gag/v1/offline_games_sudoku_compass_complete_gag_02_master.wav",
+      "source_sha256": "741ff214ac3a57697a5d8d8568b30578089261800fe47541ed9301154dfd83d0",
+      "duration_seconds": 1.080042,
+      "decision": "selected",
+      "critique": "Compact pencil/metal transients lead immediately into a continuous restrained tail."
+    },
+    "derivation": "ffmpeg loudnorm I=-20:LRA=7:TP=-3, 48 kHz mono Vorbis q5",
+    "runtime_asset": "res://assets/audio/logic/gag-v1/sudoku_complete_reward.ogg",
+    "runtime_sha256": "4be425f00093f2dc47073c0d405f4d2332e32554bc433959ee0c460dff952d12",
+    "runtime_qc": {"duration_seconds": 1.080042, "integrated_lufs": -20.1, "true_peak_dbfs": -5.6},
+    "runtime_reference": "main.gd::SFX_SUDOKU_GAG_COMPLETE -> _play_logic_event_sfx(logic_complete, grade 4)"
+  },
+  "provenance_boundaries": {
+    "reused_library_assets": [],
+    "generated_assets": "Fresh GAG-managed API output; no retrieved third-party game asset was selected.",
+    "source_masters": "Retained only in the HOME-WSL GAG archive and intentionally absent from this repository.",
+    "prior_assets": "Existing procedural art/audio remains separately attributed and is not relabeled as GAG."
+  }
+}
+

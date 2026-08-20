@@ -1,0 +1,16 @@
+{
+  "average_frame_ms": 26.6329722222222,
+  "busy_case": "grade-4 full-board completion retriggered every 60 frames",
+  "catalog_effect_cap": 12,
+  "game_id": "sudoku",
+  "max_frame_ms": 40.65,
+  "note": "Xvfb/llvmpipe busy-completion regression trace; not a physical-device FPS claim",
+  "p95_frame_ms": 34.214,
+  "peak_static_memory_bytes": 63354863,
+  "renderer": "llvmpipe (LLVM 21.1.8, 256 bits)",
+  "sample_count": 180,
+  "viewport": [
+    540,
+    960
+  ]
+}

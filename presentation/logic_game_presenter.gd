@@ -1,13 +1,14 @@
 extends RefCounted
 
-## Presentation-only state and drawing for Meowdoku. The gameplay board remains
-## authoritative in main.gd; this presenter consumes semantic selection/result
-## events and never writes rule state.
+## Presentation-only state and drawing for Sudoku and Meowdoku. The gameplay
+## board remains authoritative in main.gd; this presenter consumes semantic
+## selection/result events and never writes rule state.
 
 const BOARD_ORIGIN := Vector2(47.0, 236.0)
 const CELL_SIZE := 49.5
 const BOARD_EDGE := CELL_SIZE * 9.0
 const MEOW_REWARD_TEXTURE: Texture2D = preload("res://assets/art/logic/gag-v1/meowdoku_paw_reward.png")
+const SUDOKU_REWARD_TEXTURE: Texture2D = preload("res://assets/art/logic/gag-v1/sudoku_compass_reward.png")
 
 var selected_cell := Vector2i(0, 0)
 var selected_started := -10.0
@@ -370,7 +371,7 @@ func _draw_compass(canvas: CanvasItem, center: Vector2, radius: float, color: Co
 
 
 func _draw_reward_texture(canvas: CanvasItem, meow: bool, center: Vector2, bounds: Vector2, modulate: Color) -> void:
-	var texture := MEOW_REWARD_TEXTURE
+	var texture := MEOW_REWARD_TEXTURE if meow else SUDOKU_REWARD_TEXTURE
 	if texture == null:
 		return
 	var source_size := texture.get_size()

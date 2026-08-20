@@ -70,7 +70,7 @@ func _test_sudoku_roles() -> void:
 	game.state["board"][0][2] = 0
 	game.state["selected"] = [2, 0]
 	game._sudoku_place(int(solution[0][2]))
-	_expect_event("sudoku_block", "logic_correct", 2)
+	_expect_event("sudoku_block", "logic_block_complete", 3)
 
 
 func _test_solitaire_grade() -> void:
