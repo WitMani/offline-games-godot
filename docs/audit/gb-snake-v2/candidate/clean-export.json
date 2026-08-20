@@ -1,0 +1,30 @@
+{
+  "result": "PASS",
+  "source": "git archive of feature commit c9cd5569b7a3d318cdf89f5dc8a16a5f27744936",
+  "export_profile": "Web Evaluator",
+  "godot": "4.6.stable.official.89cea1439",
+  "threads_enabled": false,
+  "pck": {
+    "name": "index.19482cf641d1.pck",
+    "sha256": "19482cf641d1183491a7f76cef1c13720c8d0e54cc3dac9a259474b49954ba57",
+    "bytes": 14227796,
+    "runtime_derivatives_found": 5,
+    "runtime_import_records_found": 5,
+    "source_master_scan": "PASS"
+  },
+  "engine": {
+    "name": "index.2b558bdb3c3a.wasm",
+    "sha256": "2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137",
+    "bytes": 37686550
+  },
+  "browser": {
+    "report": "web/local-web-acceptance.json",
+    "report_sha256": "597c935b622bb99bb6ff190b05e5984803c4e93efec6f68ee0b9906f56f97b89",
+    "ready_seconds": 1.684,
+    "actual_visible_action": "tap hardware Up D-pad",
+    "console_errors": 0,
+    "request_failures": 0,
+    "bad_responses": 0,
+    "result": "PASS"
+  }
+}

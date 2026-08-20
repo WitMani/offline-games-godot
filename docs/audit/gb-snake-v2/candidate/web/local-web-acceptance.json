@@ -1,0 +1,86 @@
+{
+  "result": "PASS",
+  "source": "clean git archive of feature commit c9cd5569b7a3d318cdf89f5dc8a16a5f27744936",
+  "url": "http://127.0.0.1:18794/?release=clean-c9cd556",
+  "ready_seconds": 1.684,
+  "secure_context": true,
+  "webassembly": true,
+  "canvas_count": 1,
+  "probe_error": null,
+  "initial": {
+    "game_id": "snake_classic",
+    "width": 15,
+    "height": 23,
+    "target_length": 120,
+    "food": [
+      11,
+      11
+    ],
+    "before": {
+      "head": [
+        8,
+        11
+      ],
+      "direction": [
+        1,
+        0
+      ],
+      "score": 4,
+      "moves": 1,
+      "pending_growth": 0,
+      "status": "playing",
+      "segment_count": 4
+    }
+  },
+  "actual_action": {
+    "name": "tap visible hardware Up D-pad",
+    "logical_canvas_point": [
+      159,
+      581
+    ],
+    "observability_note": "the published state bridge is sampled, so legal rightward ticks may occur before the accepted Up tick appears",
+    "before": {
+      "head": [
+        8,
+        11
+      ],
+      "direction": [
+        1,
+        0
+      ],
+      "score": 4,
+      "moves": 1,
+      "pending_growth": 0,
+      "status": "playing",
+      "segment_count": 4
+    },
+    "after": {
+      "head": [
+        9,
+        10
+      ],
+      "direction": [
+        0,
+        -1
+      ],
+      "score": 4,
+      "moves": 3,
+      "pending_growth": 0,
+      "status": "playing",
+      "segment_count": 4
+    }
+  },
+  "console_errors": [],
+  "request_failures": [],
+  "bad_responses": [],
+  "screenshots": {
+    "stable": {
+      "path": "gb-snake-local-stable.png",
+      "sha256": "33387f4f34c07719fbe815a90415d7f526fb7ba12a2efea28bad86d1ce54fcd9"
+    },
+    "after_up": {
+      "path": "gb-snake-local-after-up.png",
+      "sha256": "a1a8bd796fac97c86764104063dcd3141501b52807f613389171f396d1fda93f"
+    }
+  }
+}
