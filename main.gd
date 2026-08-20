@@ -56,6 +56,8 @@ const SOLITAIRE_CARD_BACK_TEXTURE: Texture2D = preload("res://assets/art/cards/s
 const TRIPEAKS_CARD_BACK_TEXTURE: Texture2D = preload("res://assets/art/cards/tripeaks_card_back_gag_v1.webp")
 const MAHJONG_TILE_BASE_TEXTURE: Texture2D = preload("res://assets/art/catalog/tile_games/mahjong_tile_base.svg")
 const MAHJONG_GAG_TILE_TEXTURE: Texture2D = preload("res://assets/art/catalog/tile_games/gag/mahjong_tile_blank_gag_v1.png")
+const TILECLUB_GAG_BADGE_ATLAS_TEXTURE: Texture2D = preload("res://assets/art/catalog/tile_games/gag/tileclub_badge_atlas_gag_v1.png")
+const TILECLUB_GAG_SHELL_TEXTURE: Texture2D = preload("res://assets/art/catalog/tile_games/gag/tileclub_shell_badge_gag_v1.png")
 const SNAKE_RULES = preload("res://snake_model.gd")
 const SNAKE_GB_RULES = preload("res://models/snake_gb_model.gd")
 const SNAKES_ARENA_RULES = preload("res://models/snakes_arena_model.gd")
@@ -87,6 +89,7 @@ const SFX_SUDOKU_GAG_COMPLETE: AudioStream = preload("res://assets/audio/logic/g
 const SFX_SOLITAIRE_CARD_SETTLE: AudioStream = preload("res://assets/audio/cards/solitaire_card_settle_gag_v1.ogg")
 const SFX_TRIPEAKS_STREAK_PEAK: AudioStream = preload("res://assets/audio/cards/tripeaks_streak_peak_gag_v1.ogg")
 const SFX_MAHJONG_GAG_PAIR: AudioStream = preload("res://assets/audio/catalog/tile_games/gag/jade_pair_resonance_gag_v1.ogg")
+const SFX_TILECLUB_GAG_MATCH: AudioStream = preload("res://assets/audio/catalog/tile_games/gag/fabric_triple_stitch_gag_v1.ogg")
 
 var catalog: Array = [
 	{"id":"merge2248", "title":"2248", "subtitle":"数字连线", "group":"数字", "accent":Color("ffbf2f"), "desc":"八方向连接数字，把相邻数合成到 2048"},
@@ -146,6 +149,7 @@ var motion_from := Vector2.ZERO
 var motion_to := Vector2.ZERO
 var motion_color := CYAN
 var motion_label := ""
+var motion_value := 0
 var home_entered_at := 0.0
 var sfx_players: Array[AudioStreamPlayer] = []
 var sfx_cursor := 0
@@ -159,6 +163,7 @@ var catalog_art_director = CATALOG_ART_DIRECTION.new()
 var watermelon_presenter = WATERMELON_PRESENTATION.new()
 var logic_game_presenter = LOGIC_GAME_PRESENTATION.new()
 var mahjong_object_fx: Dictionary = {}
+var tileclub_object_fx: Dictionary = {}
 var catalog_fx: Array[Dictionary] = []
 var catalog_fx_serial := 0
 var merge2248_drag_active := false
@@ -327,7 +332,7 @@ func _impact(position: Vector2, color: Color, strength := 1.0) -> void:
 	impact_until = elapsed + 0.34
 	queue_redraw()
 
-func _start_motion(kind: String, from: Vector2, to: Vector2, color: Color, label := "", duration := 0.34) -> void:
+func _start_motion(kind: String, from: Vector2, to: Vector2, color: Color, label := "", duration := 0.34, visual_value := 0) -> void:
 	motion_kind = kind
 	motion_started = elapsed
 	motion_duration = duration
@@ -335,6 +340,7 @@ func _start_motion(kind: String, from: Vector2, to: Vector2, color: Color, label
 	motion_to = to
 	motion_color = color
 	motion_label = label
+	motion_value = visual_value
 	queue_redraw()
 
 func _start_catalog_event(kind: String, position: Vector2, color: Color, grade := 1, label := "", duration := 0.72, metadata: Dictionary = {}) -> void:
@@ -352,13 +358,13 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 		"duration": duration,
 		"seed": catalog_fx_serial,
 	}
-	if game_id in ["sudoku", "meowdoku", "mahjong"]:
+	if game_id in ["sudoku", "meowdoku", "mahjong", "tileclub"]:
 		effect["font_role"] = "ui_cjk"
 	effect.merge(metadata, true)
 	catalog_fx.append(effect)
 	# The fruit burst is a large transparent texture. Six concurrent envelopes
 	# preserve rapid taps and cascades while bounding overdraw on WebGL/Canvas.
-	var catalog_fx_cap := 6 if game_id in ["watermelon", "merge2048", "mahjong"] else 12
+	var catalog_fx_cap := 6 if game_id in ["watermelon", "merge2048", "mahjong", "tileclub"] else 12
 	while catalog_fx.size() > catalog_fx_cap:
 		catalog_fx.pop_front()
 	var semantic := str(metadata.get("semantic", kind))
@@ -403,13 +409,20 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 		var event_grade := clampi(grade, 1, 4)
 		var event_sfx := _catalog_event_sfx(kind, event_grade)
 		var event_volume := -17.0 + float(event_grade) * 1.5
+		var event_pitch := 0.92 + float(event_grade) * 0.09
 		if event_sfx == SFX_SOLITAIRE_CARD_SETTLE:
 			event_volume = -11.5 + float(event_grade) * 1.1
 		elif event_sfx == SFX_TRIPEAKS_STREAK_PEAK:
 			event_volume = -12.5 + float(event_grade) * 1.2
 		elif event_sfx == SFX_MAHJONG_GAG_PAIR:
 			event_volume = -7.0 + float(event_grade)
-		_play_sfx(event_sfx, event_volume, 0.92 + float(event_grade) * 0.09)
+		elif event_sfx == SFX_TILECLUB_GAG_MATCH:
+			event_volume = -7.0 + float(event_grade)
+			event_pitch = 0.97 + float(event_grade - 3) * 0.035
+		elif game_id == "tileclub" and event_sfx == SFX_SNAKE_REJECT:
+			event_volume = -15.0 + float(event_grade)
+			event_pitch = 0.88 + float(event_grade) * 0.025
+		_play_sfx(event_sfx, event_volume, event_pitch)
 		if event_grade == 1:
 			_haptic(8)
 		else:
@@ -423,6 +436,10 @@ func _catalog_event_sfx(kind: String, grade: int) -> AudioStream:
 		return SFX_TRIPEAKS_STREAK_PEAK
 	if game_id == "mahjong" and kind == "jade_pair":
 		return SFX_MAHJONG_GAG_PAIR
+	if game_id == "tileclub" and kind in ["stitch_match", "stitch_clear"]:
+		return SFX_TILECLUB_GAG_MATCH
+	if game_id == "tileclub" and kind in ["stitch_risk", "stitch_tray_full"]:
+		return SFX_SNAKE_REJECT
 	return SFX_SNAKE_EAT if grade >= 2 else SFX_SNAKE_KEY
 
 func _play_logic_event_sfx(kind: String, grade: int) -> void:
@@ -1246,6 +1263,23 @@ func _draw_result_overlay(won: bool) -> void:
 		_draw_center_font(UI_FONT, "得分 %d · 步数 %d" % [int(state.get("score", 0)), int(state.get("moves", 0))], Vector2(270, 493), 16, Color("24594d"))
 		_draw_center_font(UI_FONT, "点击右上角“重开”继续挑战", Vector2(270, 536), 13, Color("4d6f66"))
 		return
+	if game_id == "tileclub":
+		var success := won
+		var thread_color := Color("65dcb6") if success else Color("f06a91")
+		var cloth_ink := Color("43263a")
+		draw_rect(Rect2(0, 112, 540, 848), Color("261320", 0.70))
+		_draw_panel(Rect2(55, 345, 430, 244), Color("160d15", 0.38), Color.TRANSPARENT, 18, 0)
+		_draw_panel(Rect2(48, 338, 444, 244), Color("fff0cf"), Color(thread_color, 0.94), 16, 3)
+		var stitch_rect := Rect2(63, 353, 414, 214)
+		for stitch in range(18):
+			var stitch_x := stitch_rect.position.x + 8.0 + float(stitch) * 22.5
+			draw_line(Vector2(stitch_x, stitch_rect.position.y), Vector2(stitch_x + 8, stitch_rect.position.y), Color(cloth_ink, 0.24), 1.5)
+			draw_line(Vector2(stitch_x, stitch_rect.end.y), Vector2(stitch_x + 8, stitch_rect.end.y), Color(cloth_ink, 0.24), 1.5)
+		_draw_fabric_patch(Rect2(241, 354, 58, 58), int(tileclub_object_fx.get("value", 1)), 1.0, false, 0.48)
+		_draw_center_font(DISPLAY_FONT, "织毯完成" if success else "槽位绷满", Vector2(270, 449), 29, cloth_ink)
+		_draw_center_font(UI_FONT, "得分 %d · 步数 %d" % [int(state.get("score", 0)), int(state.get("moves", 0))], Vector2(270, 490), 16, Color(cloth_ink, 0.88))
+		_draw_center_font(UI_FONT, "点击右上角“重开”继续挑战", Vector2(270, 536), 13, Color(cloth_ink, 0.68))
+		return
 	draw_rect(Rect2(0, 112, 540, 848), Color(COAL, 0.72))
 	var color := GREEN if won else RED
 	_draw_panel(Rect2(48, 338, 444, 238), Color("111a2e", 0.985), Color(color, 0.82), 18, 2)
@@ -1290,8 +1324,14 @@ func _draw_motion_overlay() -> void:
 	var alpha := sin(progress * PI)
 	match motion_kind:
 		"tile":
-			_draw_panel(Rect2(position - Vector2(25, 25), Vector2(50, 50)), Color(motion_color, 0.96), Color(INK, 0.78), 12, 2)
-			_draw_center(motion_label, position + Vector2(0, 2), 20, COAL)
+			var press := sin(clampf(progress / 0.28, 0.0, 1.0) * PI)
+			var patch_size := Vector2(50.0 * (1.0 + press * 0.11), 50.0 * (1.0 - press * 0.13))
+			for knot in range(1, 5):
+				var knot_t := clampf(float(knot) / 5.0, 0.0, 1.0)
+				var knot_position := motion_from.lerp(position, knot_t)
+				draw_circle(knot_position, 2.0, Color(motion_color.lightened(0.18), alpha * (0.56 - knot_t * 0.08)))
+			var tile_alpha := maxf(alpha, 1.0 - progress)
+			_draw_fabric_patch(Rect2(position - patch_size * 0.5, patch_size), motion_value, tile_alpha, false, 0.82)
 		"card":
 			var flip_scale := maxf(0.12, abs(cos(progress * PI)))
 			var rect := Rect2(position - Vector2(29 * flip_scale, 40), Vector2(58 * flip_scale, 80))
@@ -4713,6 +4753,7 @@ func _init_tileclub() -> void:
 	state["tray"] = []
 	state["score"] = 0
 	state["moves"] = 0
+	tileclub_object_fx = {}
 
 func _tileclub_tap(pos: Vector2) -> void:
 	if game_id != "tileclub" or state.get("status") != "playing":
@@ -4733,11 +4774,13 @@ func _tileclub_tap(pos: Vector2) -> void:
 	tray.append(value)
 	state["moves"] = int(state["moves"]) + 1
 	_flash_feedback("收集 · %s" % _tile_symbol(value), _tile_color(value))
-	var tile_center := Vector2(64 + col * 64, 264 + row * 64)
+	var tile_center := _tileclub_tile_center(index)
 	_impact(tile_center, _tile_color(value), 0.45)
-	_start_motion("tile", tile_center, Vector2(66 + (tray.size() - 1) * 67, 759), _tile_color(value), _tile_symbol(value), 0.44)
-	_start_catalog_event("stitch_collect", tile_center, _tile_color(value), 1, "%s片入槽" % _tile_symbol(value), 0.54)
+	var arrival := Vector2(66 + (tray.size() - 1) * 67, 759)
+	_start_motion("tile", tile_center, arrival, _tile_color(value), _tile_symbol(value), 0.44, value)
 	var removed_count := 0
+	var matched_value := 0
+	var matched_positions: Array = []
 	for n in range(1, 8):
 		var count := 0
 		for v in tray:
@@ -4747,20 +4790,60 @@ func _tileclub_tap(pos: Vector2) -> void:
 			removed_count = 0
 			for i in range(tray.size() - 1, -1, -1):
 				if int(tray[i]) == n and removed_count < 3:
+					matched_positions.append(Vector2(66 + i * 67, 759))
 					tray.remove_at(i)
 					removed_count += 1
-				state["score"] = int(state["score"]) + 100
-				_flash_feedback("三枚消除 · +100", GOLD)
-				_impact(Vector2(270, 730), GOLD, 1.0)
-				var cleared_after_match := _tileclub_cleared()
-				_start_catalog_event("stitch_match", Vector2(270, 755), GOLD, 4 if cleared_after_match else 3, "三枚缝合 · +100", 0.96 if not cleared_after_match else 1.12)
+			matched_value = n
+			state["score"] = int(state["score"]) + 100
 			_log_event("tileclub_match", {"tile":n, "score":state["score"]})
 		if removed_count > 0:
 			break
-	if tray.size() >= 7:
+	var cleared_after_action := _tileclub_cleared()
+	var tray_count := tray.size()
+	if removed_count > 0:
+		var match_grade := 4 if cleared_after_action else 3
+		var match_duration := 1.12 if match_grade == 4 else 0.96
+		tileclub_object_fx = {
+			"kind":"clear" if match_grade == 4 else "match", "value":matched_value,
+			"positions":matched_positions, "grade":match_grade, "started":elapsed,
+			"duration":match_duration,
+		}
+		_flash_feedback("织毯完成 · 清盘" if match_grade == 4 else "三枚消除 · +100", GOLD)
+		_impact(Vector2(270, 755), GOLD, 1.15 if match_grade == 4 else 0.92)
+		_start_catalog_event("stitch_match", Vector2(270, 755), GOLD, match_grade, "织毯完成 · 清盘" if match_grade == 4 else "三枚缝合 · +100", match_duration)
+	elif tray_count >= 7:
+		tileclub_object_fx = {
+			"kind":"full", "value":value, "positions":[], "grade":4,
+			"started":elapsed, "duration":1.02,
+		}
+		_flash_feedback("槽位绷满 · 本局结束", RED)
+		_start_catalog_event("stitch_tray_full", Vector2(270, 759), RED, 4, "槽位绷满 · 本局结束", 1.02)
+	elif cleared_after_action:
+		tileclub_object_fx = {
+			"kind":"clear", "value":value, "positions":[arrival], "grade":4,
+			"started":elapsed, "duration":1.08,
+		}
+		_flash_feedback("织毯完成 · 清盘", GOLD)
+		_start_catalog_event("stitch_clear", Vector2(270, 755), GOLD, 4, "织毯完成 · 清盘", 1.08)
+	elif tray_count >= 5:
+		var risk_grade := 3 if tray_count == 6 else 2
+		var risk_label := "只余一格 · 谨慎落片" if risk_grade == 3 else "槽位吃紧 · 余 2 格"
+		tileclub_object_fx = {
+			"kind":"risk", "value":value, "positions":[arrival], "grade":risk_grade,
+			"started":elapsed, "duration":0.78 if risk_grade == 3 else 0.66,
+		}
+		_flash_feedback(risk_label, RED if risk_grade == 3 else AMBER)
+		_start_catalog_event("stitch_risk", arrival, RED if risk_grade == 3 else AMBER, risk_grade, risk_label, 0.78 if risk_grade == 3 else 0.66)
+	else:
+		tileclub_object_fx = {
+			"kind":"collect", "value":value, "positions":[arrival], "grade":1,
+			"started":elapsed, "duration":0.54,
+		}
+		_start_catalog_event("stitch_collect", tile_center, _tile_color(value), 1, "%s片入槽" % _tile_symbol(value), 0.54)
+	if tray_count >= 7:
 		state["status"] = "over"
 		_capture("tileclub_tray_full")
-	elif _tileclub_cleared():
+	elif cleared_after_action:
 		state["status"] = "won"
 		_capture("tileclub_win")
 
@@ -4775,6 +4858,9 @@ func _tileclub_cleared() -> bool:
 			return false
 	return true
 
+func _tileclub_tile_center(index: int) -> Vector2:
+	return Vector2(64 + (index % 7) * 64, 264 + (index / 7) * 64)
+
 func _draw_tileclub() -> void:
 	_draw_section_heading("玩具俱乐部", "三枚同图案自动消除", Color("ff9f68"))
 	var origin := Vector2(36, 236)
@@ -4786,31 +4872,115 @@ func _draw_tileclub() -> void:
 		var rect := Rect2(origin + Vector2(col * cell, row * cell), Vector2(56, 56))
 		var value := int(tiles[index])
 		if value == 0:
-			draw_circle(rect.get_center(), 3.0, Color(INK, 0.08))
+			draw_circle(rect.get_center(), 2.5, Color("ffe5d6", 0.14))
+			draw_line(rect.get_center() - Vector2(4, 4), rect.get_center() + Vector2(4, 4), Color("ffe5d6", 0.07), 1.0)
 			if index == 48 and state["tray"].is_empty() and int(state["moves"]) == 0:
 				draw_arc(rect.get_center(), 18, 0, TAU, 24, Color(INK, 0.10), 1.0)
 		else:
-			_draw_panel(Rect2(rect.position + Vector2(0, 5), rect.size), Color(0, 0, 0, 0.30), Color.TRANSPARENT, 12, 0)
-			_draw_panel(rect, _tile_color(value), Color(INK, 0.30), 12, 2)
-			for stitch_corner in [Vector2(8, 8), Vector2(48, 8), Vector2(48, 48), Vector2(8, 48)]:
-				draw_circle(rect.position + stitch_corner, 1.5, Color("fff0d7", 0.76))
-			draw_circle(rect.position + Vector2(17, 15), 10, Color(INK, 0.13))
-			_draw_center(_tile_symbol(value), rect.get_center() + Vector2(0, 3), 22, COAL)
-			if (row + col) % 4 == 0:
-				draw_arc(rect.get_center(), 21, -PI * 0.2, PI * 0.9, 16, Color(INK, 0.16), 2.0)
+			_draw_fabric_patch(rect, value)
 	var tray_count := int(state["tray"].size())
 	var risk_color := RED if tray_count >= 6 else (AMBER if tray_count >= 5 else MINT)
+	var object_age := elapsed - float(tileclub_object_fx.get("started", -10.0))
+	var object_duration := float(tileclub_object_fx.get("duration", 0.0))
+	var object_kind := str(tileclub_object_fx.get("kind", ""))
+	var risk_pulse := 0.0
+	if object_kind in ["risk", "full"] and object_age >= 0.0 and object_age < object_duration:
+		var object_t := clampf(object_age / object_duration, 0.0, 1.0)
+		risk_pulse = sin(object_t * PI * (3.0 if object_kind == "full" else 2.0)) * 0.5 + 0.5
 	_draw_status_badge("槽位 %d / 7" % tray_count, Vector2(36, 692), risk_color, tray_count < 5, 124)
-	_draw_panel(Rect2(30, 726, 480, 66), Color("17142a", 0.96), Color(risk_color, 0.46), 14, 2)
+	_draw_panel(Rect2(30, 726, 480, 66).grow(risk_pulse * 2.0), Color("211a30", 0.97), Color(risk_color, 0.46 + risk_pulse * 0.42), 14, 2 + int(risk_pulse * 2.0))
+	var tile_motion_progress := clampf((elapsed - motion_started) / maxf(0.001, motion_duration), 0.0, 1.0) if motion_kind == "tile" else 1.0
+	var motion_target_index := int(round((motion_to.x - 66.0) / 67.0))
 	for i in range(7):
 		var slot := Rect2(39 + i * 67, 736, 54, 46)
-		_draw_panel(slot, Color("0e1528"), Color(risk_color, 0.62) if i < tray_count else Color(INK, 0.14), 8, 2)
+		var occupied := i < tray_count
+		var slot_kick := sin(object_age * 68.0 + i * 0.8) * risk_pulse * (2.2 if object_kind == "full" else 0.7)
+		slot.position.x += slot_kick
+		_draw_panel(slot, Color("100f20"), Color(risk_color, 0.72 + risk_pulse * 0.18) if occupied else Color(INK, 0.14), 8, 2)
 		if i < tray_count:
 			var tray_value := int(state["tray"][i])
-			_draw_center(_tile_symbol(tray_value), slot.get_center(), 18, _tile_color(tray_value))
+			var awaiting_arrival := tile_motion_progress < 1.0 and i == motion_target_index and tray_value == motion_value
+			if not awaiting_arrival:
+				_draw_fabric_patch(slot.grow(-4.0), tray_value, 1.0, true, risk_pulse * 0.45)
+	if object_kind == "full" and risk_pulse > 0.02:
+		var snap_color := Color("ff95ae", 0.70 * risk_pulse)
+		draw_line(Vector2(37, 718), Vector2(251, 727), snap_color, 2.4)
+		draw_line(Vector2(289, 727), Vector2(503, 718), snap_color, 2.4)
+		draw_line(Vector2(251, 727), Vector2(260, 715), snap_color, 2.4)
+		draw_line(Vector2(280, 738), Vector2(289, 727), snap_color, 2.4)
+	_draw_tileclub_object_feedback()
+
+func _draw_fabric_patch(rect: Rect2, value: int, alpha := 1.0, compact := false, emphasis := 0.0) -> void:
+	# The visible cloth, piping, stitching, shadow and appliqué are selected GAG
+	# derivatives. The shell uses its dedicated repair after the atlas cell failed
+	# the motif-readability review.
+	var safe_value := clampi(value, 1, 7)
+	var visual_rect := rect
+	if compact:
+		var side := minf(rect.size.x, rect.size.y)
+		visual_rect = Rect2(rect.get_center() - Vector2(side, side) * 0.5, Vector2(side, side))
+	draw_rect(Rect2(visual_rect.position + Vector2(1.5, 2.5), visual_rect.size), Color("1c1119", 0.22 * alpha), true)
+	if safe_value == 6:
+		draw_texture_rect(TILECLUB_GAG_SHELL_TEXTURE, visual_rect, false, Color(1, 1, 1, alpha))
+	else:
+		draw_texture_rect_region(TILECLUB_GAG_BADGE_ATLAS_TEXTURE, visual_rect, _tileclub_gag_badge_region(safe_value), Color(1, 1, 1, alpha))
+	if emphasis > 0.01:
+		var highlight_radius := minf(visual_rect.size.x, visual_rect.size.y) * 0.52
+		draw_arc(visual_rect.get_center(), highlight_radius, -PI * 0.75, PI * 0.20, 24, Color("fff4cc", emphasis * alpha), 2.4)
+
+func _tileclub_gag_badge_region(value: int) -> Rect2:
+	match clampi(value, 1, 7):
+		1:
+			return Rect2(50, 52, 126, 126)
+		2:
+			return Rect2(188, 52, 127, 126)
+		3:
+			return Rect2(50, 190, 126, 128)
+		4:
+			return Rect2(188, 190, 127, 128)
+		5:
+			return Rect2(50, 328, 126, 126)
+		7:
+			return Rect2(326, 328, 127, 127)
+		_:
+			return Rect2(326, 190, 127, 128)
+
+func _draw_tileclub_object_feedback() -> void:
+	var kind := str(tileclub_object_fx.get("kind", ""))
+	if kind not in ["match", "clear"]:
+		return
+	var age := elapsed - float(tileclub_object_fx.get("started", -10.0))
+	var duration := float(tileclub_object_fx.get("duration", 0.0))
+	if duration <= 0.0 or age < 0.0 or age >= duration:
+		return
+	var t := clampf(age / duration, 0.0, 1.0)
+	var gather := 1.0 - pow(1.0 - clampf((t - 0.08) / 0.43, 0.0, 1.0), 3.0)
+	var settle := clampf((t - 0.58) / 0.42, 0.0, 1.0)
+	var positions: Array = tileclub_object_fx.get("positions", [])
+	var value := int(tileclub_object_fx.get("value", 1))
+	var target := Vector2(270, 755)
+	var alpha := 1.0 - settle
+	for index in range(positions.size()):
+		var source: Vector2 = positions[index]
+		var spread := (float(index) - float(positions.size() - 1) * 0.5) * 16.0
+		var destination := target + Vector2(spread * (1.0 - gather), -12.0 * sin(gather * PI))
+		var center := source.lerp(destination, gather)
+		var scale := 1.0 + sin(minf(1.0, t / 0.42) * PI) * 0.16 - settle * 0.42
+		var patch_size := Vector2(46, 46) * scale
+		_draw_fabric_patch(Rect2(center - patch_size * 0.5, patch_size), value, alpha, true, 0.72)
+		draw_line(source, center, Color(_tile_color(value), 0.30 * alpha), 2.0)
+	var seal_alpha := sin(clampf((t - 0.24) / 0.76, 0.0, 1.0) * PI)
+	if seal_alpha > 0.01:
+		var stitch_count := 18 if kind == "clear" else 12
+		for stitch in range(stitch_count):
+			var angle := float(stitch) / float(stitch_count) * TAU + t * 0.32
+			var radius := 28.0 + gather * (25.0 if kind == "clear" else 12.0)
+			var p := target + Vector2(cos(angle), sin(angle)) * radius
+			var tangent := Vector2(-sin(angle), cos(angle))
+			draw_line(p - tangent * 4.0, p + tangent * 4.0, Color("ffe5a8", seal_alpha * 0.80), 2.2)
 
 func _tile_color(value: int) -> Color:
-	var colors := [Color("78d7e8"), Color("f6c667"), Color("ff8a78"), Color("b898f2"), Color("6fdb9d"), Color("f18cc8"), Color("a1b5d9")]
+	var colors := [Color("6fcb58"), Color("f6c667"), Color("e95656"), Color("f6b72e"), Color("f17a83"), Color("65b8eb"), Color("5de4ff")]
 	return colors[clampi(value - 1, 0, colors.size() - 1)]
 
 func _tile_symbol(value: int) -> String:
