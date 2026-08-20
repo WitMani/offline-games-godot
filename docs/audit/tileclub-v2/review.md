@@ -1,10 +1,10 @@
 # Tile Club v2 acceptance review
 
-Result: **feature, native and clean Web acceptance PASS**. This slice changes
-Tile Club presentation only. The 7×7 source board, deterministic shuffle, tap
-contract, source removal, tray append order, three-equal removal, `+100` score,
-move count, seven-slot loss and empty-board win remain frozen. Mahjong and the
-other catalog games are not part of this release.
+Result: **feature, native, clean Web and Aliyun acceptance PASS**. This slice
+changes Tile Club presentation only. The 7×7 source board, deterministic
+shuffle, tap contract, source removal, tray append order, three-equal removal,
+`+100` score, move count, seven-slot loss and empty-board win remain frozen.
+Mahjong and the other catalog games are not part of this release.
 
 ## What is visibly different
 
@@ -70,8 +70,24 @@ Club, read the deterministic board, selected the first non-empty patch at index
 1 and verified that tile `1` became `0`, tray `[]→[1]`, moves `0→1`, score stayed
 `0`, and status remained `playing`.
 
-Aliyun deployment and the second fresh-browser action are the remaining release
-gate; they will be appended to this review after the atomic switch.
+## Exact deployed artifact
+
+- Release: `20260820T135011Z-182852a0f846`
+- PCK: `index.182852a0f846.pck`, SHA-256
+  `182852a0f846d8e1e952af2b8b1db9a85f734b505337fbbc0996ffe50f171184`
+- Engine: `index.2b558bdb3c3a.wasm`, SHA-256
+  `2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137`
+
+Both immutable artifacts return HTTP 200 with gzip and year-long immutable
+caching. The deployed PCK contains the two GAG PNGs and GAG OGG, excludes the
+Tile Club source masters/rejected candidates, and retains the prior Mahjong pack
+`index.f68621696ea9.pck` across the atomic switch.
+
+Fresh remote Chromium loaded the exact Aliyun release in a secure context,
+entered Tile Club, read index 0 as the intentional empty cell, and selected the
+first non-empty patch at index 1. Tile `1` became `0`, tray `[]→[1]`, moves
+`0→1`, score stayed `0`, and status remained `playing`. Console errors, failed
+requests and bad responses: 0. Cold EC2-to-Aliyun ready time was 224.763 seconds.
 
 Primary evidence:
 
@@ -80,6 +96,7 @@ Primary evidence:
 - `candidate/continuous/tileclub-clear.webm`
 - `candidate/continuous/tileclub-full.webm`
 - `candidate/web/local-web-acceptance.json`
+- `candidate/web/aliyun-web-acceptance.json`
 - `gates.json`
 - `stable-comparison.webp`
 - `collect-comparison.webp`

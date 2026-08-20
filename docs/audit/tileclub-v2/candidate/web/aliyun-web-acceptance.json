@@ -1,0 +1,88 @@
+{
+  "result": "PASS",
+  "release": "20260820T135011Z-182852a0f846",
+  "source_commit": "71335504bdd98a75b832b2f7ac017580d0861139",
+  "url": "https://aliyun-ecs.tail17a64.ts.net:8788/?release=20260820T135011Z-182852a0f846",
+  "ready_seconds": 224.763,
+  "secure_context": true,
+  "webassembly": true,
+  "canvas_count": 1,
+  "probe_error": null,
+  "artifacts": {
+    "pck": {
+      "name": "index.182852a0f846.pck",
+      "sha256": "182852a0f846d8e1e952af2b8b1db9a85f734b505337fbbc0996ffe50f171184",
+      "bytes": 13614248,
+      "gzip_bytes": 13465891,
+      "http_status": 200,
+      "cache_control": "public, max-age=31536000, immutable",
+      "content_encoding": "gzip"
+    },
+    "engine": {
+      "name": "index.2b558bdb3c3a.wasm",
+      "sha256": "2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137",
+      "bytes": 37686550,
+      "gzip_bytes": 9392911,
+      "http_status": 200,
+      "cache_control": "public, max-age=31536000, immutable",
+      "content_encoding": "gzip"
+    },
+    "pck_contains": [
+      "res://assets/art/catalog/tile_games/gag/tileclub_badge_atlas_gag_v1.png",
+      "res://assets/art/catalog/tile_games/gag/tileclub_shell_badge_gag_v1.png",
+      "res://assets/audio/catalog/tile_games/gag/fabric_triple_stitch_gag_v1.ogg"
+    ],
+    "tileclub_source_master_scan": "PASS",
+    "tileclub_rejected_candidate_scan": "PASS",
+    "previous_pack_retained": "index.f68621696ea9.pck"
+  },
+  "initial": {
+    "game_id": "tileclub",
+    "state": {
+      "target_index": 1,
+      "target_value": 1,
+      "target_tile": 1,
+      "tray": [],
+      "score": 0,
+      "moves": 0,
+      "status": "playing"
+    },
+    "tile_count": 49
+  },
+  "actual_action": {
+    "name": "collect first non-empty deterministic board tile at index 1",
+    "before": {
+      "target_index": 1,
+      "target_value": 1,
+      "target_tile": 1,
+      "tray": [],
+      "score": 0,
+      "moves": 0,
+      "status": "playing"
+    },
+    "after": {
+      "target_index": 1,
+      "target_value": 1,
+      "target_tile": 0,
+      "tray": [
+        1
+      ],
+      "score": 0,
+      "moves": 1,
+      "status": "playing"
+    }
+  },
+  "console_errors": [],
+  "request_failures": [],
+  "bad_responses": [],
+  "screenshots": {
+    "stable": {
+      "path": "tileclub-aliyun-stable.png",
+      "sha256": "cf36a3c155c097629f6de75ea4edf65a29f586ff2e3359e60a8b4779a0e8e5c9"
+    },
+    "after_collect": {
+      "path": "tileclub-aliyun-after-collect.png",
+      "sha256": "86488c4cf5568dbc53f8386f72c2e8d8f089498736e4b3f5893c5e56c52bf29a"
+    }
+  }
+}
