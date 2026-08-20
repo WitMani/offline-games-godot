@@ -30,29 +30,51 @@ if ! grep -Fq 'const GODOT_THREADS_ENABLED = false;' "$CANDIDATE_DIR/index.html"
 fi
 
 python3 "$ROOT_DIR/tools/fingerprint_web_bundle.py" "$CANDIDATE_DIR"
-PACK_FILE="$(find "$CANDIDATE_DIR" -maxdepth 1 -type f -name 'index.*.pck' -printf '%f\n')"
+mapfile -t PACK_FILES < <(find "$CANDIDATE_DIR" -maxdepth 1 -type f -name 'index.*.pck' -printf '%f\n' | sort)
+mapfile -t WASM_FILES < <(find "$CANDIDATE_DIR" -maxdepth 1 -type f -name 'index.*.wasm' -printf '%f\n' | sort)
+if [ "${#PACK_FILES[@]}" -ne 1 ] || [ "${#WASM_FILES[@]}" -ne 1 ]; then
+	echo "Refusing deployment: expected one fingerprinted PCK and WASM" >&2
+	exit 1
+fi
+PACK_FILE="${PACK_FILES[0]}"
+WASM_FILE="${WASM_FILES[0]}"
+ENGINE_FILE="${WASM_FILE%.wasm}"
+JS_FILE="$ENGINE_FILE.js"
+if [ ! -s "$CANDIDATE_DIR/$JS_FILE" ]; then
+	echo "Missing fingerprinted engine file: $JS_FILE" >&2
+	exit 1
+fi
+if ! grep -Fq "\"mainPack\":\"$PACK_FILE\"" "$CANDIDATE_DIR/index.html" ||
+	! grep -Fq "\"executable\":\"$ENGINE_FILE\"" "$CANDIDATE_DIR/index.html"; then
+	echo "Refusing deployment: index.html does not reference this bundle" >&2
+	exit 1
+fi
 PACK_TOKEN="${PACK_FILE#index.}"
 PACK_TOKEN="${PACK_TOKEN%.pck}"
 RELEASE_ID="$(date -u +%Y%m%dT%H%M%SZ)-$PACK_TOKEN"
 REMOTE_RELEASE="$REMOTE_ROOT/releases/$RELEASE_ID"
 
-ssh -o BatchMode=yes "$REMOTE" "install -d -m 0755 '$REMOTE_RELEASE'"
-if ssh -o BatchMode=yes "$REMOTE" "test -e '$REMOTE_ROOT/current'"; then
-	CURRENT_RELEASE="$(ssh -o BatchMode=yes "$REMOTE" "readlink -f '$REMOTE_ROOT/current'")"
-	ssh -o BatchMode=yes "$REMOTE" "cp -al '$CURRENT_RELEASE/.' '$REMOTE_RELEASE/'"
-fi
-# Fingerprinted names are content identities, so equal name + size can safely reuse
-# the prior release even though Godot refreshes export mtimes on every build.
-rsync -a --size-only --delete -e 'ssh -o BatchMode=yes' "$CANDIDATE_DIR/" "$REMOTE:$REMOTE_RELEASE/"
 PREVIOUS_RELEASE="$(ssh -o BatchMode=yes "$REMOTE" "readlink -f '$REMOTE_ROOT/current' 2>/dev/null || true")"
-ssh -o BatchMode=yes "$REMOTE" "test -s '$REMOTE_RELEASE/index.html' && test -s '$REMOTE_RELEASE/$PACK_FILE' && ln -sfn '$REMOTE_RELEASE' '$REMOTE_ROOT/current.next' && mv -Tf '$REMOTE_ROOT/current.next' '$REMOTE_ROOT/current'"
+ssh -o BatchMode=yes "$REMOTE" "install -d -m 0755 '$REMOTE_RELEASE'"
+if [ -n "$PREVIOUS_RELEASE" ]; then
+	ssh -o BatchMode=yes "$REMOTE" "cp -al '$PREVIOUS_RELEASE/.' '$REMOTE_RELEASE/'"
+fi
+# Keep prior fingerprinted assets in the new release so a browser that loaded the
+# previous HTML can finish fetching its pack during an atomic switch. Checksums
+# are required because two index files can have equal sizes but different hashes.
+rsync -a --checksum -e 'ssh -o BatchMode=yes' "$CANDIDATE_DIR/" "$REMOTE:$REMOTE_RELEASE/"
+ssh -o BatchMode=yes "$REMOTE" "test -s '$REMOTE_RELEASE/index.html' && test -s '$REMOTE_RELEASE/$PACK_FILE' && test -s '$REMOTE_RELEASE/$WASM_FILE' && test -s '$REMOTE_RELEASE/$JS_FILE' && grep -Fq '\"mainPack\":\"$PACK_FILE\"' '$REMOTE_RELEASE/index.html' && grep -Fq '\"executable\":\"$ENGINE_FILE\"' '$REMOTE_RELEASE/index.html' && ln -sfn '$REMOTE_RELEASE' '$REMOTE_ROOT/current.next' && mv -Tf '$REMOTE_ROOT/current.next' '$REMOTE_ROOT/current'"
 
-HTTP_CODE="$(curl --noproxy '*' -ksS -o /dev/null -w '%{http_code}' "$PUBLIC_URL/?release=$RELEASE_ID")"
-if [ "$HTTP_CODE" != "200" ]; then
+INDEX_BODY="$(curl --noproxy '*' -kfsS "$PUBLIC_URL/index.html?release=$RELEASE_ID" || true)"
+PACK_HTTP_CODE="$(curl --noproxy '*' -ksS -r 0-0 -o /dev/null -w '%{http_code}' "$PUBLIC_URL/$PACK_FILE")"
+WASM_HTTP_CODE="$(curl --noproxy '*' -ksS -r 0-0 -o /dev/null -w '%{http_code}' "$PUBLIC_URL/$WASM_FILE")"
+if ! grep -Fq "\"mainPack\":\"$PACK_FILE\"" <<<"$INDEX_BODY" ||
+	{ [ "$PACK_HTTP_CODE" != "200" ] && [ "$PACK_HTTP_CODE" != "206" ]; } ||
+	{ [ "$WASM_HTTP_CODE" != "200" ] && [ "$WASM_HTTP_CODE" != "206" ]; }; then
 	if [ -n "$PREVIOUS_RELEASE" ]; then
 		ssh -o BatchMode=yes "$REMOTE" "ln -sfn '$PREVIOUS_RELEASE' '$REMOTE_ROOT/current.next' && mv -Tf '$REMOTE_ROOT/current.next' '$REMOTE_ROOT/current'"
 	fi
-	echo "Deployment health check failed: HTTP $HTTP_CODE" >&2
+	echo "Deployment health check failed: pack=$PACK_HTTP_CODE wasm=$WASM_HTTP_CODE" >&2
 	exit 1
 fi
 
