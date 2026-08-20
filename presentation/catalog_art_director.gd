@@ -118,7 +118,12 @@ func draw_event_fx(canvas: CanvasItem, effect: Dictionary, now: float, label_fon
 
 	var label := str(effect.get("label", ""))
 	if not label.is_empty() and age >= 0.08:
-		_draw_event_label(canvas, position + Vector2(0, -50.0 - float(grade) * 4.0 - peak * 8.0), label, color, fade, label_font, 11 + mini(grade, 2))
+		var label_position := position + Vector2(0, -50.0 - float(grade) * 4.0 - peak * 8.0)
+		if game_id == "meowdoku":
+			# Keep dynamic CJK feedback in the folio footer so it never covers a
+			# playable number or the section heading.
+			label_position = Vector2(270, 705.0 - peak * 4.0)
+		_draw_event_label(canvas, label_position, label, color, fade, label_font, 11 + mini(grade, 2))
 
 
 func _draw_merge_event(canvas: CanvasItem, p: Vector2, color: Color, grade: int, t: float, peak: float, fade: float) -> void:
@@ -158,10 +163,19 @@ func _draw_fruit_event(canvas: CanvasItem, p: Vector2, color: Color, grade: int,
 func _draw_paw_event(canvas: CanvasItem, p: Vector2, color: Color, kind: String, grade: int, t: float, fade: float) -> void:
 	if "error" in kind:
 		_draw_zigzag(canvas, p + Vector2(-25, 0), p + Vector2(25, 0), Color("ff5c78", fade), 7.0, 4.0)
+		for claw in range(3):
+			var claw_x := -10.0 + float(claw) * 10.0
+			canvas.draw_line(p + Vector2(claw_x - 4, -17), p + Vector2(claw_x + 3, -7), Color("ffb4c8", 0.76 * fade), 2.0, true)
+		return
+	if "erase" in kind:
+		canvas.draw_line(p + Vector2(-24, 8), p + Vector2(lerpf(-24.0, 24.0, t), 8), Color("f5a6bc", 0.58 * fade), 3.0, true)
 		return
 	var scale := 0.6 + _ease_out_cubic(clampf(t / 0.42, 0.0, 1.0)) * (0.58 + grade * 0.08)
 	_draw_paw(canvas, p, Color(color, 0.74 * fade), scale)
-	canvas.draw_arc(p, 16.0 + t * 32.0, 0, TAU, 28, Color("fff6fb", 0.62 * fade), 2.5, true)
+	var ring_count := 2 if "block" in kind else (3 if "complete" in kind else 1)
+	for ring in range(ring_count):
+		var ring_t := clampf((t - float(ring) * 0.08) / 0.82, 0.0, 1.0)
+		canvas.draw_arc(p, 16.0 + ring_t * (32.0 + ring * 11.0), 0, TAU, 28, Color("fff6fb", (0.62 - ring * 0.12) * fade), 2.5, true)
 
 
 func _draw_logic_event(canvas: CanvasItem, p: Vector2, color: Color, kind: String, grade: int, t: float, fade: float) -> void:

@@ -1,0 +1,19 @@
+{
+  "games": {
+    "meowdoku": {
+      "average_frame_ms": 17.2745222222222,
+      "busy_case": "grade-4 full-board completion retriggered every 60 frames",
+      "catalog_effect_cap": 12,
+      "max_frame_ms": 23.339,
+      "p95_frame_ms": 21.129,
+      "peak_static_memory_bytes": 63126352
+    }
+  },
+  "note": "Xvfb/llvmpipe busy-completion regression trace; not a physical-device FPS claim",
+  "renderer": "llvmpipe (LLVM 21.1.8, 256 bits)",
+  "sample_count_per_game": 180,
+  "viewport": [
+    540,
+    960
+  ]
+}

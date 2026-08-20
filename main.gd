@@ -60,6 +60,7 @@ const MERGE2248_PRESENTATION = preload("res://presentation/merge2248_presenter.g
 const MERGE2048_CLASSIC_PRESENTATION = preload("res://presentation/merge2048_classic_presenter.gd")
 const CATALOG_ART_DIRECTION = preload("res://presentation/catalog_art_director.gd")
 const WATERMELON_PRESENTATION = preload("res://presentation/watermelon_presenter.gd")
+const LOGIC_GAME_PRESENTATION = preload("res://presentation/logic_game_presenter.gd")
 const SFX_CASE_OPEN: AudioStream = preload("res://assets/audio/ui/case_open.wav")
 const SFX_SNAKE_KEY: AudioStream = preload("res://assets/audio/snake/key.wav")
 const SFX_SNAKE_REJECT: AudioStream = preload("res://assets/audio/snake/reject.wav")
@@ -72,6 +73,12 @@ const SFX_FRUIT_CASCADE: AudioStream = preload("res://assets/audio/2048balls/fru
 const SFX_2048_SLIDE: AudioStream = preload("res://assets/audio/merge2048/tile_slide.ogg")
 const SFX_2048_MERGE: AudioStream = preload("res://assets/audio/merge2048/tile_merge.ogg")
 const SFX_2048_MILESTONE: AudioStream = preload("res://assets/audio/merge2048/tile_milestone.ogg")
+const SFX_LOGIC_SELECT: AudioStream = preload("res://assets/audio/logic/paper_select.wav")
+const SFX_LOGIC_CONFIRM: AudioStream = preload("res://assets/audio/logic/ink_confirm.wav")
+const SFX_LOGIC_ERROR: AudioStream = preload("res://assets/audio/logic/correction_scratch.wav")
+const SFX_LOGIC_BLOCK: AudioStream = preload("res://assets/audio/logic/block_stamp.wav")
+const SFX_LOGIC_COMPLETE: AudioStream = preload("res://assets/audio/logic/folio_complete.wav")
+const SFX_MEOW_GAG_COMPLETE: AudioStream = preload("res://assets/audio/logic/gag-v1/meowdoku_complete_reward.ogg")
 
 var catalog: Array = [
 	{"id":"merge2248", "title":"2248", "subtitle":"数字连线", "group":"数字", "accent":Color("ffbf2f"), "desc":"八方向连接数字，把相邻数合成到 2048"},
@@ -142,6 +149,7 @@ var merge2248_presenter = MERGE2248_PRESENTATION.new()
 var merge2048_classic_presenter = MERGE2048_CLASSIC_PRESENTATION.new()
 var catalog_art_director = CATALOG_ART_DIRECTION.new()
 var watermelon_presenter = WATERMELON_PRESENTATION.new()
+var logic_game_presenter = LOGIC_GAME_PRESENTATION.new()
 var catalog_fx: Array[Dictionary] = []
 var catalog_fx_serial := 0
 var merge2248_drag_active := false
@@ -335,6 +343,8 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 		"duration": duration,
 		"seed": catalog_fx_serial,
 	}
+	if game_id == "meowdoku":
+		effect["font_role"] = "ui_cjk"
 	effect.merge(metadata, true)
 	catalog_fx.append(effect)
 	# The fruit burst is a large transparent texture. Six concurrent envelopes
@@ -343,7 +353,9 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 	while catalog_fx.size() > catalog_fx_cap:
 		catalog_fx.pop_front()
 	var semantic := str(metadata.get("semantic", kind))
-	if game_id == "merge2048":
+	if game_id == "meowdoku":
+		_play_meowdoku_event_sfx(semantic, clampi(grade, 1, 4))
+	elif game_id == "merge2048":
 		var wood_grade := clampi(grade, 1, 4)
 		if semantic == "wood_reject":
 			_play_sfx(SFX_SNAKE_REJECT, -17.0, 0.88)
@@ -386,6 +398,26 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 		else:
 			_haptic_pattern([10 + event_grade * 4, 16, 18 + event_grade * 9])
 	queue_redraw()
+
+func _play_meowdoku_event_sfx(kind: String, grade: int) -> void:
+	if "error" in kind:
+		_play_sfx(SFX_LOGIC_ERROR, -14.0, 1.08)
+		_haptic_pattern([9, 18, 9])
+	elif "complete" in kind and grade >= 4:
+		# A quiet folio tone supports the authored GAG reward without masking its
+		# felt-paw transient and three warm chimes.
+		_play_sfx(SFX_LOGIC_COMPLETE, -22.0, 1.08)
+		_play_sfx(SFX_MEOW_GAG_COMPLETE, -10.0, 1.0)
+		_haptic_pattern([18, 20, 25, 24, 36])
+	elif "block" in kind:
+		_play_sfx(SFX_LOGIC_BLOCK, -11.5, 1.08)
+		_haptic_pattern([13, 18, 22])
+	elif "erase" in kind:
+		_play_sfx(SFX_LOGIC_SELECT, -18.0, 0.97)
+		_haptic(5)
+	else:
+		_play_sfx(SFX_LOGIC_CONFIRM, -16.0, 1.08)
+		_haptic(6)
 
 func _prune_catalog_fx() -> void:
 	var active: Array[Dictionary] = []
@@ -745,12 +777,24 @@ func _add_button(label: String, rect: Rect2, callback: Callable, accent: Color =
 	button.add_theme_color_override("font_hover_color", Color.WHITE)
 	button.add_theme_color_override("font_focus_color", Color.WHITE)
 	var action_control := screen == "game" and rect.position.y > 150.0
+	var meow_control := action_control and game_id == "meowdoku"
 	var effective_accent: Color = Color(_catalog_item(game_id).get("accent", accent)) if action_control else accent
 	var normal_fill := _game_control_fill() if action_control else Color("111a2e")
 	var normal := _button_style(normal_fill, Color(effective_accent, 0.28 if action_control else 0.10), 12, 1)
 	var hover := _button_style(Color(effective_accent, 0.22), Color(effective_accent, 0.94), 12, 2)
 	var pressed := _button_style(Color(effective_accent, 0.38), Color.WHITE, 10, 2)
 	var focus := _button_style(Color(effective_accent, 0.18), Color.WHITE, 12, 2)
+	if meow_control:
+		var control_ink := Color("5b2d46")
+		normal = _button_style(Color("f7e2ed"), Color(effective_accent, 0.52), 14, 1)
+		hover = _button_style(Color("fff5fa"), Color(effective_accent, 0.92), 14, 2)
+		pressed = _button_style(Color("e9bfd3"), Color(effective_accent.darkened(0.24), 0.92), 12, 2)
+		focus = _button_style(Color("fff5fa"), Color("f6c667"), 14, 2)
+		button.add_theme_font_override("font", NUMBER_FONT if label.is_valid_int() else UI_FONT)
+		button.add_theme_color_override("font_color", control_ink)
+		button.add_theme_color_override("font_hover_color", control_ink)
+		button.add_theme_color_override("font_pressed_color", control_ink)
+		button.add_theme_color_override("font_focus_color", control_ink)
 	if screen == "home":
 		normal.bg_color = Color(0, 0, 0, 0)
 		normal.border_color = Color(0, 0, 0, 0)
@@ -774,7 +818,7 @@ func _game_control_fill() -> Color:
 		"merge2248": return Color("23585a")
 		"merge2048": return Color("3a2d25")
 		"watermelon": return Color("3b2237")
-		"meowdoku": return Color("37243b")
+		"meowdoku": return Color("f7e2ed")
 		"sudoku": return Color("27223a")
 		"snake_classic": return Color("343b2d")
 		"snake_io": return Color("0a2845")
@@ -962,11 +1006,7 @@ func _draw_game_icon(id: String, center: Vector2, accent: Color, scale := 1.0) -
 			draw_circle(center + Vector2(7, -4) * scale, 8 * scale, Color("62d3aa"))
 			draw_arc(center + Vector2(4, -12) * scale, 8 * scale, 3.2, 5.2, 12, accent, 2 * scale)
 		"meowdoku":
-			draw_circle(center, r, Color(accent, 0.20))
-			draw_circle(center + Vector2(-6, -2) * scale, 2.2 * scale, accent)
-			draw_circle(center + Vector2(6, -2) * scale, 2.2 * scale, accent)
-			draw_line(center + Vector2(-6, 7) * scale, center + Vector2(0, 4) * scale, accent, 2 * scale)
-			draw_line(center + Vector2(0, 4) * scale, center + Vector2(6, 7) * scale, accent, 2 * scale)
+			logic_game_presenter.draw_header_badge(self, id, center, r * 2.15)
 		"sudoku":
 			for i in range(3):
 				draw_line(center + Vector2(-11 + i * 11, -11) * scale, center + Vector2(-11 + i * 11, 11) * scale, accent, 1.5 * scale)
@@ -1146,6 +1186,19 @@ func _draw_section_heading(title: String, detail: String, accent: Color) -> void
 	draw_line(Vector2(30, 216), Vector2(510, 216), Color(accent, 0.34), 2.0)
 
 func _draw_result_overlay(won: bool) -> void:
+	if game_id == "meowdoku":
+		var paper := Color("fff1f7")
+		var edge := Color("d55f96")
+		var ink := Color("4b2940")
+		draw_rect(Rect2(0, 112, 540, 848), Color("231c28", 0.56))
+		_draw_panel(Rect2(54, 344, 432, 236), Color("17131a", 0.26), Color.TRANSPARENT, 18, 0)
+		_draw_panel(Rect2(48, 338, 444, 238), paper, Color(edge, 0.92), 18, 3)
+		draw_line(Vector2(74, 356), Vector2(466, 356), Color("ffffff", 0.72), 2.0, true)
+		logic_game_presenter.draw_result_badge(self, game_id, Vector2(270, 384))
+		_draw_center_font(DISPLAY_FONT, "手账完成", Vector2(270, 438), 30, ink)
+		_draw_center_font(UI_FONT, "得分 %d · 步数 %d" % [int(state.get("score", 0)), int(state.get("moves", 0))], Vector2(270, 480), 16, Color(ink, 0.88))
+		_draw_center_font(UI_FONT, "点击右上角“重开”继续挑战", Vector2(270, 526), 13, Color(ink, 0.68))
+		return
 	draw_rect(Rect2(0, 112, 540, 848), Color(COAL, 0.72))
 	var color := GREEN if won else RED
 	_draw_panel(Rect2(48, 338, 444, 238), Color("111a2e", 0.985), Color(color, 0.82), 18, 2)
@@ -2088,6 +2141,8 @@ func _init_sudoku() -> void:
 	state["mistakes"] = 0
 	state["selected"] = [0, 0]
 	state["score"] = 0
+	if game_id == "meowdoku":
+		logic_game_presenter.reset(elapsed, Vector2i(0, 0))
 
 func _sudoku_tap(pos: Vector2) -> void:
 	var origin := Vector2(47, 236)
@@ -2097,10 +2152,18 @@ func _sudoku_tap(pos: Vector2) -> void:
 		var y := int((pos.y - origin.y) / cell)
 		state["selected"] = [x, y]
 		selected_cell = Vector2i(x, y)
+		if game_id == "meowdoku":
+			logic_game_presenter.select(selected_cell, elapsed)
+			_play_sfx(SFX_LOGIC_SELECT, -19.0, 1.08)
+			_haptic(4)
 		_log_event("sudoku_cell_selected", {"x":x, "y":y})
+		queue_redraw()
 
 func _sudoku_place(number: int) -> void:
 	if (game_id != "sudoku" and game_id != "meowdoku") or state.get("status") != "playing":
+		return
+	if game_id == "meowdoku":
+		_meowdoku_place(number)
 		return
 	var selected: Array = state.get("selected", [0, 0])
 	var x := int(selected[0])
@@ -2133,6 +2196,52 @@ func _sudoku_place(number: int) -> void:
 	else:
 		_log_event("sudoku_place", {"x":x, "y":y, "value":number})
 
+func _meowdoku_place(number: int) -> void:
+	var selected: Array = state.get("selected", [0, 0])
+	var x := int(selected[0])
+	var y := int(selected[1])
+	var given: Array = state["given"]
+	if int(given[y][x]) != 0:
+		return
+	var solution: Array = state["solution"]
+	var cell := Vector2i(x, y)
+	var position := logic_game_presenter.cell_center(cell)
+	var block := int(y / 3) * 3 + int(x / 3)
+	var accent := Color("e16c9f")
+	if number != 0 and number != int(solution[y][x]):
+		state["mistakes"] = int(state["mistakes"]) + 1
+		_flash_feedback("这里不是 %d" % number, RED)
+		logic_game_presenter.present("logic_error", cell, block, number, 2, elapsed)
+		_start_catalog_event("logic_error", position, RED, 2, "猫爪提醒", 0.66, {"semantic":"logic_error"})
+		_log_event("sudoku_mistake", {"x":x, "y":y, "value":number})
+		return
+	state["board"][y][x] = number
+	state["moves"] = int(state["moves"]) + 1
+	var completed_block := _sudoku_block_complete(block)
+	var completed_all := _sudoku_complete()
+	if number == 0:
+		_flash_feedback("轻轻擦去", accent)
+		logic_game_presenter.present("logic_erase", cell, block, number, 1, elapsed)
+		_start_catalog_event("logic_erase", position, accent, 1, "轻轻擦去", 0.54, {"semantic":"logic_erase"})
+	elif completed_all:
+		_flash_feedback("整册完成", GOLD)
+		logic_game_presenter.present("logic_complete", cell, block, number, 4, elapsed)
+		_start_catalog_event("logic_complete", Vector2(270, 458), GOLD, 4, "整册完成", 1.18, {"semantic":"logic_complete"})
+	elif completed_block:
+		_flash_feedback("猫爪盖章", accent)
+		logic_game_presenter.present("logic_block_complete", cell, block, number, 3, elapsed)
+		_start_catalog_event("logic_block_complete", _sudoku_block_center(block), accent, 3, "猫爪盖章", 0.96, {"semantic":"logic_block_complete"})
+	else:
+		_flash_feedback("落子 %d" % number, accent)
+		logic_game_presenter.present("logic_correct", cell, block, number, 1, elapsed)
+		_start_catalog_event("logic_correct", position, accent, 1, "猫爪确认", 0.68, {"semantic":"logic_correct"})
+	if completed_all:
+		state["score"] = max(100, 1000 - int(state["mistakes"]) * 25)
+		state["status"] = "won"
+		_capture("meowdoku_win")
+	else:
+		_log_event("sudoku_place", {"x":x, "y":y, "value":number})
+
 func _sudoku_complete() -> bool:
 	for row in state["board"]:
 		for value in row:
@@ -2141,6 +2250,12 @@ func _sudoku_complete() -> bool:
 	return true
 
 func _draw_sudoku() -> void:
+	if game_id == "meowdoku":
+		var meow_accent := Color("e16c9f")
+		_draw_section_heading("猫爪手账", "选格后输入数字", meow_accent)
+		logic_game_presenter.draw_board(self, game_id, state, elapsed, NUMBER_FONT)
+		_draw_text("同行、同列与九宫同步定位", Vector2(47, 706), 13, Color("f1dce7"))
+		return
 	var origin := Vector2(47, 236)
 	var cell := 49.5
 	var board: Array = state["board"]
@@ -2185,6 +2300,11 @@ func _draw_sudoku() -> void:
 				var by := block / 3
 				_draw_paw(origin + Vector2(bx * cell * 3 + cell * 2.65, by * cell * 3 + cell * 0.36), Color(accent, 0.58), 0.72)
 	_draw_text("选中格会同步标出同行、同列与九宫", Vector2(47, 706), 13, BRIGHT_MUTED)
+
+func _sudoku_block_center(block: int) -> Vector2:
+	var bx := block % 3
+	var by := int(block / 3)
+	return Vector2(47, 236) + Vector2((float(bx) * 3.0 + 1.5) * 49.5, (float(by) * 3.0 + 1.5) * 49.5)
 
 func _sudoku_block_complete(block: int) -> bool:
 	var board: Array = state["board"]

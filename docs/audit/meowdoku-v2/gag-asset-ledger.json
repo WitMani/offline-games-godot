@@ -1,0 +1,103 @@
+{
+  "schema": "offline-games.gag-ledger.v1",
+  "game": "meowdoku",
+  "created_utc": "2026-08-20",
+  "gag": {
+    "endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+    "server": "game-assets-generator 1.29.0",
+    "mode": "pure-api",
+    "local_gpu_or_pytorch_required": false,
+    "providers_used": ["gemini", "removebg", "elevenlabs"]
+  },
+  "semantic_search": [
+    {
+      "media": "image",
+      "query": "无文字、透明背景的可爱猫爪贴纸或纸艺徽章，粉色手账文具，柔和圆润轮廓，适合休闲数独完成奖励主体，PNG",
+      "rejected": [
+        {"id": "kenney_pink_body_squircle.png", "score": 0.3970407227824988, "reason": "通用粉色轮廓，没有猫爪或手账材质"},
+        {"id": "reward-new-badge.png", "score": 0.3598421487871521, "reason": "通用奖励徽章，无法建立游戏身份"},
+        {"id": "icon_event.png", "score": 0.35939277279627274, "reason": "事件图标语义与毛毡纸艺不一致"}
+      ],
+      "decision": "无现成候选同时满足猫爪、纸艺毛毡、透明主体与无文字，进入生成。"
+    },
+    {
+      "media": "audio",
+      "query": "soft tactile paper paw stamp sound, cozy cute puzzle confirmation and completion reward, short dry game SFX",
+      "rejected": [
+        {"id": "fruit-cascade", "score": 0.726019649, "reason": "水果连锁，跨游戏素材汤"},
+        {"id": "coin", "score": 0.71582291, "reason": "金币反馈，不符合纸艺对象"},
+        {"id": "sword", "score": 0.715822103, "reason": "金属攻击，不符合温和逻辑游戏"}
+      ],
+      "decision": "无合格现成声音，生成专属完成反馈。"
+    }
+  ],
+  "generated": {
+    "image": {
+      "selected_asset_id": "generated_images__20260820_183543_Gemini.png",
+      "model": "gemini-3.1-flash-image",
+      "provider": "gemini",
+      "prompt": "Single isolated game reward emblem, no text, no letters, no numbers. A chunky cat paw stamp made from layered cut paper and soft felt, rose pink pads, cream paper edge, plum ink outline, one tiny gold thread stitch and two small paper confetti pieces. Centered front view, friendly casual logic puzzle asset, handcrafted 2.5D cartoon, clean distinctive silhouette, restrained soft shadow, transparent background, ample padding. No screen, no UI, no grid, no typography, no photorealism.",
+      "source_master": {
+        "location": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/logic_games/gag-v1/masters/generated_images__20260820_183543_Gemini.png",
+        "container_detected": "JPEG/JFIF",
+        "dimensions": [1408, 768],
+        "bytes": 602949,
+        "sha256": "c57fdb6ba0404873e14bb09cdf2c6a457dcacd8b145eb26abf03b0ca529fc701",
+        "shipped_in_repo": false
+      },
+      "rejected_variant": {
+        "asset_id": "generated_images__20260820_183605_Gemini.png",
+        "sha256": "515317e5c258723bbe719979515af8e4f509e3b6eabe00b5e3fad19d1fc376ac",
+        "reason": "分层花朵与装饰过多，主体轮廓不够直接"
+      },
+      "transforms": [
+        "GAG Remove.bg to 677x369 RGBA",
+        "auto-trim with 12px padding to 331x297",
+        "preserve transparent RGBA runtime cutout"
+      ],
+      "runtime": {
+        "path": "assets/art/logic/gag-v1/meowdoku_paw_reward.png",
+        "dimensions": [331, 297],
+        "bytes": 149484,
+        "sha256": "1816f55ef6f6a5cff536ebb494fc881c939a4238d6881b4d7462efb18abbceaf",
+        "actual_uses": ["header identity", "block-complete stamp", "grade-4 completion reward", "result card"]
+      }
+    },
+    "audio": {
+      "asset_id": "offline_games_meowdoku_paw_complete_gag",
+      "version": 1,
+      "provider": "elevenlabs",
+      "model": "eleven_text_to_sound_v2",
+      "prompt": "A soft tactile felt cat paw stamp landing on thick paper, followed by three tiny warm wooden chimes. Cozy cute logic puzzle completion reward, clean and dry, short transient with a gentle sparkling tail, no voice, no music bed, no ambience, no harsh impact.",
+      "delivery_digest": "cc2ffbf6df823127cd58d76a867d107d35316f133a935985740b9b2d364b8117",
+      "selected_master": {
+        "location": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/logic_games/gag-v1/masters/sfx/offline_games_meowdoku_paw_complete_gag/v1/offline_games_meowdoku_paw_complete_gag_01_master.wav",
+        "sha256": "92712538fdc526088c025a551144e490e724960753058f42882c8e7633130ccf",
+        "duration_seconds": 0.948625,
+        "integrated_lufs": -18.26,
+        "peak_dbfs": -1.05,
+        "shipped_in_repo": false
+      },
+      "runtime": {
+        "path": "assets/audio/logic/gag-v1/meowdoku_complete_reward.ogg",
+        "sha256": "34911284fe47fd7ebfcb3f4df0c07642d1e63f3e37159fc269532d2f1ebeac18",
+        "duration_seconds": 0.948625,
+        "integrated_lufs": -20.5,
+        "true_peak_dbtp": -2.8,
+        "actual_use": "grade-4 full-board completion only"
+      }
+    }
+  },
+  "procedural_support": {
+    "provenance": "original deterministic code; not GAG",
+    "generator": "tools/generate_logic_sfx.py",
+    "assets": [
+      "assets/audio/logic/paper_select.wav",
+      "assets/audio/logic/ink_confirm.wav",
+      "assets/audio/logic/correction_scratch.wav",
+      "assets/audio/logic/block_stamp.wav",
+      "assets/audio/logic/folio_complete.wav"
+    ]
+  },
+  "source_master_policy": "GAG archive retains source masters; repository ships only two reviewed runtime derivatives and no source master."
+}
