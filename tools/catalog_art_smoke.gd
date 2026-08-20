@@ -51,9 +51,9 @@ func _test_merge2048_peak() -> void:
 
 func _test_watermelon_peak() -> void:
 	game._open_game("watermelon")
-	game.state["columns"][0] = [3, 2, 2, 1]
-	game.state["next"] = 1
-	game._water_drop(0)
+	for position in [Vector2(240, 600), Vector2(270, 600), Vector2(240, 600), Vector2(270, 600)]:
+		game.watermelon_model.inject_ball(1, position, Vector2.ZERO, 77)
+	game._watermelon_update(game.watermelon_model.FIXED_DT)
 	_expect_event("watermelon", "fruit_merge", 4)
 
 

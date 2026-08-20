@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-08-20T19:20:00Z",
+  "game_id": "watermelon",
+  "slice": "stable-signature GAG visibility repair plus exact-title physics integration",
+  "gag": {
+    "endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+    "transport": "Streamable HTTP",
+    "server_version": "1.29.0",
+    "execution_mode": "pure API; no local GPU or main-process PyTorch",
+    "enabled_api_paths": ["fal.ai", "openrouter", "gemini", "remove.bg", "elevenlabs"]
+  },
+  "semantic_search": {
+    "status": "completed_before_generation",
+    "queries": [
+      "premium cartoon orchard wooden frame and recipe tray for a fruit merge game",
+      "cartoon fruit progression tray with five empty recipe positions",
+      "fruit juice merge VFX transparent mobile game",
+      "fruit drop merge cascade short game sound effects"
+    ],
+    "reviewed_and_rejected": [
+      "generic golden SSR card frame: wrong role and visual identity",
+      "unrelated 3x3 tile atlas: wrong game and runtime role",
+      "generic magic/coin VFX: no fruit-orchard semantic fit",
+      "generic music and accept sounds: no drop/contact/cascade semantic fit"
+    ],
+    "representative_similarity": "approximately 0.4; insufficient for reuse"
+  },
+  "source_masters": [
+    {
+      "id": "gag-orchard-tray-20260821-022649",
+      "archive_path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/2048balls/v3/generated_images__20260821_022649_FAL.ai.png",
+      "provider": "fal.ai",
+      "model": "fal-ai/flux-pro/v1.1",
+      "requested_size": "square_hd",
+      "bytes": 222662,
+      "sha256": "1ea517b13e383cbd038e995d40c949cd4f6546b5b4305be247af1152b75f58c1",
+      "content_note": "1024x1024 JPEG content stored under a .png filename; source generated two trays despite the single-object instruction, so it was reviewed but not shipped directly",
+      "prompt_summary": "single long honey-wood orchard recipe tray, dark maroon channel, no text, fruit, logo, or UI"
+    }
+  ],
+  "transformations": [
+    {
+      "operation": "GAG crop_image manual",
+      "input": "gag-orchard-tray-20260821-022649",
+      "crop": [55, 65, 925, 345],
+      "output": "orchard_recipe_tray_top.png"
+    },
+    {
+      "operation": "GAG Remove.bg",
+      "provider": "removebg",
+      "input": "orchard_recipe_tray_top.png",
+      "output": "orchard_recipe_tray_transparent.png",
+      "dimensions": [818, 305]
+    },
+    {
+      "operation": "GAG crop_image auto_trim",
+      "padding": 8,
+      "input": "orchard_recipe_tray_transparent.png",
+      "output": "orchard_recipe_tray_runtime.png",
+      "dimensions": [792, 239],
+      "sha256_prefix_recorded_at_production": "38cbeccc"
+    },
+    {
+      "operation": "local ffmpeg WebP runtime derivative",
+      "quality": 88,
+      "alpha_preserved": true,
+      "input": "orchard_recipe_tray_runtime.png",
+      "output": "assets/art/2048balls/orchard_recipe_tray_gag_v3.webp"
+    }
+  ],
+  "new_runtime_assets": [
+    {
+      "path": "assets/art/2048balls/orchard_recipe_tray_gag_v3.webp",
+      "dimensions": [792, 239],
+      "bytes": 20606,
+      "sha256": "ebfa46b46d2beee1027347fbf383735897fb17e4a4371c45584c635612829dce",
+      "runtime_reference": "presentation/watermelon_presenter.gd::RECIPE_TRAY and draw_recipe_tray",
+      "visibility": "stable full-width lower-board signature asset",
+      "shipped": true,
+      "replicates": null
+    }
+  ],
+  "inherited_gag_runtime_assets": {
+    "ledger": "docs/art-direction/2048balls-v2.asset-ledger.json",
+    "visual": [
+      "assets/art/2048balls/fruit_01_lemon.png",
+      "assets/art/2048balls/fruit_02_orange.png",
+      "assets/art/2048balls/fruit_03_apple.png",
+      "assets/art/2048balls/fruit_04_grape.png",
+      "assets/art/2048balls/fruit_05_watermelon.png",
+      "assets/art/2048balls/juice_merge_burst.png"
+    ],
+    "audio": [
+      "assets/audio/2048balls/fruit_drop.ogg",
+      "assets/audio/2048balls/fruit_merge.ogg",
+      "assets/audio/2048balls/fruit_cascade.ogg"
+    ],
+    "runtime_change": "all five fruits now remain visible as live free-physics balls; the burst appears at grades 2-4 with scaled envelopes; audio remains semantic-event routed"
+  },
+  "source_master_policy": "source masters and intermediate PNGs remain in the HOME-WSL GAG archive; only runtime derivatives may enter the repository and PCK"
+}

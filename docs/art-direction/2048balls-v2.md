@@ -1,5 +1,11 @@
 # 2048 Balls · orchard toy direction v2
 
+> Superseded on 2026-08-20 by `2048balls-gag-v3-stage0.md`. A later
+> exact-title review against Voodoo's official `2048 Balls 3D` material found
+> that this slice's seven-column / instant-append / score-1000 contract was not
+> original-faithful. Keep this document only as historical art evidence; do
+> not cite its mechanics invariant or approval boundary as current.
+
 ## Decision and invariants
 
 ```text

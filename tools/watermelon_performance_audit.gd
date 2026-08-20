@@ -1,6 +1,6 @@
 extends SceneTree
 
-const OUTPUT := "user://watermelon_v2_performance.json"
+const OUTPUT := "user://watermelon_gag_v3_physics_performance.json"
 
 var game: Control
 
@@ -13,10 +13,17 @@ func _run() -> void:
 	game = load("res://main.tscn").instantiate()
 	root.add_child(game)
 	game._open_game("watermelon")
-	game.state["columns"] = [
-		[1, 2, 3, 4, 5], [2, 3, 4], [1, 2, 3, 4], [4, 2],
-		[5, 4, 3], [1, 2, 3], [2, 3, 4, 5],
-	]
+	var tiers := [1, 2, 3, 4, 5, 2, 3, 4, 1, 3, 5, 2, 4, 1, 5, 3, 2, 4]
+	for index in range(tiers.size()):
+		var row := index / 6
+		var column := index % 6
+		game.watermelon_model.inject_ball(
+			int(tiers[index]),
+			Vector2(92.0 + float(column) * 69.0, 648.0 - float(row) * 59.0),
+			Vector2.ZERO,
+			100 + index
+		)
+	game._sync_watermelon_state()
 	for _warmup in range(24):
 		await process_frame
 
@@ -43,7 +50,7 @@ func _run() -> void:
 		"max_frame_ms": samples.back(),
 		"renderer": RenderingServer.get_video_adapter_name(),
 		"viewport": [int(game.size.x), int(game.size.y)],
-		"note": "Xvfb/llvmpipe comparative trace with GAG fruit textures and six capped grade-four events; not a device FPS claim",
+		"note": "Xvfb/llvmpipe comparative trace with an 18-ball free-physics pile, GAG fruit textures, stable GAG tray and six capped grade-four events; not a device FPS claim",
 	}
 	var file := FileAccess.open(OUTPUT, FileAccess.WRITE)
 	file.store_string(JSON.stringify(report, "  ") + "\n")

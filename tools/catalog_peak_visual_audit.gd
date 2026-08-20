@@ -49,9 +49,9 @@ func _trigger_peak(id: String) -> void:
 			game.state["board"] = [[64, 64, 64, 64], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
 			game._merge_move(Vector2i.LEFT)
 		"watermelon":
-			game.state["columns"][3] = [3, 2, 2, 1]
-			game.state["next"] = 1
-			game._water_drop(3)
+			for position in [Vector2(240, 600), Vector2(270, 600), Vector2(240, 600), Vector2(270, 600)]:
+				game.watermelon_model.inject_ball(1, position, Vector2.ZERO, 77)
+			game._watermelon_update(game.watermelon_model.FIXED_DT)
 		"meowdoku", "sudoku":
 			var solution: Array = game.state["solution"]
 			for y in range(3):

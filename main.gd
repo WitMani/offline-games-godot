@@ -71,6 +71,7 @@ const SNAKE_RULES = preload("res://snake_model.gd")
 const SNAKE_GB_RULES = preload("res://models/snake_gb_model.gd")
 const SNAKES_ARENA_RULES = preload("res://models/snakes_arena_model.gd")
 const MERGE2248_RULES = preload("res://models/merge2248_model.gd")
+const WATERMELON_RULES = preload("res://models/watermelon_physics_model.gd")
 const MERGE2248_PRESENTATION = preload("res://presentation/merge2248_presenter.gd")
 const MERGE2048_CLASSIC_PRESENTATION = preload("res://presentation/merge2048_classic_presenter.gd")
 const CATALOG_ART_DIRECTION = preload("res://presentation/catalog_art_director.gd")
@@ -172,6 +173,7 @@ var snake_model = SNAKE_RULES.new()
 var snake_gb_model = SNAKE_GB_RULES.new()
 var snakes_arena_model = SNAKES_ARENA_RULES.new()
 var merge2248_model = MERGE2248_RULES.new()
+var watermelon_model = WATERMELON_RULES.new()
 var merge2248_presenter = MERGE2248_PRESENTATION.new()
 var merge2048_classic_presenter = MERGE2048_CLASSIC_PRESENTATION.new()
 var catalog_art_director = CATALOG_ART_DIRECTION.new()
@@ -299,6 +301,8 @@ func _process(delta: float) -> void:
 		_snake_gb_update(delta)
 	elif screen == "game" and game_id == "snake_io" and state.get("status", "playing") == "playing":
 		_snakes_arena_update(delta)
+	elif screen == "game" and game_id == "watermelon" and state.get("status", "playing") == "playing":
+		_watermelon_update(delta)
 	_snake_prune_fx()
 	_snakes_arena_prune_fx()
 	_prune_catalog_fx()
@@ -543,6 +547,19 @@ func _input(event: InputEvent) -> void:
 		_set_arena_boost_key(event.keycode, event.pressed)
 		get_viewport().set_input_as_handled()
 		return
+	if event is InputEventKey and event.pressed and not event.echo and screen == "game" and game_id == "watermelon":
+		if event.keycode in [KEY_LEFT, KEY_A]:
+			_watermelon_nudge(-1.0)
+			get_viewport().set_input_as_handled()
+			return
+		if event.keycode in [KEY_RIGHT, KEY_D]:
+			_watermelon_nudge(1.0)
+			get_viewport().set_input_as_handled()
+			return
+		if event.keycode in [KEY_DOWN, KEY_S, KEY_SPACE, KEY_ENTER]:
+			_watermelon_drop_current()
+			get_viewport().set_input_as_handled()
+			return
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_ESCAPE:
 			if screen == "game":
@@ -574,6 +591,8 @@ func _gui_input(event: InputEvent) -> void:
 				merge2248_drag_active = true
 			elif screen == "game" and game_id == "snake_io":
 				_snakes_arena_begin_pointer(event.position)
+			elif screen == "game" and game_id == "watermelon" and _watermelon_board_rect().has_point(event.position):
+				_watermelon_aim_at(event.position.x)
 		else:
 			var swipe_delta: Vector2 = event.position - pointer_down
 			if game_id == "merge2248" and merge2248_drag_active:
@@ -582,6 +601,8 @@ func _gui_input(event: InputEvent) -> void:
 				merge2248_drag_active = false
 			elif game_id == "snake_io":
 				_snakes_arena_end_pointer(event.position)
+			elif game_id == "watermelon" and _watermelon_board_rect().has_point(pointer_down):
+				_watermelon_drop_at(event.position.x)
 			elif pointer_down.x >= 0.0 and swipe_delta.length() > 42.0 and game_id == "merge2048":
 				if abs(swipe_delta.x) > abs(swipe_delta.y):
 					_merge_move(Vector2i.RIGHT if swipe_delta.x > 0 else Vector2i.LEFT)
@@ -595,6 +616,8 @@ func _gui_input(event: InputEvent) -> void:
 			_merge2248_extend_at(event.position)
 		elif arena_pointer_active and game_id == "snake_io":
 			_snakes_arena_aim_at_screen(event.position)
+		elif game_id == "watermelon" and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and _watermelon_board_rect().has_point(pointer_down):
+			_watermelon_aim_at(event.position.x)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch and event.pressed:
@@ -603,6 +626,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			merge2248_drag_active = true
 		elif screen == "game" and game_id == "snake_io":
 			_snakes_arena_begin_pointer(event.position)
+		elif screen == "game" and game_id == "watermelon" and _watermelon_board_rect().has_point(event.position):
+			_watermelon_aim_at(event.position.x)
 	elif event is InputEventScreenTouch and not event.pressed:
 		if game_id == "merge2248" and merge2248_drag_active:
 			_merge2248_extend_at(event.position)
@@ -610,6 +635,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			merge2248_drag_active = false
 		elif game_id == "snake_io":
 			_snakes_arena_end_pointer(event.position)
+		elif game_id == "watermelon" and _watermelon_board_rect().has_point(pointer_down):
+			_watermelon_drop_at(event.position.x)
 		else:
 			_handle_tap(event.position)
 	elif event is InputEventScreenDrag:
@@ -617,6 +644,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_merge2248_extend_at(event.position)
 		elif game_id == "snake_io":
 			_snakes_arena_aim_at_screen(event.position)
+		elif game_id == "watermelon" and _watermelon_board_rect().has_point(pointer_down):
+			_watermelon_aim_at(event.position.x)
 
 func _build_home() -> void:
 	if game_id == "snake_io":
@@ -671,7 +700,7 @@ func _build_game_buttons() -> void:
 			_add_button("上", Rect2(241, 826, 58, 52), Callable(self, "_merge_move").bind(Vector2i.UP), SURFACE_2, 16)
 			_add_button("右", Rect2(312, 826, 58, 52), Callable(self, "_merge_move").bind(Vector2i.RIGHT), SURFACE_2, 16)
 		"watermelon":
-			_add_button("轻触果箱选择落点", Rect2(158, 820, 224, 52), Callable(self, "_water_drop_hint"), SURFACE_2, 14)
+			_add_button("拖动瞄准 · 松手投放", Rect2(158, 878, 224, 52), Callable(self, "_water_drop_hint"), SURFACE_2, 14)
 		"sudoku", "meowdoku":
 			for n in range(1, 10):
 				var row := (n - 1) / 5
@@ -945,9 +974,8 @@ func _handle_tap(pos: Vector2) -> void:
 		return
 	match game_id:
 		"watermelon":
-			if Rect2(30, 236, 462, 466).has_point(pos):
-				var column := clampi(int((pos.x - 43.0) / 62.0), 0, 6)
-				_water_drop(column)
+			if _watermelon_board_rect().has_point(pos):
+				_watermelon_drop_at(pos.x)
 		"sudoku", "meowdoku": _sudoku_tap(pos)
 		"mahjong": _mahjong_tap(pos)
 		"tileclub": _tileclub_tap(pos)
@@ -1100,9 +1128,7 @@ func _draw_game_icon(id: String, center: Vector2, accent: Color, scale := 1.0) -
 			_draw_center("2", center + Vector2(-6, 3) * scale, int(13 * scale), INK)
 			_draw_center("+", center + Vector2(5, 4) * scale, int(10 * scale), accent)
 		"watermelon":
-			draw_circle(center + Vector2(-7, 3) * scale, 10 * scale, Color("ec6d8e"))
-			draw_circle(center + Vector2(7, -4) * scale, 8 * scale, Color("62d3aa"))
-			draw_arc(center + Vector2(4, -12) * scale, 8 * scale, 3.2, 5.2, 12, accent, 2 * scale)
+			watermelon_presenter.draw_fruit(self, center, 3, 14.0 * scale, elapsed, [], false)
 		"meowdoku", "sudoku":
 			logic_game_presenter.draw_header_badge(self, id, center, r * 2.15)
 		"snake_classic", "snake_io":
@@ -1262,7 +1288,7 @@ func _objective_status() -> String:
 	match game_id:
 		"merge2248": return "最高 %s / 2048" % _merge2248_highest_label()
 		"merge2048": return "目标 2048"
-		"watermelon": return "下个 %s" % _fruit_name(int(state.get("next", 1)))
+		"watermelon": return "目标 %d" % int(state.get("target_value", 256))
 		"snake_classic": return "长度 %d / %d" % [int(state.get("score", 4)), int(state.get("target_length", 120))]
 		"snake_io": return "位次 #%d · 体量 %.1f" % [max(1, int(state.get("rank", 1))), float(state.get("mass", 0.0))]
 		"solitaire": return "牌库 %d" % int(state.get("stock", 0))
@@ -2339,101 +2365,182 @@ func _linear_channel(channel: float) -> float:
 # -----------------------------------------------------------------------------
 
 func _init_watermelon() -> void:
-	state["columns"] = [[], [], [], [], [], [], []]
-	state["next"] = 1
-	state["score"] = 0
-	state["moves"] = 0
+	watermelon_model.reset(abs("watermelon".hash()) + 17, true)
+	_sync_watermelon_state()
 
-func _water_drop(column: int) -> void:
+func _watermelon_board_rect() -> Rect2:
+	return Rect2(26, 232, 470, 474)
+
+
+func _watermelon_aim_at(screen_x: float) -> void:
 	if game_id != "watermelon" or state.get("status") != "playing":
 		return
-	var columns: Array = state["columns"]
-	if columns[column].size() >= 7:
-		var blocked_position := Vector2(70 + column * 62, 338)
-		_flash_feedback("这列已经装满", RED)
-		_start_catalog_event("fruit_error_full", blocked_position, RED, 2, "换一条轨道", 0.68)
-		_log_event("ball_drop_rejected", {"column":column, "reason":"column_full"})
+	watermelon_model.set_aim_x(screen_x)
+	_sync_watermelon_state()
+	queue_redraw()
+
+
+func _watermelon_nudge(direction: float) -> void:
+	if game_id != "watermelon" or state.get("status") != "playing":
 		return
-	var value := int(state["next"])
-	columns[column].append(value)
-	state["next"] = 1 + ((value + rng.randi_range(0, 2)) % 5)
-	state["moves"] = int(state["moves"]) + 1
-	_flash_feedback("落下 · %s" % _fruit_name(value), _fruit_color(value))
-	var merged := true
-	var merge_count := 0
-	var highest_result := value
-	var merge_score_gained := 0
-	while merged:
-		merged = false
-		for i in range(columns[column].size() - 1):
-			if columns[column][i] == columns[column][i + 1]:
-				columns[column][i] = min(5, int(columns[column][i]) + 1)
-				highest_result = maxi(highest_result, int(columns[column][i]))
-				merge_count += 1
-				columns[column].remove_at(i + 1)
-				var merge_points := int(columns[column][i]) * 10
-				merge_score_gained += merge_points
-				state["score"] = int(state["score"]) + merge_points
-				_impact(Vector2(70 + column * 66, 610 - i * 58), _fruit_color(int(columns[column][i])), 0.9)
-				merged = true
-				break
-	var event_row := maxi(0, columns[column].size() - 1)
-	if merge_count > 0:
-		var merged_row: int = columns[column].find(highest_result)
-		if merged_row >= 0:
-			event_row = merged_row
-	var event_position := Vector2(70 + column * 62, 668 - event_row * 50)
-	if merge_count > 0:
-		var merge_grade := clampi(1 + merge_count + (1 if highest_result >= 5 else 0), 2, 4)
-		var harvest_complete := int(state["score"]) >= 1000
-		if harvest_complete:
-			merge_grade = 4
-		var merge_kind := "fruit_harvest_complete" if harvest_complete else "fruit_merge"
-		var merge_label := "丰收完成 · +%d" % merge_score_gained if harvest_complete else "%s%s · +%d" % [_fruit_name(highest_result), "连携" if merge_count > 1 else "合成", merge_score_gained]
-		_start_catalog_event(merge_kind, event_position, _fruit_color(highest_result), merge_grade, merge_label, 0.92 if merge_grade >= 3 else 0.78)
-	else:
-		_start_catalog_event("fruit_drop", event_position, _fruit_color(value), 1, "%s落箱" % _fruit_name(value), 0.56)
-	_log_event("ball_drop", {"column":column, "value":value, "merge_count":merge_count, "highest_result":highest_result, "score_gained":merge_score_gained})
-	if columns[column].size() >= 7:
-		_start_catalog_event("fruit_error_full", Vector2(70 + column * 62, 340), RED, 2, "果箱满了", 0.68)
-		state["status"] = "over"
-		_capture("watermelon_full")
+	watermelon_model.nudge_aim(direction)
+	_sync_watermelon_state()
+	_flash_feedback("瞄准 %d" % int(round(watermelon_model.aim_x)), AMBER)
+
+
+func _watermelon_drop_current() -> void:
+	_watermelon_drop_at(watermelon_model.aim_x)
+
+
+func _watermelon_drop_at(screen_x: float) -> void:
+	if game_id != "watermelon" or state.get("status") != "playing":
 		return
-	if int(state["score"]) >= 1000:
-		state["status"] = "won"
-		_capture("watermelon_win")
+	watermelon_model.set_aim_x(screen_x)
+	watermelon_model.drop()
+	_consume_watermelon_events(watermelon_model.step(0.0))
+	_sync_watermelon_state()
+
+
+# Compatibility route used by the collection-wide smoke test. The runtime no
+# longer has discrete columns; the seven legacy indices map to free aim points.
+func _water_drop(column: int) -> void:
+	var clamped_column := clampi(column, 0, 6)
+	_watermelon_drop_at(70.0 + float(clamped_column) * 62.0)
+
+
+func _watermelon_update(delta: float) -> void:
+	_consume_watermelon_events(watermelon_model.step(delta))
+	_sync_watermelon_state()
+
+
+func _consume_watermelon_events(events: Array) -> void:
+	for event_value in events:
+		var event: Dictionary = event_value
+		var kind := str(event.get("kind", ""))
+		var position: Vector2 = event.get("position", Vector2(watermelon_model.aim_x, watermelon_model.SPAWN_Y))
+		var tier := maxi(1, int(event.get("tier", 1)))
+		var value := int(event.get("value", watermelon_model.value_for_tier(tier)))
+		match kind:
+			"ball_released":
+				_flash_feedback("松手落下 · %d" % value, _fruit_color(tier))
+			"ball_landed":
+				_start_catalog_event(
+					"fruit_drop", position, _fruit_color(tier), 1,
+					"%d 落地" % value, 0.56,
+					{"ball_id":int(event.get("ball_id", -1)), "tier":tier, "semantic":"fruit_drop"}
+				)
+			"balls_merged":
+				var grade := clampi(int(event.get("grade", 2)), 2, 4)
+				var chain := maxi(1, int(event.get("chain", 1)))
+				var merge_word := "连携×%d" % chain if chain > 1 else "合成"
+				var label := "%d %s · +%d" % [value, merge_word, value]
+				_start_catalog_event(
+					"fruit_merge", position, _fruit_color(tier), grade, label,
+					0.96 if grade >= 3 else 0.78,
+					{
+						"result_id":int(event.get("result_id", -1)), "tier":tier,
+						"chain":chain, "semantic":"fruit_merge",
+						"source_positions":event.get("source_positions", []),
+					}
+				)
+				_impact(position, _fruit_color(tier), 0.58 + float(grade) * 0.18)
+			"target_reached":
+				var completed := int(event.get("completed_target", value))
+				var next_target := watermelon_model.value_for_tier(watermelon_model.target_tier)
+				if not catalog_fx.is_empty() and str(catalog_fx.back().get("game_id", "")) == "watermelon":
+					catalog_fx.back()["kind"] = "fruit_harvest_complete"
+					catalog_fx.back()["label"] = "目标 %d 达成 · 向 %d" % [completed, next_target]
+					catalog_fx.back()["grade"] = 4
+				_flash_feedback("目标 %d 达成 · 继续挑战 %d" % [completed, next_target], GOLD)
+				_sync_watermelon_state()
+				_capture("watermelon_target_%d" % completed)
+			"drop_rejected":
+				var reason := str(event.get("reason", "blocked"))
+				var reject_label := "落口被挡住" if reason == "spawn_blocked" else "稍候再投"
+				_flash_feedback(reject_label, RED)
+				_start_catalog_event("fruit_error_drop", position, RED, 2, reject_label, 0.68, {"reason":reason})
+			"danger_overflow":
+				_flash_feedback("果球越过危险线", RED)
+				_start_catalog_event("fruit_error_overflow", position, RED, 4, "危险线溢出", 0.92, {"tier":tier})
+				_sync_watermelon_state()
+				_capture("watermelon_overflow")
+		_log_event("watermelon_%s" % kind, event)
+
+
+func _sync_watermelon_state() -> void:
+	var snapshot := watermelon_model.snapshot()
+	for key in snapshot:
+		state[key] = snapshot[key]
+	# Keep the common catalog-facing alias while the authoritative state remains
+	# tier/value based. No column array is retained.
+	state["next"] = int(snapshot.get("next_tier", 1))
+	state.erase("columns")
 
 func _water_drop_hint() -> void:
 	if game_id == "watermelon" and state.get("status") == "playing":
-		_flash_feedback("直接点击果箱内任一轨道", RED)
+		_flash_feedback("左右拖动瞄准，松手投放", AMBER)
 
 func _draw_watermelon() -> void:
-	_draw_section_heading("果园落口", "点击下方轨道投放", RED)
-	_draw_panel(Rect2(396, 226, 112, 80), Color("42243a", 0.96), Color("ffd17e", 0.72), 16, 2)
-	_draw_text("下一个", Vector2(412, 247), 10, BRIGHT_MUTED)
-	_draw_fruit(Vector2(472, 275), int(state["next"]), 21.0, false)
-	watermelon_presenter.draw_crate(self, Rect2(26, 232, 470, 474), elapsed)
-	draw_line(Vector2(48, 316), Vector2(474, 316), Color("fff2f5", 0.54), 3.0)
-	_draw_text("危险线", Vector2(416, 350), 11, Color("ffd2d8"))
-	for col in range(7):
-		var x := 43.0 + col * 62.0
-		var drop_center := Vector2(x + 27, 334)
-		draw_circle(drop_center + Vector2(0, 2), 12.0, Color("1f0e0a", 0.24))
-		draw_arc(drop_center, 11.0, 0, TAU, 20, Color("ffd890", 0.52), 1.5)
-		draw_line(drop_center - Vector2(0, 5), drop_center + Vector2(0, 5), Color(INK, 0.42), 2.0)
-		draw_line(drop_center + Vector2(-4, 2), drop_center + Vector2(0, 6), Color(INK, 0.42), 2.0)
-		draw_line(drop_center + Vector2(4, 2), drop_center + Vector2(0, 6), Color(INK, 0.42), 2.0)
-		var stack: Array = state["columns"][col]
-		for row in range(stack.size()):
-			var y := 668.0 - row * 50.0
-			_draw_fruit(Vector2(x + 27, y), int(stack[row]), 23.0)
-	_draw_text("合成西瓜即可完成本局", Vector2(38, 742), 13, BRIGHT_MUTED)
+	_draw_section_heading("果园落口", "拖动瞄准 · 松手投放", RED)
+	var board_rect := _watermelon_board_rect()
+	watermelon_presenter.draw_crate(self, board_rect, elapsed)
+	var aim_x := float(state.get("aim_x", 270.0))
+	var next_tier := int(state.get("next_tier", 1))
+	var next_visual := _watermelon_visual_value(next_tier)
+	var next_value := int(state.get("next_value", 2))
+	var aim_color := _fruit_color(next_tier)
+	# Continuous aim and visible falling motion are gameplay state, not a
+	# presentation-only fake. The guide sits behind every simulated ball.
+	draw_dashed_line(Vector2(aim_x, 316), Vector2(aim_x, watermelon_model.FLOOR_Y - 8.0), Color(aim_color, 0.42), 2.0, 9.0)
+	draw_circle(Vector2(aim_x, 310), 28.0, Color(aim_color, 0.12))
+	draw_arc(Vector2(aim_x, 310), 28.0, 0, TAU, 36, Color(aim_color, 0.58), 2.0, true)
+	watermelon_presenter.draw_fruit(self, Vector2(aim_x, 310), next_visual, 19.0, elapsed, [], false)
+	_draw_watermelon_number_badge(Vector2(aim_x, 310), str(next_value), 11 if next_value < 100 else 9, 9.0)
 
-func _draw_fruit(center: Vector2, value: int, radius: float, animate := true) -> void:
-	watermelon_presenter.draw_fruit(self, center, value, radius, elapsed, catalog_fx, animate)
+	var highest_tier := int(state.get("highest_tier", 0))
+	var balls: Array = state.get("balls", [])
+	for ball_value in balls:
+		var ball: Dictionary = ball_value
+		var serialized_position: Array = ball.get("position", [270.0, 620.0])
+		var center := Vector2(float(serialized_position[0]), float(serialized_position[1]))
+		var tier := int(ball.get("tier", 1))
+		var radius := float(ball.get("radius", 18.0))
+		var visual_value := _watermelon_visual_value(tier)
+		var ball_color := _fruit_color(tier)
+		draw_circle(center + Vector2(0, 2), radius, Color("17090d", 0.30))
+		draw_circle(center, radius, Color(ball_color, 0.14))
+		draw_arc(center, radius, 0, TAU, 28, Color(ball_color.lightened(0.18), 0.34), 1.2, true)
+		watermelon_presenter.draw_fruit(self, center, visual_value, radius, elapsed, catalog_fx, true, int(ball.get("id", -1)))
+		var ball_number := str(int(ball.get("value", 2)))
+		var number_size := 13 if ball_number.length() <= 2 else (11 if ball_number.length() <= 4 else 9)
+		_draw_watermelon_number_badge(center, ball_number, number_size, maxf(9.0, radius * 0.36))
+
+	# The next pod is deliberately painted after the crate so the hero fruit is
+	# never hidden behind the upper rail.
+	_draw_panel(Rect2(388, 224, 120, 86), Color("42243a", 0.96), Color("ffd17e", 0.72), 16, 2)
+	_draw_text("下一个", Vector2(402, 247), 10, BRIGHT_MUTED)
+	_draw_fruit(Vector2(469, 275), next_visual, 25.0, false)
+	_draw_watermelon_number_badge(Vector2(469, 275), str(next_value), 12 if next_value < 100 else 10, 10.0)
+	_draw_text("危险线", Vector2(414, 350), 11, Color("ffd2d8"))
+	watermelon_presenter.draw_recipe_tray(self, Rect2(26, 708, 488, 142), next_visual, mini(5, highest_tier), elapsed)
+	_draw_center("果园谱系 · 同值碰撞逐级丰收", Vector2(270, 742), 11, Color("fff0cc", 0.88))
+
+func _draw_fruit(center: Vector2, value: int, radius: float, animate := true, entity_id := -1) -> void:
+	watermelon_presenter.draw_fruit(self, center, value, radius, elapsed, catalog_fx, animate, entity_id)
+
+
+func _draw_watermelon_number_badge(center: Vector2, label: String, font_size: int, radius: float) -> void:
+	draw_circle(center + Vector2(0.8, 1.2), radius + 1.0, Color("17080c", 0.46))
+	draw_circle(center, radius, Color("3a1620", 0.78))
+	draw_arc(center, radius, 0, TAU, 22, Color("fff5d3", 0.54), 1.0, true)
+	_draw_center_font(NUMBER_FONT, label, center + Vector2(0, -0.6), font_size, Color.WHITE)
+
+
+func _watermelon_visual_value(tier: int) -> int:
+	return 1 + posmod(maxi(1, tier) - 1, 5)
 
 func _fruit_color(value: int) -> Color:
-	match value:
+	match _watermelon_visual_value(value):
 		1: return Color("f6d365")
 		2: return Color("f49b67")
 		3: return Color("ec6d8e")
@@ -2441,10 +2548,10 @@ func _fruit_color(value: int) -> Color:
 		_: return Color("62d3aa")
 
 func _fruit_symbol(value: int) -> String:
-	return ["", "一", "二", "三", "四", "五"][clampi(value, 1, 5)]
+	return ["", "一", "二", "三", "四", "五"][_watermelon_visual_value(value)]
 
 func _fruit_name(value: int) -> String:
-	return ["", "柠檬", "橙子", "苹果", "葡萄", "西瓜"][clampi(value, 1, 5)]
+	return ["", "柠檬", "橙子", "苹果", "葡萄", "西瓜"][_watermelon_visual_value(value)]
 
 # -----------------------------------------------------------------------------
 # Sudoku / Meowdoku
