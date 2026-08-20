@@ -49,6 +49,18 @@ if ! grep -Fq "\"mainPack\":\"$PACK_FILE\"" "$CANDIDATE_DIR/index.html" ||
 	echo "Refusing deployment: index.html does not reference this bundle" >&2
 	exit 1
 fi
+
+# The Hangzhou preview sits behind a tailnet hop. Precompress immutable engine
+# and pack artifacts once at build time so nginx can serve gzip_static files
+# without spending CPU on every playtest or sending ~50 MB uncompressed.
+for asset in "$PACK_FILE" "$WASM_FILE" "$JS_FILE"; do
+	gzip -9 -c "$CANDIDATE_DIR/$asset" > "$CANDIDATE_DIR/$asset.gz"
+	if [ ! -s "$CANDIDATE_DIR/$asset.gz" ]; then
+		echo "Failed to precompress release asset: $asset" >&2
+		exit 1
+	fi
+done
+
 PACK_TOKEN="${PACK_FILE#index.}"
 PACK_TOKEN="${PACK_TOKEN%.pck}"
 RELEASE_ID="$(date -u +%Y%m%dT%H%M%SZ)-$PACK_TOKEN"
@@ -63,18 +75,21 @@ fi
 # previous HTML can finish fetching its pack during an atomic switch. Checksums
 # are required because two index files can have equal sizes but different hashes.
 rsync -a --checksum -e 'ssh -o BatchMode=yes' "$CANDIDATE_DIR/" "$REMOTE:$REMOTE_RELEASE/"
-ssh -o BatchMode=yes "$REMOTE" "test -s '$REMOTE_RELEASE/index.html' && test -s '$REMOTE_RELEASE/$PACK_FILE' && test -s '$REMOTE_RELEASE/$WASM_FILE' && test -s '$REMOTE_RELEASE/$JS_FILE' && grep -Fq '\"mainPack\":\"$PACK_FILE\"' '$REMOTE_RELEASE/index.html' && grep -Fq '\"executable\":\"$ENGINE_FILE\"' '$REMOTE_RELEASE/index.html' && ln -sfn '$REMOTE_RELEASE' '$REMOTE_ROOT/current.next' && mv -Tf '$REMOTE_ROOT/current.next' '$REMOTE_ROOT/current'"
+ssh -o BatchMode=yes "$REMOTE" "test -s '$REMOTE_RELEASE/index.html' && test -s '$REMOTE_RELEASE/$PACK_FILE' && test -s '$REMOTE_RELEASE/$WASM_FILE' && test -s '$REMOTE_RELEASE/$JS_FILE' && test -s '$REMOTE_RELEASE/$PACK_FILE.gz' && test -s '$REMOTE_RELEASE/$WASM_FILE.gz' && test -s '$REMOTE_RELEASE/$JS_FILE.gz' && grep -Fq '\"mainPack\":\"$PACK_FILE\"' '$REMOTE_RELEASE/index.html' && grep -Fq '\"executable\":\"$ENGINE_FILE\"' '$REMOTE_RELEASE/index.html' && ln -sfn '$REMOTE_RELEASE' '$REMOTE_ROOT/current.next' && mv -Tf '$REMOTE_ROOT/current.next' '$REMOTE_ROOT/current'"
 
 INDEX_BODY="$(curl --noproxy '*' -kfsS "$PUBLIC_URL/index.html?release=$RELEASE_ID" || true)"
 PACK_HTTP_CODE="$(curl --noproxy '*' -ksS -r 0-0 -o /dev/null -w '%{http_code}' "$PUBLIC_URL/$PACK_FILE")"
 WASM_HTTP_CODE="$(curl --noproxy '*' -ksS -r 0-0 -o /dev/null -w '%{http_code}' "$PUBLIC_URL/$WASM_FILE")"
+PACK_ENCODING="$(curl --noproxy '*' -kfsSI -H 'Accept-Encoding: gzip' "$PUBLIC_URL/$PACK_FILE" | tr -d '\r' | awk -F': ' 'tolower($1) == "content-encoding" {print tolower($2); exit}')"
+WASM_ENCODING="$(curl --noproxy '*' -kfsSI -H 'Accept-Encoding: gzip' "$PUBLIC_URL/$WASM_FILE" | tr -d '\r' | awk -F': ' 'tolower($1) == "content-encoding" {print tolower($2); exit}')"
 if ! grep -Fq "\"mainPack\":\"$PACK_FILE\"" <<<"$INDEX_BODY" ||
 	{ [ "$PACK_HTTP_CODE" != "200" ] && [ "$PACK_HTTP_CODE" != "206" ]; } ||
-	{ [ "$WASM_HTTP_CODE" != "200" ] && [ "$WASM_HTTP_CODE" != "206" ]; }; then
+	{ [ "$WASM_HTTP_CODE" != "200" ] && [ "$WASM_HTTP_CODE" != "206" ]; } ||
+	[ "$PACK_ENCODING" != "gzip" ] || [ "$WASM_ENCODING" != "gzip" ]; then
 	if [ -n "$PREVIOUS_RELEASE" ]; then
 		ssh -o BatchMode=yes "$REMOTE" "ln -sfn '$PREVIOUS_RELEASE' '$REMOTE_ROOT/current.next' && mv -Tf '$REMOTE_ROOT/current.next' '$REMOTE_ROOT/current'"
 	fi
-	echo "Deployment health check failed: pack=$PACK_HTTP_CODE wasm=$WASM_HTTP_CODE" >&2
+	echo "Deployment health check failed: pack=$PACK_HTTP_CODE/$PACK_ENCODING wasm=$WASM_HTTP_CODE/$WASM_ENCODING" >&2
 	exit 1
 fi
 
