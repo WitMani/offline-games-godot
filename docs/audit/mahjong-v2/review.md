@@ -1,6 +1,6 @@
 # Vita Mahjong v2 acceptance review
 
-Result: **feature and native acceptance PASS**. This slice changes Mahjong
+Result: **feature, native and clean Web acceptance PASS**. This slice changes Mahjong
 presentation only. The fixed 20-tile order, hit regions, selection and
 deselection behavior, mismatch mutation, pair legality, removed indices,
 `+50` score, move count and terminal condition remain frozen. Tile Club is not
@@ -57,13 +57,21 @@ one derived OGG ship.
   max 21.280 ms, with a six-effect cap. These are comparative software-renderer
   traces, not physical-device FPS claims.
 
-Clean archive Web export, PCK content scan, browser actual-action acceptance,
-and exact Aliyun release fingerprints are recorded after this feature commit.
+The clean Git archive exported `index.1b6f0673a41c.pck` and the unchanged
+`index.2b558bdb3c3a.wasm` engine. The PCK contains the selected GAG PNG, authored
+SVG backing and GAG OGG; source-master identifiers and Tile Club GAG paths are
+absent. Fresh Chromium loaded in 1.630 seconds with one canvas, no probe error,
+console error, request failure or bad response. It entered Mahjong and performed
+one real pair: removed indices became `[0, 10]`, score `0→50`, moves `0→1`, and
+status remained `playing`.
+
+Exact Aliyun release fingerprints are recorded after merge and atomic deploy.
 
 Primary evidence:
 
 - `candidate/evidence.json`
 - `candidate/performance.json`
 - `candidate/continuous/mahjong-clear.webm`
+- `candidate/web/local-web-acceptance.json`
 - `stable-comparison.webp`
 - `../../art-direction/mahjong-v2.gag-asset-ledger.json`

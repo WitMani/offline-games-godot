@@ -1,0 +1,93 @@
+{
+  "result": "PASS",
+  "source": "clean git archive of feature commit f2301d6b22daaf34c1fa8fdf15028a2fe26e51a5",
+  "url": "http://127.0.0.1:18790/index.html?release=f2301d6",
+  "ready_seconds": 1.63,
+  "secure_context": true,
+  "webassembly": true,
+  "canvas_count": 1,
+  "probe_error": null,
+  "clean_export": {
+    "html_sha256": "f5d07a114950c0bf7b5a4d2c1a8239371d52ecf45e4086bc91a06e37b456f216",
+    "pck": {
+      "name": "index.1b6f0673a41c.pck",
+      "sha256": "1b6f0673a41c6ae5d5fd98894507a39f2f50c69ae218c86015e64e3749ebe894",
+      "bytes": 13201900
+    },
+    "engine": {
+      "name": "index.2b558bdb3c3a.wasm",
+      "sha256": "2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137",
+      "bytes": 37686550
+    },
+    "pck_contains": [
+      "res://assets/art/catalog/tile_games/gag/mahjong_tile_blank_gag_v1.png",
+      "res://assets/art/catalog/tile_games/mahjong_tile_base.svg",
+      "res://assets/audio/catalog/tile_games/gag/jade_pair_resonance_gag_v1.ogg"
+    ],
+    "source_master_scan": "PASS",
+    "tileclub_gag_scan": "PASS"
+  },
+  "initial": {
+    "game_id": "mahjong",
+    "tiles": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "removed": [],
+    "selected": -1,
+    "score": 0,
+    "moves": 0,
+    "status": "playing"
+  },
+  "actual_action": {
+    "name": "select matching East tiles at indices 0 and 10",
+    "before": {
+      "removed": [],
+      "selected": -1,
+      "score": 0,
+      "moves": 0,
+      "status": "playing"
+    },
+    "after": {
+      "removed": [
+        0,
+        10
+      ],
+      "selected": -1,
+      "score": 50,
+      "moves": 1,
+      "status": "playing"
+    }
+  },
+  "console_errors": [],
+  "request_failures": [],
+  "bad_responses": [],
+  "screenshots": {
+    "stable": {
+      "path": "mahjong-local-stable.png",
+      "sha256": "19b41a66b0cff2e70017dce7a444ddfe84530fd52cee9b316a40f68f1441029c"
+    },
+    "after_pair": {
+      "path": "mahjong-local-after-pair.png",
+      "sha256": "c7e417307bda798eb12ca587b32a29eae7da3ff59a6cec7f1d0992c7a6b7ae5e"
+    }
+  }
+}
