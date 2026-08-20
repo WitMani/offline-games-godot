@@ -1,6 +1,6 @@
 {
   "result": "PASS",
-  "source": "clean git archive of feature commit 249362a",
+  "source": "clean git archive of pre-evidence feature tree 249362a; runtime tree is identical to feature commit 948915a and main commit 6109827",
   "url": "http://127.0.0.1:18788/index.html",
   "ready_seconds": 5.914,
   "secure_context": true,

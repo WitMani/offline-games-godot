@@ -1,0 +1,65 @@
+{
+  "result": "PASS",
+  "release": "20260820T122024Z-ec1636cfbd9b",
+  "url": "https://aliyun-ecs.tail17a64.ts.net:8788/?release=20260820T122024Z-ec1636cfbd9b",
+  "source_commit": "6109827098d93ddc5de990609f210a2478543cda",
+  "ready_seconds_cold_ec2_to_aliyun": 236.862,
+  "secure_context": true,
+  "webassembly": true,
+  "canvas_count": 1,
+  "probe_error": null,
+  "initial": {
+    "game_id": "tripeaks",
+    "state": {"current": 7, "stock": 12, "removed": [], "score": 0, "streak": 0, "moves": 0, "status": "playing"}
+  },
+  "actual_actions": [
+    {
+      "name": "deal from stock",
+      "before": {"current": 7, "stock": 12, "moves": 0},
+      "after": {"current": 12, "stock": 11, "moves": 1}
+    },
+    {
+      "name": "accept adjacent king from tableau index 10",
+      "before": {"current": 12, "removed": [], "score": 0, "streak": 0, "moves": 1},
+      "after": {"current": 13, "removed": [10], "score": 30, "streak": 1, "moves": 2}
+    }
+  ],
+  "artifacts": {
+    "html_sha256": "86b3ae377d213472ccf64e7dbc871ff3e1dc02638d125282cc35ff261642f182",
+    "pck": {
+      "name": "index.ec1636cfbd9b.pck",
+      "sha256": "ec1636cfbd9b64561e45766572292b6f6bc0b86f237e9c672085bede6dbd5600",
+      "bytes": 12977588,
+      "gzip_bytes": 12846220,
+      "http_status": 200,
+      "cache_control": "public, max-age=31536000, immutable",
+      "content_encoding": "gzip"
+    },
+    "engine": {
+      "name": "index.2b558bdb3c3a.wasm",
+      "sha256": "2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137",
+      "bytes": 37686550,
+      "gzip_bytes": 9392911,
+      "http_status": 200,
+      "cache_control": "public, max-age=31536000, immutable",
+      "content_encoding": "gzip"
+    },
+    "pck_contains": [
+      "res://assets/art/cards/tripeaks_card_back_gag_v1.webp",
+      "res://assets/audio/cards/tripeaks_streak_peak_gag_v1.ogg"
+    ],
+    "previous_pack_retained": "index.5f5d3807cf84.pck"
+  },
+  "console_errors": [],
+  "request_failures": [],
+  "bad_responses": [],
+  "audit_browser_warnings": {
+    "count": 4,
+    "type": "SwiftShader ReadPixels performance warning",
+    "production_error": false
+  },
+  "screenshots": {
+    "stable": {"path": "tripeaks-aliyun-stable.png", "sha256": "df0d294f5d489da2dca1dba5ba8491f8acc92094e81f575ed9f3ec175f2523ae"},
+    "after_streak": {"path": "tripeaks-aliyun-after-streak.png", "sha256": "67313009b21f094d127ab101bf30999957de883bc911313d3a122e278a63e423"}
+  }
+}

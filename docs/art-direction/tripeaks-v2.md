@@ -50,4 +50,8 @@ search candidate is included in the repository.
   `tools/tripeaks_presentation_smoke.gd`
 - Provenance ledger:
   `docs/art-direction/tripeaks-v2.gag-asset-ledger.json`
-- Aliyun exact-artifact acceptance will be recorded after the atomic release.
+- Aliyun exact-artifact acceptance:
+  `docs/audit/tripeaks-v2/candidate/web/aliyun-web-acceptance.json`
+
+Accepted release: `20260820T122024Z-ec1636cfbd9b`, sourced from Git commit
+`6109827098d93ddc5de990609f210a2478543cda`.
