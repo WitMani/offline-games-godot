@@ -1,0 +1,42 @@
+{
+  "result": "PASS",
+  "viewport": [540, 960],
+  "scope": "sudoku only",
+  "stable_signature": {
+    "asset": "res://assets/art/logic/gag-v1/sudoku_compass_reward.png",
+    "location": "game header",
+    "approximate_runtime_size": [39, 39],
+    "visible_before_input": true
+  },
+  "events": {
+    "selection": {"grade": 0, "frames": ["01-selection-intent.webp", "02-selection-settle.webp"]},
+    "correct": {"grade": 1, "frames": ["03-correct-intent.webp", "04-correct-impact.webp", "05-correct-settle.webp", "06-correct-recovery.webp"]},
+    "erase": {"grade": 1, "frames": ["07-erase-intent.webp", "08-erase-impact.webp", "09-erase-settle.webp", "10-erase-recovery.webp"]},
+    "error": {"grade": 2, "frames": ["11-error-intent.webp", "12-error-impact.webp", "13-error-settle.webp", "14-error-recovery.webp"]},
+    "block_complete": {"grade": 3, "frames": ["15-block-intent.webp", "16-block-impact.webp", "17-block-settle.webp", "18-block-recovery.webp"]},
+    "board_complete": {"grade": 4, "frames": ["19-complete-intent.webp", "20-complete-impact.webp", "21-complete-settle.webp", "22-complete-recovery-result.webp", "23-result-stable.webp"]}
+  },
+  "state_snapshots": {
+    "correct": {"moves": 1, "mistakes": 0, "status": "playing", "kind": "logic_correct", "grade": 1},
+    "erase": {"moves": 1, "mistakes": 0, "status": "playing", "kind": "logic_erase", "grade": 1},
+    "error": {"moves": 0, "mistakes": 1, "status": "playing", "kind": "logic_error", "grade": 2},
+    "block": {"moves": 1, "mistakes": 0, "status": "playing", "kind": "logic_block_complete", "grade": 3},
+    "complete": {"moves": 1, "mistakes": 0, "score": 1000, "status": "won", "kind": "logic_complete", "grade": 4}
+  },
+  "continuous_peak": {
+    "path": "continuous/sudoku-complete.webm",
+    "frames": 36,
+    "fps": 30,
+    "duration_seconds": 1.2,
+    "sha256": "81158db523f84020f1bba5d3e2d7f61442afda5c691d81f64211f240858a3f16"
+  },
+  "textured_plate_review": {
+    "generated_text_present": false,
+    "digits_font": "NUMBER_FONT",
+    "cjk_font": "UI_FONT",
+    "stable_contrast": "PASS",
+    "impact_contrast": "PASS",
+    "result_contrast": "PASS"
+  }
+}
+
