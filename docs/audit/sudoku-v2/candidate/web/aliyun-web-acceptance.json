@@ -1,0 +1,64 @@
+{
+  "result": "PASS",
+  "release": "20260820T124706Z-3d190f988def",
+  "url": "https://aliyun-ecs.tail17a64.ts.net:8788/?release=20260820T124706Z-3d190f988def",
+  "source_commit": "18553e1443011f43285a3055df34e3220c0be934",
+  "ready_seconds_cold_ec2_to_aliyun": 199.08,
+  "secure_context": true,
+  "webassembly": true,
+  "canvas_count": 1,
+  "probe_error": null,
+  "initial": {
+    "game_id": "sudoku",
+    "state": {"moves": 0, "mistakes": 0, "score": 0, "status": "playing", "selected": [0, 0]},
+    "target_cell_row_1_column_3": 0
+  },
+  "actual_action": {
+    "name": "select empty row 1 column 3 and enter correct digit 4",
+    "selected": [2, 0],
+    "before": {"value": 0, "moves": 0, "mistakes": 0},
+    "after": {"value": 4, "moves": 1, "mistakes": 0, "status": "playing"}
+  },
+  "artifacts": {
+    "html_sha256": "5034d3547f2d1294fc7f541817dc1b3b819dd17e231601882fce682fd80262a6",
+    "pck": {
+      "name": "index.3d190f988def.pck",
+      "sha256": "3d190f988defaf44ab3753c8ed8ce0f06a895b8779482aa7433ccec80e80b9bf",
+      "bytes": 13109712,
+      "gzip_bytes": 12973523,
+      "http_status": 200,
+      "cache_control": "public, max-age=31536000, immutable",
+      "content_encoding": "gzip"
+    },
+    "engine": {
+      "name": "index.2b558bdb3c3a.wasm",
+      "sha256": "2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137",
+      "bytes": 37686550,
+      "gzip_bytes": 9392911,
+      "http_status": 200,
+      "cache_control": "public, max-age=31536000, immutable",
+      "content_encoding": "gzip"
+    },
+    "pck_contains": [
+      "res://assets/art/logic/gag-v1/sudoku_compass_reward.png",
+      "res://assets/audio/logic/gag-v1/sudoku_complete_reward.ogg"
+    ],
+    "source_master_scan": "PASS",
+    "previous_pack_retained": "index.ec1636cfbd9b.pck"
+  },
+  "console_errors": [],
+  "request_failures": [],
+  "bad_responses": [],
+  "audit_browser_warnings": {"count": 0},
+  "screenshots": {
+    "stable": {
+      "path": "sudoku-aliyun-stable.png",
+      "sha256": "fb9573c79dbcde1bb96a16cde621a6573c1a2c88781606b5ff1d2acfa10994c5"
+    },
+    "after_correct": {
+      "path": "sudoku-aliyun-after-correct.png",
+      "sha256": "b453b2577ada8a5ffbd036d52b74c87250a1d951b38ea7f62b7e98b54dc75f07"
+    }
+  }
+}
+

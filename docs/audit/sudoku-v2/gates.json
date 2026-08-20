@@ -1,0 +1,97 @@
+{
+  "result": "PASS",
+  "scope": "sudoku only",
+  "source": {
+    "worktree_feature_commit": "0155370d8d58bb86b7e848235e3b9c8c04b02f7e",
+    "main_feature_commit": "308a450",
+    "deployed_main_commit": "18553e1443011f43285a3055df34e3220c0be934",
+    "gameplay_rules_changed": false,
+    "other_game_rules_changed": false
+  },
+  "gag": {
+    "mode": "HOME-WSL MCP pure API",
+    "server": "game-assets-generator 1.29.0",
+    "image": {
+      "path": "assets/art/logic/gag-v1/sudoku_compass_reward.png",
+      "sha256": "a8980a0667e547c8c8b7486f29a65905126cac2da2af41bfca5ab96afe526c97",
+      "dimensions": [341, 344],
+      "first_visible_beat": "stable gameplay header before input",
+      "runtime_roles": ["header", "3x3 block completion", "full-board completion", "result card"],
+      "result": "PASS"
+    },
+    "audio": {
+      "path": "assets/audio/logic/gag-v1/sudoku_complete_reward.ogg",
+      "sha256": "4be425f00093f2dc47073c0d405f4d2332e32554bc433959ee0c460dff952d12",
+      "duration_seconds": 1.080042,
+      "runtime_event": "logic_complete grade 4",
+      "result": "PASS"
+    },
+    "source_masters_in_repository": 0,
+    "unused_generations_in_repository": 0
+  },
+  "automated": {
+    "sudoku_presentation": {"assertions": 103, "result": "PASS"},
+    "meowdoku_regression": {"assertions": 88, "result": "PASS"},
+    "solitaire_regression": {"assertions": 67, "result": "PASS"},
+    "tripeaks_regression": {"assertions": 62, "result": "PASS"},
+    "rules": {"assertions": 6, "result": "PASS"},
+    "font_coverage": {"assertions": 58, "result": "PASS"},
+    "font_subset": {"required_glyphs": 3874, "bytes": 1815112, "result": "PASS"},
+    "catalog_art": {"assertions": 10, "result": "PASS"},
+    "cover_assets": {"games": 14, "result": "PASS"},
+    "home_buttons": {"games": 14, "result": "PASS"},
+    "all_games": {"games": 14, "result": "PASS"}
+  },
+  "visual": {
+    "viewport": [540, 960],
+    "matched_event_frames": 24,
+    "events": ["stable", "selection", "correct", "erase", "error", "3x3 block completion", "full-board completion", "result"],
+    "continuous_peak": {
+      "path": "candidate/continuous/sudoku-complete.webm",
+      "frames": 36,
+      "fps": 30,
+      "duration_seconds": 1.2,
+      "sha256": "81158db523f84020f1bba5d3e2d7f61442afda5c691d81f64211f240858a3f16"
+    },
+    "textured_plate_contrast_review": "PASS",
+    "generated_text_present": false
+  },
+  "performance": {
+    "renderer": "llvmpipe (LLVM 21.1.8, 256 bits)",
+    "sample_count": 180,
+    "average_frame_ms": 26.6329722222222,
+    "p95_frame_ms": 34.214,
+    "max_frame_ms": 40.65,
+    "peak_static_memory_bytes": 63354863,
+    "active_effect_cap": 12,
+    "note": "Bounded busy-completion software-renderer regression trace; not a physical-device FPS claim",
+    "result": "PASS"
+  },
+  "clean_export": {
+    "source": "git archive of feature commit 0155370d8d58bb86b7e848235e3b9c8c04b02f7e",
+    "pck_sha256": "04049ff7ca4a5c59472e22ff3c85b7fe4afb0a662a9bbf416a2b06302f3cd916",
+    "engine_sha256": "2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137",
+    "pck_contains": [
+      "res://assets/art/logic/gag-v1/sudoku_compass_reward.png",
+      "res://assets/audio/logic/gag-v1/sudoku_complete_reward.ogg"
+    ],
+    "source_master_scan": "PASS",
+    "browser_actual_action": "PASS",
+    "console_errors": 0,
+    "request_failures": 0,
+    "result": "PASS"
+  },
+  "aliyun": {
+    "release": "20260820T124706Z-3d190f988def",
+    "url": "https://aliyun-ecs.tail17a64.ts.net:8788/?release=20260820T124706Z-3d190f988def",
+    "pck_sha256": "3d190f988defaf44ab3753c8ed8ce0f06a895b8779482aa7433ccec80e80b9bf",
+    "engine_sha256": "2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137",
+    "previous_pack_retained": "index.ec1636cfbd9b.pck",
+    "ready_seconds_cold_ec2_to_aliyun": 199.08,
+    "actual_action_result": "PASS",
+    "console_errors": 0,
+    "request_failures": 0,
+    "result": "PASS"
+  }
+}
+
