@@ -121,7 +121,7 @@
     "aliyun": "web/aliyun-web-acceptance.json",
     "actual_action": "tap adjacent cell [1,0] through the visible canvas",
     "local_result": "PASS",
-    "aliyun_result": "pending deployment"
+    "aliyun_result": "PASS"
   },
   "shipping_boundary": {
     "runtime_derivatives": 6,

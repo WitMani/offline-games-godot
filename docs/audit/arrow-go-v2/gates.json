@@ -1,0 +1,137 @@
+{
+  "result": "PASS",
+  "scope": "arrow_go only",
+  "source": {
+    "starting_commit": "d2a7dd040c54f5f652a03cd6e189f554d2f392ff",
+    "feature_commit": "6ef316120314879508032a60cc03c90f18fe9e00",
+    "clean_web_acceptance_commit": "25a9f866339c2cecee6238a28692b615e51c075e",
+    "deployed_source_commit": "25a9f866339c2cecee6238a28692b615e51c075e",
+    "gameplay_rules_changed": false,
+    "shared_path_game_rules_changed": false
+  },
+  "gag": {
+    "mode": "HOME-WSL MCP pure API",
+    "server_version_reported": "0.2.0",
+    "semantic_searches": 3,
+    "visual_runtime_assets": 4,
+    "audio_runtime_assets": 2,
+    "stable_playable_instances": 83,
+    "source_masters_in_repository": 0,
+    "rejected_candidates_in_repository": 0,
+    "subjective_audio_listening_claimed": false,
+    "result": "PASS"
+  },
+  "automated": {
+    "arrow_go_mechanics": {"assertions": 175, "result": "PASS"},
+    "arrow_go_art": {"assertions": 189, "result": "PASS"},
+    "amaze_go_mechanics_regression": {"assertions": 61, "result": "PASS"},
+    "amaze_go_art_regression": {"assertions": 176, "result": "PASS"},
+    "tileclub_regression": {"assertions": 223, "result": "PASS"},
+    "mahjong_regression": {"assertions": 116, "result": "PASS"},
+    "sudoku_regression": {"assertions": 103, "result": "PASS"},
+    "meowdoku_regression": {"assertions": 88, "result": "PASS"},
+    "solitaire_regression": {"assertions": 67, "result": "PASS"},
+    "tripeaks_regression": {"assertions": 62, "result": "PASS"},
+    "merge2048_regression": {"assertions": 7, "result": "PASS"},
+    "merge2248_integration": {"assertions": 10, "result": "PASS"},
+    "merge2248_model": {"assertions": 10, "result": "PASS"},
+    "watermelon_regression": {"assertions": 9, "result": "PASS"},
+    "rules": {"assertions": 6, "result": "PASS"},
+    "catalog_art": {"assertions": 10, "result": "PASS"},
+    "font_coverage": {"assertions": 65, "result": "PASS"},
+    "font_subset": {"required_glyphs": 3879, "bytes": 1816916, "result": "PASS"},
+    "cover_assets": {"games": 14, "result": "PASS"},
+    "home_buttons": {"games": 14, "result": "PASS"},
+    "all_games": {"games": 14, "result": "PASS"}
+  },
+  "visual": {
+    "viewport": [540, 960],
+    "candidate_frames": 22,
+    "baseline_frames": 2,
+    "continuous_step": {
+      "frames": 20,
+      "fps": 30,
+      "duration_seconds": 0.666,
+      "sha256": "5ae001b245837a47dfb261620a6cc4a6f92909953b9415bfa66d0f36dac28acc"
+    },
+    "continuous_complete": {
+      "frames": 42,
+      "fps": 30,
+      "duration_seconds": 1.4,
+      "sha256": "5d2896c10ff567aedb1571974acee06afd93f5c3e1c68416dd8253519c410881"
+    },
+    "generated_text_present": false,
+    "stable_signature_review": "PASS",
+    "ordinary_step_review": "PASS",
+    "wrong_direction_review": "PASS",
+    "waypoint_hierarchy_review": "PASS",
+    "dock_and_result_review": "PASS"
+  },
+  "performance": {
+    "renderer": "llvmpipe (LLVM 21.1.8, 256 bits)",
+    "stable": {
+      "sample_count": 120,
+      "average_frame_ms": 13.9616166666667,
+      "p95_frame_ms": 16.091,
+      "max_frame_ms": 20.435
+    },
+    "busy": {
+      "sample_count": 180,
+      "average_frame_ms": 14.9331611111111,
+      "p95_frame_ms": 17.886,
+      "max_frame_ms": 20.623
+    },
+    "active_effect_cap": 12,
+    "result": "PASS"
+  },
+  "clean_export": {
+    "source": "git archive of feature commit 6ef316120314879508032a60cc03c90f18fe9e00",
+    "pck": "index.1dcb0a3017d7.pck",
+    "pck_sha256": "1dcb0a3017d70cdfea6908d9e97751d949e1b66999375b1e2bfaa57981da3ec5",
+    "pck_bytes": 14138244,
+    "engine": "index.2b558bdb3c3a.wasm",
+    "engine_sha256": "2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137",
+    "engine_bytes": 37686550,
+    "arrow_go_runtime_assets_in_pck": 6,
+    "arrow_go_source_master_scan": "PASS",
+    "browser_ready_seconds": 1.662,
+    "browser_actual_action": "PASS",
+    "console_errors": 0,
+    "request_failures": 0,
+    "bad_responses": 0,
+    "result": "PASS"
+  },
+  "aliyun": {
+    "release": "20260820T153322Z-94cdf396b261",
+    "url": "https://aliyun-ecs.tail17a64.ts.net:8788/?release=20260820T153322Z-94cdf396b261",
+    "pck": "index.94cdf396b261.pck",
+    "pck_sha256": "94cdf396b2614fb2b799b198f55d655299705690b4757d761499c23d1b2a1e66",
+    "pck_bytes": 14138244,
+    "pck_gzip_sha256": "8634123e7254663449aa6adfd0cff982948070d458bc1efbd373bc072f4b4fe9",
+    "pck_gzip_bytes": 13966626,
+    "engine": "index.2b558bdb3c3a.wasm",
+    "engine_sha256": "2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137",
+    "engine_bytes": 37686550,
+    "previous_pack_retained": "index.8a91a10f0ccd.pck",
+    "runtime_assets_in_pck": 6,
+    "immutable_cache": true,
+    "gzip_served": true,
+    "ready_seconds_cold_ec2_to_aliyun": 247.678,
+    "actual_action": {
+      "player_before": [0, 0],
+      "player_after": [1, 0],
+      "destination_painted_before": false,
+      "destination_painted_after": true,
+      "score_after": 5,
+      "moves_after": 1,
+      "streak_after": 1,
+      "status_after": "playing"
+    },
+    "stable_screenshot_sha256": "948475dba3a8407e95ac6ba4f02b28481c17e56e07eeb70ac43994da97877e73",
+    "after_step_screenshot_sha256": "751f3edfdf638ce1a1824147489d64fa457a6893267ce82ac7026ca1fafd0d36",
+    "console_errors": 0,
+    "request_failures": 0,
+    "bad_responses": 0,
+    "result": "PASS"
+  }
+}

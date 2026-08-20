@@ -1,0 +1,77 @@
+{
+  "result": "PASS",
+  "source": "deployed source commit 25a9f866339c2cecee6238a28692b615e51c075e",
+  "url": "https://aliyun-ecs.tail17a64.ts.net:8788/?release=20260820T153322Z-94cdf396b261",
+  "ready_seconds": 247.678,
+  "secure_context": true,
+  "webassembly": true,
+  "canvas_count": 1,
+  "probe_error": null,
+  "initial": {
+    "game_id": "arrow_go",
+    "size": 9,
+    "player": [
+      0,
+      0
+    ],
+    "target": [
+      8,
+      8
+    ],
+    "arrow_rows": 9,
+    "arrow_columns": 9,
+    "before": {
+      "player": [
+        0,
+        0
+      ],
+      "destination_painted": false,
+      "score": 0,
+      "moves": 0,
+      "streak": 0,
+      "status": "playing"
+    }
+  },
+  "actual_action": {
+    "name": "tap visible adjacent cell [1,0]",
+    "logical_canvas_point": [
+      125.667,
+      259.889
+    ],
+    "before": {
+      "player": [
+        0,
+        0
+      ],
+      "destination_painted": false,
+      "score": 0,
+      "moves": 0,
+      "streak": 0,
+      "status": "playing"
+    },
+    "after": {
+      "player": [
+        1,
+        0
+      ],
+      "destination_painted": true,
+      "score": 5,
+      "moves": 1,
+      "streak": 1,
+      "status": "playing"
+    }
+  },
+  "console_errors": [],
+  "request_failures": [],
+  "bad_responses": [],
+  "screenshots": {
+    "stable": {
+      "path": "arrow-go-aliyun-stable.png",
+      "sha256": "948475dba3a8407e95ac6ba4f02b28481c17e56e07eeb70ac43994da97877e73"
+    },
+    "after_step": {
+      "path": "arrow-go-aliyun-after-step.png",
+      "sha256": "751f3edfdf638ce1a1824147489d64fa457a6893267ce82ac7026ca1fafd0d36"
+    }
+  }
+}
