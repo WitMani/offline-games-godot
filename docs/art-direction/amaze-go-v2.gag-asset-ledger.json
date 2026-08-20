@@ -1,0 +1,164 @@
+{
+  "schema_version": "offline-games-gag-ledger/v1",
+  "created_at": "2026-08-20T14:15:00Z",
+  "scope": ["amaze_go"],
+  "starting_commit": "fab3f93b43eead360bbf9a828c427fedbf6823af",
+  "gag": {
+    "endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+    "transport": "MCP Streamable HTTP via direct Python client",
+    "server": "game-assets-generator",
+    "server_version_reported": "0.2.0",
+    "tools_count": 21,
+    "health_checked_at": "2026-08-20",
+    "execution_mode": {
+      "local_gpu": false,
+      "main_service_pytorch": false,
+      "semantic_embedding": "Gemini API",
+      "image": "fal.ai API",
+      "background_removal": "Remove.bg API",
+      "audio": "ElevenLabs API",
+      "openrouter_available": true
+    }
+  },
+  "semantic_searches": [
+    {
+      "id": "amaze_go_visual_search",
+      "query": "无文字 正视图 黄铜珐琅 测绘罗盘棋子 发条探索者 地图终点航标 透明背景 卡通游戏素材",
+      "result_count": 12,
+      "candidates": [
+        ["card-spring-scout.png", 0.46303215752620897],
+        ["generated_images__20260820_183644_Gemini.png", 0.44931525715301107],
+        ["generated_images__20260820_183633_Gemini_nobg_20260820_183911_cropped.png", 0.4168849146792291],
+        ["2048-tile-surface-C6nXGAid.png", 0.41606493058535166],
+        ["2048-tile-surface.png", 0.41606493058535166],
+        ["kenney_magic_03.png", 0.40932452587514173],
+        ["generated_images__20260820_183633_Gemini_nobg_20260820_183911.png", 0.4083302467817054],
+        ["vfx-coin-token.png", 0.4070692505853567],
+        ["ring_2.png", 0.4045267833317806],
+        ["ring_2_97740.png", 0.4045267833317806],
+        ["item_magicwand.png", 0.4024027839791043],
+        ["item_magicwand_53783.png", 0.4024027839791043]
+      ],
+      "decision": "reject all and generate",
+      "reason": "The scout was a card character rather than a top-down board token; logic badges, 2048 surfaces, generic rings, coin and wand did not form a clockwork cartography pawn/beacon family."
+    },
+    {
+      "id": "amaze_go_audio_search",
+      "query": "黄铜罗盘 咔哒 墨水落印 路径点亮 终点地图盖章 游戏音效",
+      "result_count": 12,
+      "candidates": [
+        ["music_20251213_095552_dark_ominous_boss_battle_theme.mp3", 0.5884310979423287],
+        ["music_20251213_095552_dark_ominous_boss_battle_theme_602253.mp3", 0.5884310979423287],
+        ["music_20260330_002207_peaceful_ambient_exploration_m_loop.mp3", 0.587121962139301],
+        ["music_20260330_002207_peaceful_ambient_exploration_m.wav", 0.58134415995617],
+        ["c8b142fec15c015c1d58606aa244cdbbb5da8d60c5163b509fb6ee88477e4a8b.mp3", 0.5787588937195759],
+        ["bgm_boss.mp3", 0.5743772639977947],
+        ["bgm_boss_722349.mp3", 0.5743772639977947],
+        ["music_20251212_142040_dark_ominous_boss_battle_theme.mp3", 0.5743772639977947],
+        ["garden_boss_bgm.mp3", 0.5703893399159672],
+        ["music_20251213_154333_fast_paced_chase_music__urgent.mp3", 0.5703893399159672],
+        ["9ae2596021b09a7672ec8ee8fc23247145d28d3e3778695b11600c20eff5c5d2.mp3", 0.5698735489837977],
+        ["music_20260330_002128_calm_menu_background_music__pi.wav", 0.5695125282496636]
+      ],
+      "decision": "reject all and generate",
+      "reason": "The results were long-form boss, chase, menu or exploration music rather than short brass-ratchet, ink-pin and destination-seal feedback."
+    }
+  ],
+  "image_generations": [
+    {
+      "asset_id": "gag-image-20260820-220520-fal",
+      "status": "rejected",
+      "provider": "fal.ai",
+      "model": "fal-ai/flux-pro/v1.1",
+      "server_source": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/path_games/gag-v1/amaze_go/generated_images__20260820_220520_FAL.ai.png",
+      "source_encoding": "JPEG payload with .png suffix",
+      "source_sha256": "c2e820d93293e598af5b9b57c1c8c30010a5a3b45ec01ed840c163cf8d6bcac0",
+      "prompt_summary": "isolated aged-brass and cobalt pocket-compass surveyor; no cardinal letters or text",
+      "rejection_reason": "fal.ai rendered prominent N/E/S/W letters and therefore failed the no-generated-text and small-size legibility gate"
+    },
+    {
+      "asset_id": "gag-image-20260820-220717-fal",
+      "status": "selected_repair",
+      "provider": "fal.ai",
+      "model": "fal-ai/flux-pro/v1.1",
+      "seed": null,
+      "server_source": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/path_games/gag-v1/amaze_go/generated_images__20260820_220717_FAL.ai.png",
+      "source_encoding": "JPEG payload with .png suffix",
+      "source_sha256": "25a693d4ac193e814dde5d4dff3547f657f336e2beafec2e61fc8283d82da324",
+      "prompt": "One isolated production-ready 2D cartoon board-game pawn, orthographic exact top-down view: a tiny round clockwork cartographer beetle / survey rover. Chunky aged-brass crescent legs and gear tabs form a clear circular silhouette, deep cobalt-blue enamel shell, one large ivory glass survey lens at the center, and one short coral-red feeler pointing straight upward to show its facing direction. Tiny screws, soft dark contact shadow, bright worn edge highlight. Friendly mechanical object, not a real insect and not a compass. Exact centered symmetrical body, readable at 52 pixels. Exactly one pawn only. The surface must be completely blank: no cardinal letters, no alphabet, no words, no numbers, no tick labels, no compass rose, no arrows, no symbols, no logo, no UI, no map, no maze, no separate props, no human, no hands. Plain neutral gray background with strong separation for later background removal.",
+      "style_reference_prompt": "Premium warm cartoon cartography game art, chunky tactile pocket-toy proportions, aged brass, ivory enamel, deep cobalt cyanotype and restrained coral, layered contact shadow/body/bevel/edge highlight, readable at 52 pixels, orthographic and not photoreal.",
+      "derivations": [
+        {"tool": "remove_background", "provider": "removebg", "sha256": "378e2399e64feda208976f84c778cf0d848f0f892e03dcd532586db1b3bfd8d6", "size": [500, 500]},
+        {"tool": "crop_image", "mode": "auto_trim", "padding": 6, "sha256": "baeb571dcb42962905a0f7c8dd8ff15f71625e7954739fb57cba746e62d4eddc", "size": [358, 347]}
+      ],
+      "runtime_asset": "res://assets/art/catalog/path_games/gag/amaze_go_surveyor_gag_v1.png",
+      "runtime_sha256": "baeb571dcb42962905a0f7c8dd8ff15f71625e7954739fb57cba746e62d4eddc",
+      "first_visible_beat": "untouched opening board at cell [0,0], approximately 58x58 draw rect",
+      "runtime_references": ["stable player pawn", "legal-step travel", "wall recoil", "terminal arrival", "result plaque"]
+    },
+    {
+      "asset_id": "gag-image-20260820-220519-fal",
+      "status": "selected",
+      "provider": "fal.ai",
+      "model": "fal-ai/flux-pro/v1.1",
+      "seed": null,
+      "server_source": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/path_games/gag-v1/amaze_go/generated_images__20260820_220519_FAL.ai.png",
+      "source_encoding": "JPEG payload with .png suffix",
+      "source_sha256": "cef2dffb1bd172de47b36f0b69a8d3e3d4c5e3decc395e01faebb4ab729692e0",
+      "prompt": "One isolated production-ready 2D cartoon destination beacon token, orthographic top-down front-facing view: a circular cartographer seal with an aged-brass outer ring, scalloped ivory parchment layer, restrained coral-red wax center, and one bold raised eight-point destination-star / map-pin silhouette in warm gold. Chunky tactile board-game piece, tiny rivets, soft dark contact shadow and bright worn edge highlight, exact centered symmetrical silhouette, readable at 50 pixels. Exactly one token only. No compass letters, no arrows, no words, no numbers, no labels, no text, no logo, no UI, no map, no maze, no separate props, no character, no hands. Plain neutral gray background with strong separation for later background removal.",
+      "style_reference_prompt": "Premium warm cartoon cartography game art, chunky tactile pocket-toy proportions, aged brass, ivory enamel, deep cobalt cyanotype and restrained coral wax, layered contact shadow/body/bevel/edge highlight, readable at 52 pixels, orthographic and not photoreal.",
+      "derivations": [
+        {"tool": "remove_background", "provider": "removebg", "sha256": "cb3e479237e6e9e49bef6e02d0c923822d55a36738c96e37b99d3205c31d6f18", "size": [500, 500]},
+        {"tool": "crop_image", "mode": "auto_trim", "padding": 6, "sha256": "15ac1714e7d0bce2331b6c5280d2b6366598453d7ea9cd4299ffbe7e0282e6c8", "size": [393, 398]}
+      ],
+      "runtime_asset": "res://assets/art/catalog/path_games/gag/amaze_go_beacon_gag_v1.png",
+      "runtime_sha256": "15ac1714e7d0bce2331b6c5280d2b6366598453d7ea9cd4299ffbe7e0282e6c8",
+      "first_visible_beat": "untouched opening board at target cell [5,5], approximately 54x54 draw rect",
+      "runtime_references": ["stable destination beacon", "terminal arrival", "result plaque"]
+    }
+  ],
+  "audio_generations": [
+    {
+      "asset_id": "amaze_go_survey_ratchet",
+      "version": "v1",
+      "provider": "elevenlabs",
+      "model": "eleven_text_to_sound_v2",
+      "delivery_digest": "2f79929fc319b65db716afe8588adc81b1aca0cbca52a0ea680cdefc94ce5f6d",
+      "prompt": "A very short tactile cartoon board-game movement sound: one tiny aged-brass clockwork ratchet advances exactly one notch, followed by a soft blueprint-paper ink pin tap. Crisp warm mechanical click, quick attack and fast clean decay, subtle and repeatable, no voice, no speech, no music, no ambience.",
+      "variations": 2,
+      "selected_variation": 1,
+      "source_master_remote": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/path_games/gag-v1/amaze_go/sfx/amaze_go_survey_ratchet/v1/amaze_go_survey_ratchet_01_master.wav",
+      "source_sha256": "c3d6de913e1ce36116bc8703cc7689e2a0a2c969ee6a7a33279a6e5ed76d8c78",
+      "source_qa": {"status": "issues_detected", "duration_seconds": 0.56, "sample_rate": 48000, "channels": 1, "measured_lufs": -16.97, "measured_true_peak_db": -2.81, "trailing_silence_ms": 100.333},
+      "derivation": "ffmpeg trailing-silence trim then loudnorm target I=-18/TP=-2/LRA=5; 48 kHz mono; libvorbis q5",
+      "runtime_asset": "res://assets/audio/catalog/path_games/gag/amaze_go_survey_ratchet_gag_v1.ogg",
+      "runtime_sha256": "84ebcbb7a852593d8a20ab983afdbeb6e99ec205d59ea74520ff1254cff2d442",
+      "runtime_qa": {"duration_seconds": 0.499021, "sample_rate": 48000, "channels": 1, "measured_lufs": -18.15, "measured_true_peak_db": -4.85},
+      "runtime_reference": "amaze_go path_step grades 1 and 2"
+    },
+    {
+      "asset_id": "amaze_go_destination_seal",
+      "version": "v1",
+      "provider": "elevenlabs",
+      "model": "eleven_text_to_sound_v2",
+      "delivery_digest": "aea69a360913e986fd4cca9eea957292f0b8e015e193000702d095268c9a4408",
+      "prompt": "A short satisfying cartoon puzzle completion sound: a small brass cartographer iris locks into place, a coral wax seal stamps onto parchment with a tactile thump, then one restrained bright glass navigation chime. Warm handcrafted expedition tone, clear impact and short decay, no voice, no speech, no music, no ambience.",
+      "variations": 2,
+      "selected_variation": 2,
+      "source_master_remote": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/path_games/gag-v1/amaze_go/sfx/amaze_go_destination_seal/v1/amaze_go_destination_seal_02_master.wav",
+      "source_sha256": "2044d3915975d58d3da663b7ac30f8e849ca881a3d50127dc7486dff2c172630",
+      "source_qa": {"status": "issues_detected", "duration_seconds": 0.843083, "sample_rate": 48000, "channels": 1, "measured_lufs": -26.21, "measured_true_peak_db": -1.01, "trailing_silence_ms": 4.271},
+      "derivation": "ffmpeg silence trim, +22 dB body gain and -1.94 dBFS limiter; 48 kHz mono; libvorbis q5",
+      "runtime_asset": "res://assets/audio/catalog/path_games/gag/amaze_go_destination_seal_gag_v1.ogg",
+      "runtime_sha256": "7c6b5ae0487662e8e08b908ff5aaada815700b055e80f3acfbb38f9e5cf66c7b",
+      "runtime_qa": {"duration_seconds": 0.537542, "sample_rate": 48000, "channels": 1, "measured_lufs": -17.89, "measured_true_peak_db": -1.62},
+      "runtime_reference": "amaze_go path_complete grade 4"
+    }
+  ],
+  "shipping_boundary": {
+    "source_masters_in_repository": 0,
+    "rejected_generations_in_repository": 0,
+    "only_runtime_derivatives_ship": true,
+    "ephemeral_download_urls": "omitted because signed URLs expire"
+  }
+}

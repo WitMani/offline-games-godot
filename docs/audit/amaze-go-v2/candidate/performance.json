@@ -1,0 +1,26 @@
+{
+  "busy": {
+    "average_frame_ms": 10.3863666666667,
+    "max_frame_ms": 16.923,
+    "p95_frame_ms": 13.107,
+    "peak_static_memory_bytes": 61225379,
+    "sample_count": 180
+  },
+  "busy_case": "grade-4 destination seal, generated beacon/surveyor, ordered route, wall materials, catalog burst, real GAG seal sound and haptic route retriggered every 60 frames",
+  "catalog_effect_cap": 12,
+  "game_id": "amaze_go",
+  "note": "Software-renderer regression trace; not a physical-device FPS claim.",
+  "renderer": "llvmpipe (LLVM 21.1.8, 256 bits)",
+  "runtime": "Godot 4.6-stable (official) / Xvfb llvmpipe",
+  "stable": {
+    "average_frame_ms": 9.750125,
+    "max_frame_ms": 15.368,
+    "p95_frame_ms": 12.092,
+    "peak_static_memory_bytes": 61180057,
+    "sample_count": 120
+  },
+  "viewport": [
+    540,
+    960
+  ]
+}

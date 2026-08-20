@@ -1,0 +1,83 @@
+{
+  "event": {
+    "duration": 1.12,
+    "font_role": "ui_cjk",
+    "game_id": "amaze_go",
+    "grade": 4,
+    "kind": "path_complete",
+    "label": "全域完成"
+  },
+  "game_id": "amaze_go",
+  "motion_kind": "path",
+  "moves": 12,
+  "object_fx": {
+    "direction": "(1, 0)",
+    "duration": 1.12,
+    "from": "(376.5, 630.1667)",
+    "grade": 4,
+    "kind": "complete",
+    "route_index": 12,
+    "to": "(448.1667, 630.1667)"
+  },
+  "painted_count": 13,
+  "player": [
+    5,
+    5
+  ],
+  "route": [
+    [
+      0,
+      0
+    ],
+    [
+      1,
+      0
+    ],
+    [
+      2,
+      0
+    ],
+    [
+      3,
+      0
+    ],
+    [
+      4,
+      0
+    ],
+    [
+      5,
+      0
+    ],
+    [
+      5,
+      1
+    ],
+    [
+      5,
+      2
+    ],
+    [
+      5,
+      3
+    ],
+    [
+      5,
+      4
+    ],
+    [
+      4,
+      4
+    ],
+    [
+      4,
+      5
+    ],
+    [
+      5,
+      5
+    ]
+  ],
+  "score": 160,
+  "status": "won"
+}

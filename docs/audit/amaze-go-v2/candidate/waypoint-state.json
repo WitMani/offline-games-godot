@@ -1,0 +1,55 @@
+{
+  "event": {
+    "duration": 0.7,
+    "font_role": "ui_cjk",
+    "game_id": "amaze_go",
+    "grade": 2,
+    "kind": "path_step",
+    "label": "轨迹 ×5"
+  },
+  "game_id": "amaze_go",
+  "motion_kind": "path",
+  "moves": 5,
+  "object_fx": {
+    "direction": "(1, 0)",
+    "duration": 0.7,
+    "from": "(376.5, 271.8333)",
+    "grade": 2,
+    "kind": "waypoint",
+    "route_index": 5,
+    "to": "(448.1667, 271.8333)"
+  },
+  "painted_count": 6,
+  "player": [
+    5,
+    0
+  ],
+  "route": [
+    [
+      0,
+      0
+    ],
+    [
+      1,
+      0
+    ],
+    [
+      2,
+      0
+    ],
+    [
+      3,
+      0
+    ],
+    [
+      4,
+      0
+    ],
+    [
+      5,
+      0
+    ]
+  ],
+  "score": 25,
+  "status": "playing"
+}

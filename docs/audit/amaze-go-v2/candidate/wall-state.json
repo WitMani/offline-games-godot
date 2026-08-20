@@ -1,0 +1,36 @@
+{
+  "event": {
+    "duration": 0.62,
+    "font_role": "ui_cjk",
+    "game_id": "amaze_go",
+    "grade": 2,
+    "kind": "path_reject_wall",
+    "label": "蓝图有墙"
+  },
+  "game_id": "amaze_go",
+  "motion_kind": "path",
+  "moves": 0,
+  "object_fx": {
+    "contact": "(125.6667, 558.5)",
+    "direction": "(1, 0)",
+    "duration": 0.44,
+    "from": "(89.83334, 558.5)",
+    "grade": 2,
+    "kind": "wall_reject",
+    "segment_a": "(125.6667, 524.1)",
+    "segment_b": "(125.6667, 592.9)"
+  },
+  "painted_count": 1,
+  "player": [
+    0,
+    4
+  ],
+  "route": [
+    [
+      0,
+      4
+    ]
+  ],
+  "score": 0,
+  "status": "playing"
+}
