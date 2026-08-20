@@ -1,0 +1,34 @@
+{
+  "checked_at": "2026-08-20T11:06:33Z",
+  "commit": "49d09fe",
+  "release": "20260820T110106Z-560f0ac9978e",
+  "url": "https://aliyun-ecs.tail17a64.ts.net:8788/?release=20260820T110106Z-560f0ac9978e",
+  "engine_bundle": "index.2b558bdb3c3a",
+  "main_pack": "index.560f0ac9978e.pck",
+  "transport": {
+    "https": true,
+    "secure_context": true,
+    "webassembly": true,
+    "pck_content_encoding": "gzip",
+    "immutable_cache": true
+  },
+  "browser": {
+    "product": "Google Chrome headless",
+    "renderer": "SwiftShader WebGL2",
+    "viewport": [540, 960],
+    "console_errors": [],
+    "request_failures": []
+  },
+  "acceptance": {
+    "home_ready": true,
+    "catalog_size": 14,
+    "opened_game_id": "merge2048",
+    "screen": "game",
+    "status": "playing",
+    "target": 2048
+  },
+  "screenshot": {
+    "path": "docs/audit/merge2048-v2/online-aliyun.png",
+    "sha256": "e9d65c5573b8c902bbb84c5844d07e9b500d272acf52299094514dcd82124ab9"
+  }
+}

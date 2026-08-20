@@ -20,6 +20,9 @@ as evidence; the selected frames show the assets in the live game.
 - `semantic-snapshot.json`: final rule state, event semantics, and runtime asset
   manifest.
 - `performance.json`: comparative empty/full/busy llvmpipe trace.
+- `online-aliyun.png` and `web-acceptance.json`: the fingerprinted Aliyun
+  release booted in Chromium/SwiftShader, opened into classic 2048, with secure
+  context and WebAssembly true and no console or request failures.
 
 Human inspection on 2026-08-20 confirmed that the four material tiers remain
 distinct at gameplay size, all values are readable, the GAG wood-shaving asset
