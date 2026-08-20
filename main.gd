@@ -52,6 +52,7 @@ const MERGE2248_BG_TEXTURE: Texture2D = preload("res://assets/art/merge2248/cand
 const SNAKE_GARDEN_TEXTURE: Texture2D = preload("res://assets/art/snake/modern_garden.webp")
 const SNAKE_GB_TEXTURE: Texture2D = preload("res://assets/art/snakes/gb_handheld.webp")
 const SNAKES_DOODLE_TEXTURE: Texture2D = preload("res://assets/art/snakes/arena_doodles.webp")
+const SOLITAIRE_CARD_BACK_TEXTURE: Texture2D = preload("res://assets/art/cards/solitaire_card_back_gag_v1.webp")
 const SNAKE_RULES = preload("res://snake_model.gd")
 const SNAKE_GB_RULES = preload("res://models/snake_gb_model.gd")
 const SNAKES_ARENA_RULES = preload("res://models/snakes_arena_model.gd")
@@ -79,6 +80,7 @@ const SFX_LOGIC_ERROR: AudioStream = preload("res://assets/audio/logic/correctio
 const SFX_LOGIC_BLOCK: AudioStream = preload("res://assets/audio/logic/block_stamp.wav")
 const SFX_LOGIC_COMPLETE: AudioStream = preload("res://assets/audio/logic/folio_complete.wav")
 const SFX_MEOW_GAG_COMPLETE: AudioStream = preload("res://assets/audio/logic/gag-v1/meowdoku_complete_reward.ogg")
+const SFX_SOLITAIRE_CARD_SETTLE: AudioStream = preload("res://assets/audio/cards/solitaire_card_settle_gag_v1.ogg")
 
 var catalog: Array = [
 	{"id":"merge2248", "title":"2248", "subtitle":"数字连线", "group":"数字", "accent":Color("ffbf2f"), "desc":"八方向连接数字，把相邻数合成到 2048"},
@@ -392,12 +394,21 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 				_: _haptic_pattern([18, 14, 25, 14, 38])
 	else:
 		var event_grade := clampi(grade, 1, 4)
-		_play_sfx(SFX_SNAKE_EAT if event_grade >= 2 else SFX_SNAKE_KEY, -17.0 + float(event_grade) * 1.5, 0.92 + float(event_grade) * 0.09)
+		var event_sfx := _catalog_event_sfx(kind, event_grade)
+		var event_volume := -17.0 + float(event_grade) * 1.5
+		if event_sfx == SFX_SOLITAIRE_CARD_SETTLE:
+			event_volume = -11.5 + float(event_grade) * 1.1
+		_play_sfx(event_sfx, event_volume, 0.92 + float(event_grade) * 0.09)
 		if event_grade == 1:
 			_haptic(8)
 		else:
 			_haptic_pattern([10 + event_grade * 4, 16, 18 + event_grade * 9])
 	queue_redraw()
+
+func _catalog_event_sfx(kind: String, grade: int) -> AudioStream:
+	if game_id == "solitaire" and kind in ["card_draw", "card_recycle", "card_move", "foundation_place", "solitaire_win"]:
+		return SFX_SOLITAIRE_CARD_SETTLE
+	return SFX_SNAKE_EAT if grade >= 2 else SFX_SNAKE_KEY
 
 func _play_meowdoku_event_sfx(kind: String, grade: int) -> void:
 	if "error" in kind:
@@ -1084,6 +1095,7 @@ func _draw_game() -> void:
 		draw_rect(Rect2(toast_x, 129, 5, 42), Color(feedback_color, alpha))
 		_draw_center(feedback_text, Vector2(toast_x + 123, 150), 13, Color(INK, alpha))
 	_draw_motion_overlay()
+	_draw_solitaire_object_fx()
 	_draw_impact_fx()
 	_draw_catalog_fx()
 
@@ -1256,6 +1268,84 @@ func _draw_motion_overlay() -> void:
 			draw_line(motion_from, position, Color(motion_color, 0.46 * alpha), 8.0)
 			draw_circle(position, 11.0 + sin(progress * PI) * 4.0, Color(motion_color, 0.92))
 
+func _card_event_phase_at(effect: Dictionary, now: float) -> String:
+	var duration := maxf(0.001, float(effect.get("duration", 0.72)))
+	var t := clampf((now - float(effect.get("started", now))) / duration, 0.0, 1.0)
+	if t < 0.16:
+		return "intent"
+	if t < 0.36:
+		return "anticipation"
+	if t < 0.74:
+		return "impact"
+	return "settle"
+
+func _card_event_progress(effect: Dictionary) -> float:
+	var duration := maxf(0.001, float(effect.get("duration", 0.72)))
+	return clampf((elapsed - float(effect.get("started", elapsed))) / duration, 0.0, 1.0)
+
+func _latest_solitaire_effect() -> Dictionary:
+	if game_id != "solitaire":
+		return {}
+	for index in range(catalog_fx.size() - 1, -1, -1):
+		var effect: Dictionary = catalog_fx[index]
+		if str(effect.get("game_id", "")) == "solitaire":
+			return effect
+	return {}
+
+func _solitaire_reject_offset(column: int) -> Vector2:
+	var effect := _latest_solitaire_effect()
+	if effect.is_empty() or "reject" not in str(effect.get("kind", "")):
+		return Vector2.ZERO
+	if int(effect.get("column", -1)) != column:
+		return Vector2.ZERO
+	var t := _card_event_progress(effect)
+	var envelope := pow(1.0 - t, 2.0)
+	return Vector2(sin(t * PI * 11.0) * 7.0 * envelope, 2.5 * sin(t * PI) * envelope)
+
+func _draw_solitaire_object_fx() -> void:
+	if game_id != "solitaire":
+		return
+	for effect in catalog_fx:
+		if str(effect.get("game_id", "")) != "solitaire" or not effect.has("from") or not effect.has("to"):
+			continue
+		var kind := str(effect.get("kind", ""))
+		if "reject" in kind or "select" in kind:
+			continue
+		var t := _card_event_progress(effect)
+		var from: Vector2 = effect.get("from", Vector2.ZERO)
+		var to: Vector2 = effect.get("to", from)
+		var grade := clampi(int(effect.get("grade", 1)), 1, 4)
+		var position := from
+		var scale_value := Vector2.ONE
+		var rotation := 0.0
+		if t < 0.16:
+			var press := sin(t / 0.16 * PI)
+			position += Vector2(0, 3.5 * press)
+			scale_value = Vector2(1.0 + press * 0.05, 1.0 - press * 0.08)
+		elif t < 0.74:
+			var travel_t := clampf((t - 0.16) / 0.58, 0.0, 1.0)
+			var eased := 1.0 - pow(1.0 - travel_t, 3.0)
+			position = from.lerp(to, eased)
+			position.y -= sin(travel_t * PI) * (34.0 + float(grade) * 7.0)
+			rotation = sin(travel_t * PI) * 0.085 * signf(to.x - from.x)
+			if bool(effect.get("flip", false)):
+				scale_value.x = maxf(0.12, abs(cos(travel_t * PI)))
+		else:
+			var settle_t := clampf((t - 0.74) / 0.26, 0.0, 1.0)
+			var bounce := sin(settle_t * PI) * (0.055 + float(grade) * 0.016)
+			position = to + Vector2(0, -sin(settle_t * PI) * 4.0)
+			scale_value = Vector2.ONE * (1.0 + bounce)
+		var card_size: Vector2 = effect.get("card_size", Vector2(58, 80))
+		var rank := clampi(int(effect.get("rank", 1)), 1, 13)
+		var suit := posmod(int(effect.get("suit", 0)), 4)
+		var accent: Color = effect.get("color", AMBER)
+		draw_set_transform(position, rotation, scale_value)
+		if bool(effect.get("back", false)) and t >= 0.48:
+			_draw_card_back(Rect2(-card_size * 0.5, card_size), accent)
+		else:
+			_draw_playing_card(Rect2(-card_size * 0.5, card_size), rank, accent, suit, 0.42 + float(grade) * 0.10)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
 func _status_label() -> String:
 	match str(state.get("status", "playing")):
 		"won": return "已完成"
@@ -1302,25 +1392,71 @@ func _draw_status_badge(text: String, pos: Vector2, color: Color, positive: bool
 		draw_colored_polygon(PackedVector2Array([marker.position + Vector2(5, 0), marker.position + Vector2(10, 10), marker.position]), color)
 	_draw_center(text, pos + Vector2(width * 0.5 + 6, 15), 12, color)
 
-func _draw_playing_card(rect: Rect2, rank: int, accent: Color = RED, suit_index := -1) -> void:
-	_draw_panel(Rect2(rect.position + Vector2(0, 4), rect.size), Color(0, 0, 0, 0.30), Color.TRANSPARENT, 6, 0)
-	_draw_panel(rect, WARM_PAPER, Color(accent, 0.64), 6, 1)
+func _draw_playing_card(rect: Rect2, rank: int, accent: Color = RED, suit_index := -1, emphasis := 0.0) -> void:
+	if game_id != "solitaire":
+		_draw_panel(Rect2(rect.position + Vector2(0, 4), rect.size), Color(0, 0, 0, 0.30), Color.TRANSPARENT, 6, 0)
+		_draw_panel(rect, WARM_PAPER, Color(accent, 0.64), 6, 1)
+		var other_suit := posmod(rank - 1, 4) if suit_index < 0 else posmod(suit_index, 4)
+		var other_red_suit := other_suit == 1 or other_suit == 3
+		var other_card_color := Color("c93f55") if other_red_suit else Color("182136")
+		var other_rank_label := _card_rank(rank)
+		var other_suit_label: String = ["♠", "♥", "♣", "◆"][other_suit]
+		_draw_text_font(LATIN_FONT, other_rank_label, rect.position + Vector2(6, 18), max(10, int(rect.size.x * 0.18)), other_card_color)
+		_draw_center_font(SYMBOL_FONT, other_suit_label, rect.get_center() + Vector2(0, 7), max(15, int(rect.size.x * 0.28)), other_card_color)
+		_draw_text_font(LATIN_FONT, other_rank_label, rect.end - Vector2(7 + max(8, int(rect.size.x * 0.18)) * 0.52, 7), max(8, int(rect.size.x * 0.16)), other_card_color)
+		return
+	var radius := maxi(3, int(rect.size.x * 0.095))
+	var shadow_drop := 4.0 + emphasis * 2.0
+	_draw_panel(Rect2(rect.position + Vector2(0, shadow_drop), rect.size), Color("05070d", 0.34 + emphasis * 0.08), Color.TRANSPARENT, radius, 0)
+	_draw_panel(Rect2(rect.position + Vector2(0, 1), rect.size), Color("e4d6b9"), Color(accent.darkened(0.36), 0.72), radius, 1)
+	var face := rect.grow(-1.5)
+	_draw_panel(face, Color("fff9ec"), Color("fffef7", 0.86), maxi(2, radius - 1), 1)
+	draw_line(face.position + Vector2(5, 4), Vector2(face.end.x - 5, face.position.y + 4), Color(Color.WHITE, 0.78), 1.5, true)
+	if rect.size.x >= 48.0:
+		for fibre in range(3):
+			var fibre_y := face.position.y + 24.0 + float(fibre) * maxf(12.0, face.size.y * 0.19)
+			draw_line(Vector2(face.position.x + 7, fibre_y), Vector2(face.end.x - 7, fibre_y + 1), Color("9a805e", 0.035), 1.0)
 	var suit := posmod(rank - 1, 4) if suit_index < 0 else posmod(suit_index, 4)
 	var red_suit := suit == 1 or suit == 3
-	var card_color := Color("c93f55") if red_suit else Color("182136")
+	var card_color := Color("c94458") if red_suit else Color("172239")
 	var rank_label := _card_rank(rank)
-	var suit_label: String = ["♠", "♥", "♣", "◆"][suit]
-	_draw_text_font(LATIN_FONT, rank_label, rect.position + Vector2(6, 18), max(10, int(rect.size.x * 0.18)), card_color)
-	_draw_center_font(SYMBOL_FONT, suit_label, rect.get_center() + Vector2(0, 7), max(15, int(rect.size.x * 0.28)), card_color)
-	_draw_text_font(LATIN_FONT, rank_label, rect.end - Vector2(7 + max(8, int(rect.size.x * 0.18)) * 0.52, 7), max(8, int(rect.size.x * 0.16)), card_color)
+	var suit_label: String = ["♠", "♥", "♣", "♦"][suit]
+	var corner_size := maxi(9, int(rect.size.x * 0.20))
+	_draw_text_font(LATIN_FONT, rank_label, rect.position + Vector2(6, 17), corner_size, card_color)
+	_draw_text_font(SYMBOL_FONT, suit_label, rect.position + Vector2(6, 29), maxi(8, int(rect.size.x * 0.16)), Color(card_color, 0.92))
+	var center_size := maxi(13, int(rect.size.x * (0.34 + emphasis * 0.025)))
+	if rect.size.x >= 36.0:
+		draw_circle(rect.get_center() + Vector2(0, 4), rect.size.x * 0.22, Color(card_color, 0.045 + emphasis * 0.035))
+		_draw_center_font(SYMBOL_FONT, suit_label, rect.get_center() + Vector2(0, 8), center_size, card_color)
+	var lower_rank_size := maxi(8, int(rect.size.x * 0.17))
+	_draw_text_font(LATIN_FONT, rank_label, rect.end - Vector2(7 + lower_rank_size * 0.52, 7), lower_rank_size, card_color)
+	if emphasis > 0.01:
+		draw_arc(rect.get_center(), minf(rect.size.x, rect.size.y) * 0.58, -PI * 0.82, PI * 0.12, 18, Color(accent.lightened(0.30), minf(0.82, 0.28 + emphasis * 0.42)), 2.0, true)
 
 func _draw_card_back(rect: Rect2, accent: Color) -> void:
+	if game_id == "solitaire":
+		var radius := maxi(3, int(rect.size.x * 0.095))
+		_draw_panel(Rect2(rect.position + Vector2(0, 5), rect.size), Color("05070d", 0.36), Color.TRANSPARENT, radius, 0)
+		_draw_panel(rect, Color("174236"), Color("d7b965", 0.86), radius, 2)
+		if SOLITAIRE_CARD_BACK_TEXTURE != null and rect.size.x >= 34.0:
+			var material_rect := rect.grow(-3.0)
+			draw_texture_rect(SOLITAIRE_CARD_BACK_TEXTURE, material_rect, false, Color.WHITE)
+			draw_rect(material_rect, Color("d7b965", 0.54), false, 1.2)
+			draw_line(material_rect.position + Vector2(3, 3), Vector2(material_rect.end.x - 3, material_rect.position.y + 3), Color(Color.WHITE, 0.28), 1.0, true)
+			return
+		var solitaire_inset := rect.grow(-5)
+		_draw_panel(solitaire_inset, Color(accent.darkened(0.35), 0.58), Color("d7b965", 0.66), maxi(2, radius - 2), 1)
+		draw_circle(rect.get_center(), rect.size.x * 0.15, Color("d7b965", 0.62))
+		return
 	_draw_panel(Rect2(rect.position + Vector2(0, 4), rect.size), Color(0, 0, 0, 0.30), Color.TRANSPARENT, 6, 0)
 	_draw_panel(rect, Color("26355a"), Color(WARM_PAPER, 0.66), 6, 2)
 	var inset := rect.grow(-6)
 	_draw_panel(inset, Color(accent, 0.22), Color(accent, 0.62), 3, 1)
 	for y in range(int(inset.position.y + 4), int(inset.end.y), 8):
 		draw_line(Vector2(inset.position.x + 3, y), Vector2(inset.end.x - 3, y), Color(WARM_PAPER, 0.12), 1.0)
+
+func _card_back_texture() -> Texture2D:
+	return SOLITAIRE_CARD_BACK_TEXTURE if game_id == "solitaire" else null
 
 func _card_rank(rank: int) -> String:
 	match rank:
@@ -4013,15 +4149,23 @@ func _solitaire_draw() -> void:
 		state["stock"] = int(state["stock"]) - 1
 		state["waste"] = int(state["waste"]) + 1
 		state["moves"] = int(state["moves"]) + 1
+		var rank := 1 + int(state["waste"]) % 13
+		var suit := int(state["waste"]) % 4
 		_flash_feedback("翻开一张牌", AMBER)
-		_impact(Vector2(188, 254), AMBER, 0.45)
-		_start_motion("card", Vector2(77, 282), Vector2(169, 282), AMBER, str(1 + int(state["waste"]) % 13), 0.42)
-		_start_catalog_event("card_draw", Vector2(168, 304), AMBER, 1, "新牌入场", 0.58)
+		_start_catalog_event("card_draw", Vector2(168, 304), AMBER, 1, "新牌入场", 0.72, {
+			"from": Vector2(74, 304), "to": Vector2(168, 304),
+			"rank": rank, "suit": suit, "card_size": Vector2(72, 100), "flip": true,
+		})
 		_log_event("solitaire_draw", {"stock":state["stock"], "waste":state["waste"]})
 	else:
+		var recycled := int(state["waste"])
 		state["stock"] = int(state["waste"])
 		state["waste"] = 0
-		_start_catalog_event("card_recycle", Vector2(76, 304), CYAN, 1, "牌库重整", 0.58)
+		_start_catalog_event("card_recycle", Vector2(76, 304), CYAN, 1, "牌库重整", 0.76, {
+			"from": Vector2(168, 304), "to": Vector2(74, 304),
+			"rank": maxi(1, 1 + recycled % 13), "suit": recycled % 4,
+			"card_size": Vector2(72, 100), "back": true,
+		})
 
 func _solitaire_auto() -> void:
 	if game_id != "solitaire" or state.get("status") != "playing":
@@ -4029,15 +4173,28 @@ func _solitaire_auto() -> void:
 	var tableau: Array = state["tableau"]
 	for i in range(tableau.size()):
 		if tableau[i] > 0:
+			var previous_count := int(tableau[i])
+			var moved_rank := 13 - previous_count + 1
 			tableau[i] -= 1
 			var foundations: Array = state["foundations"]
-			foundations[i % 4] = min(13, int(foundations[i % 4]) + 1)
+			var suit := i % 4
+			foundations[suit] = min(13, int(foundations[suit]) + 1)
 			state["score"] = int(state["score"]) + 25
 			state["moves"] = int(state["moves"]) + 1
-			_flash_feedback("自动归位 · +25", GOLD)
-			_impact(Vector2(390 + (i % 4) * 32, 254), GOLD, 0.55)
 			var foundation_total := _solitaire_foundation_total()
-			_start_catalog_event("foundation_place", Vector2(323 + (i % 4) * 54, 286), GOLD, 3 if foundation_total % 4 == 0 else 2, "归位 · +25", 0.78)
+			var won := foundation_total >= 8
+			var milestone := foundation_total % 4 == 0
+			var event_grade := 4 if won else 3 if milestone else 2
+			var event_kind := "solitaire_win" if won else "foundation_place"
+			var event_label := "牌局完成" if won else "四牌归位" if milestone else "归位 · +25"
+			_flash_feedback(event_label, GOLD)
+			_start_catalog_event(event_kind, Vector2(320 + suit * 54, 289), GOLD, event_grade, event_label, 1.18 if won else 0.90, {
+				"from": _solitaire_tableau_top_center(i, previous_count),
+				"to": Vector2(320 + suit * 54, 289),
+				"rank": moved_rank, "suit": suit, "card_size": Vector2(50, 68),
+				"foundation_total": foundation_total,
+				"label_position": Vector2(320 + suit * 54, 356),
+			})
 			break
 	if _solitaire_foundation_total() >= 8:
 		state["status"] = "won"
@@ -4056,20 +4213,35 @@ func _solitaire_tap(pos: Vector2) -> void:
 		if tableau[col] > 0:
 			state["selected_col"] = col
 			_flash_feedback("已选中牌列 %d" % (col + 1), CYAN)
+			_start_catalog_event("card_select", _solitaire_tableau_top_center(col, int(tableau[col])), CYAN, 1, "", 0.46, {"column": col})
+		else:
+			_flash_feedback("这里没有可移动的牌", RED)
+			_start_catalog_event("card_reject_empty", Vector2(63 + col * 68, 456), RED, 1, "", 0.54, {"column": col})
 	else:
 		var from := int(state["selected_col"])
 		if from != col and tableau[from] > 0:
+			var source_count := int(tableau[from])
+			var target_count := int(tableau[col])
+			var moved_rank := 13 - source_count + 1
 			tableau[from] -= 1
 			tableau[col] += 1
 			state["score"] = int(state["score"]) + 10
 			state["moves"] = int(state["moves"]) + 1
-			_impact(Vector2(63 + col * 68, 430), CYAN, 0.5)
-			_start_catalog_event("card_move", Vector2(63 + col * 68, 430), CYAN, 1, "牌列衔接", 0.58)
+			var target_center := _solitaire_tableau_top_center(col, target_count + 1)
+			_start_catalog_event("card_move", target_center, CYAN, 1, "牌列衔接", 0.72, {
+				"from": _solitaire_tableau_top_center(from, source_count), "to": target_center,
+				"rank": moved_rank, "suit": from % 4, "card_size": Vector2(58, 80),
+			})
 			if _solitaire_foundation_total() >= 8:
 				state["status"] = "won"
 				_capture("solitaire_win")
 			_log_event("solitaire_move", {"from":from, "to":col})
 		state["selected_col"] = -1
+
+func _solitaire_tableau_top_center(column: int, count: int) -> Vector2:
+	var origin := Vector2(34, 408)
+	var row := maxi(0, count - 1)
+	return Vector2(origin.x + float(column) * 68.0 + 29.0, origin.y + float(row) * 42.0 + 40.0)
 
 func _solitaire_foundation_total() -> int:
 	var total := 0
@@ -4079,38 +4251,59 @@ func _solitaire_foundation_total() -> int:
 
 func _draw_solitaire() -> void:
 	_draw_section_heading("翡翠牌桌", "点选牌列，再点目标列", AMBER)
-	_draw_text("牌库", Vector2(38, 244), 12, Color("e6d7a4"))
-	var stock_rect := Rect2(38, 254, 72, 100)
+	_draw_panel(Rect2(24, 225, 492, 568), Color("062d24", 0.56), Color("d5b85d", 0.34), 15, 1)
+	draw_line(Vector2(40, 392), Vector2(500, 392), Color("e1c875", 0.18), 1.0, true)
+	_draw_text("牌库", Vector2(38, 246), 12, Color("f0dda5"))
+	var stock_rect := Rect2(38, 256, 72, 100)
 	if int(state["stock"]) > 0:
 		_draw_card_back(stock_rect, Color("d3aa52"))
 	else:
-		_draw_panel(stock_rect, Color("f8edcc", 0.05), Color("f8edcc", 0.28), 6, 2)
+		_draw_panel(stock_rect, Color("f8edcc", 0.035), Color("f8edcc", 0.26), 7, 2)
+		_draw_center_font(SYMBOL_FONT, "↻", stock_rect.get_center() + Vector2(0, 5), 22, Color("f2d47d", 0.52))
 	_draw_status_badge(str(state["stock"]), Vector2(42, 362), AMBER, true, 64)
-	_draw_text("废牌", Vector2(132, 244), 12, Color("e6d7a4"))
+	_draw_text("废牌", Vector2(132, 246), 12, Color("f0dda5"))
 	if int(state["waste"]) > 0:
-		_draw_playing_card(Rect2(132, 254, 72, 100), 1 + int(state["waste"]) % 13, RED, int(state["waste"]) % 4)
+		_draw_playing_card(Rect2(132, 256, 72, 100), 1 + int(state["waste"]) % 13, AMBER, int(state["waste"]) % 4, 0.18)
 	else:
-		_draw_panel(Rect2(132, 254, 72, 100), Color("f8edcc", 0.05), Color("f8edcc", 0.28), 6, 2)
-	_draw_text("归位区", Vector2(300, 244), 12, Color("e6d7a4"))
-	var suits := ["♠", "◆", "♣", "♥"]
+		_draw_panel(Rect2(132, 256, 72, 100), Color("f8edcc", 0.035), Color("f8edcc", 0.26), 7, 2)
+		_draw_center_font(SYMBOL_FONT, "♦", Vector2(168, 311), 18, Color("f2d47d", 0.34))
+	_draw_text("归位区", Vector2(292, 246), 12, Color("f0dda5"))
+	var suits := ["♠", "♦", "♣", "♥"]
 	for i in range(4):
-		var rect := Rect2(300 + i * 54, 254, 46, 64)
-		_draw_panel(rect, Color("f8edcc", 0.045), GREEN if int(state["foundations"][i]) > 0 else Color("f8edcc", 0.28), 6, 2)
-		_draw_center_font(SYMBOL_FONT, suits[i], rect.get_center() + Vector2(0, 3), 18, RED if i % 2 == 1 else Color("dce2d3"))
-		if int(state["foundations"][i]) > 0:
-			_draw_center_font(NUMBER_FONT, str(state["foundations"][i]), rect.get_center() + Vector2(0, 23), 10, GREEN)
-	var origin := Vector2(34, 416)
+		var rect := Rect2(296 + i * 54, 256, 48, 66)
+		var foundation_value := int(state["foundations"][i])
+		var foundation_color := GREEN if foundation_value > 0 else Color("f8edcc", 0.25)
+		_draw_panel(Rect2(rect.position + Vector2(0, 3), rect.size), Color("020a08", 0.24), Color.TRANSPARENT, 7, 0)
+		_draw_panel(rect, Color("0f4738", 0.74), foundation_color, 7, 2)
+		_draw_center_font(SYMBOL_FONT, suits[i], rect.get_center() + Vector2(0, 3), 18, Color("ce3f57") if i % 2 == 1 else Color("e9eee4"))
+		if foundation_value > 0:
+			_draw_center_font(NUMBER_FONT, str(foundation_value), rect.get_center() + Vector2(0, 23), 10, GREEN)
+			draw_arc(rect.get_center(), 28.0, -PI * 0.82, -PI * 0.82 + TAU * clampf(float(foundation_value) / 13.0, 0.0, 1.0), 20, Color("f2cf74", 0.72), 2.0, true)
+	var origin := Vector2(34, 408)
+	var selected := int(state["selected_col"])
 	for col in range(7):
 		var count := int(state["tableau"][col])
+		var lane := Rect2(origin.x + col * 68 - 3, origin.y - 5, 64, 318)
+		var target_hint := selected >= 0 and selected != col
+		_draw_panel(lane, Color("082b24", 0.20), Color("f0d578", 0.22 if target_hint else 0.10), 9, 1)
+		if target_hint:
+			draw_circle(Vector2(lane.get_center().x, lane.end.y - 13), 3.0, Color("f0d578", 0.62))
+		var column_offset := _solitaire_reject_offset(col)
+		var lift := -10.0 if selected == col else 0.0
 		for row in range(max(1, count)):
-			var rect := Rect2(origin.x + col * 68, origin.y + row * 42, 58, 80)
+			var rect := Rect2(origin.x + col * 68, origin.y + row * 42 + lift, 58, 80)
+			rect.position += column_offset
 			if row == count - 1 and count > 0:
-				_draw_playing_card(rect, 13 - count + 1, RED, col % 4)
+				_draw_playing_card(rect, 13 - count + 1, AMBER if selected == col else Color("8dbda3"), col % 4, 0.54 if selected == col else 0.08)
 			else:
-				_draw_card_back(rect, Color("365b78"))
-			if int(state["selected_col"]) == col:
-				draw_rect(rect.grow(3), CYAN, false, 3.0)
-	_draw_text("将 8 张牌送入归位区即可完成", Vector2(34, 780), 13, Color("e7dcc0"))
+				if count > 0:
+					_draw_card_back(rect, Color("77a78f"))
+				else:
+					_draw_panel(rect, Color("f7e9c7", 0.025), Color("f7e9c7", 0.18), 7, 1)
+		if selected == col and count > 0:
+			var selected_center := _solitaire_tableau_top_center(col, count) + Vector2(0, lift)
+			draw_arc(selected_center, 41.0, -PI * 0.92, PI * 0.18, 24, Color("f8d978", 0.78), 3.0, true)
+	_draw_center("将 8 张牌送入归位区即可完成", Vector2(270, 778), 13, Color("f1dfb6"))
 
 func _init_tripeaks() -> void:
 	state["cards"] = [2, 5, 8, 3, 6, 9, 12, 4, 7, 10, 13, 1, 5, 8, 11]

@@ -1,0 +1,174 @@
+{
+  "schema_version": "offline-games-gag-asset-ledger/v1",
+  "created_at": "2026-08-20T10:55:00Z",
+  "scope": ["solitaire"],
+  "approved_direction": "docs/art-direction/solitaire-v2.md",
+  "gag": {
+    "endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+    "transport": "MCP Streamable HTTP, protocol 2025-06-18",
+    "server": {"name": "game-assets-generator", "version": "1.29.0"},
+    "execution_mode": "pure API",
+    "system_probe": {
+      "gpu": "not detected",
+      "main_pytorch": "not installed",
+      "enabled_providers_used": ["fal", "elevenlabs"]
+    }
+  },
+  "semantic_searches": [
+    {
+      "id": "solitaire-card-back",
+      "query": "premium cartoon solitaire card back emerald botanical brass conservatory warm paper isolated component no text",
+      "kinds": ["image"],
+      "limit": 12,
+      "reviewed_candidates": [
+        {
+          "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/animations/20260109_012208_game_card_frame_bord_gemini.png",
+          "score": 0.44326170737190507,
+          "decision": "reject",
+          "reason": "ornate fantasy RPG frame, not a card-back surface and incompatible with the botanical-conservatory hierarchy"
+        },
+        {
+          "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/animations/card_frame_gold.png",
+          "score": 0.44326170737190507,
+          "decision": "reject",
+          "reason": "generic gold frame without emerald felt or a readable botanical center"
+        },
+        {
+          "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/ui_and_icons/card-frame-n.png",
+          "score": 0.4316798929914461,
+          "decision": "reject",
+          "reason": "green sci-fi rarity frame with the wrong material grammar"
+        }
+      ],
+      "result": "generate",
+      "reason": "no candidate matched role, materials, tiny-card readability and no-text constraints"
+    },
+    {
+      "id": "solitaire-card-audio",
+      "query": "soft tactile playing card deal paper flick game UI sound effect",
+      "kinds": ["audio"],
+      "limit": 12,
+      "reviewed_candidates": [
+        {
+          "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/audio/sfx_20251213_095733_magic_spell_cast_spa_1.wav",
+          "score": 0.6567368989592568,
+          "decision": "reject",
+          "reason": "magic spell rather than paper/felt contact"
+        },
+        {
+          "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/audio/sfx_20251213_095805_coin_collect_ding_sp_3.wav",
+          "score": 0.6479146133823926,
+          "decision": "reject",
+          "reason": "coin reward semantics over-promote routine card placement"
+        },
+        {
+          "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/audio/accept.wav",
+          "score": 0.6477912302151175,
+          "decision": "reject",
+          "reason": "generic accept click lacks paper, felt and brass identity"
+        }
+      ],
+      "result": "generate",
+      "reason": "no reusable candidate represented a tactile playing-card settle"
+    }
+  ],
+  "generation_attempts": [
+    {
+      "role": "card back",
+      "requested_provider": "fal",
+      "requested_model": "fal-ai/flux-pro/v1.1",
+      "requested_size": "768x1152",
+      "result": "provider adapter rejected the free-form size and GAG automatically fell back to Gemini API",
+      "unshipped_fallback_master": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/card_games/gag_v1/solitaire/generated_images__20260820_183807_Gemini.png",
+      "decision": "reject fallback and retry with a fal-native size; never relabel the fallback as fal.ai"
+    }
+  ],
+  "assets": [
+    {
+      "id": "solitaire-card-back-gag-v1",
+      "game": "solitaire",
+      "kind": "image",
+      "role": "stable and frequent card-back material family",
+      "route": "GAG generate_image pure API",
+      "provider": "FAL.ai",
+      "model": "fal-ai/flux-pro/v1.1",
+      "seed": null,
+      "prompt": "Full-bleed vertical playing-card back surface design for a premium friendly cartoon solitaire game. Emerald green woven felt and soft leather texture, a large simple symmetrical botanical vine medallion in warm brushed brass, four small ivory leaf accents, dark forest-green shadow channels, subtle hand-painted paper grain, broad readable shapes, clean soft bevels, restrained warm highlights. Fill the entire canvas edge-to-edge as a flat orthographic texture, centered and vertically symmetrical, readable at tiny mobile-card size. No card object, no surrounding scene, no mockup, no outside drop shadow, no letters, no numbers, no suit symbols, no UI text, no watermark, no photorealism.",
+      "style_reference_prompt": "2D premium mobile cartoon game art; hand-painted gouache surfaces; rounded chunky forms; emerald, warm cream and brushed brass palette; one clear focal motif; low visual noise; tactile but not photorealistic; cozy botanical conservatory card table. Never render text.",
+      "source_master": {
+        "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/card_games/gag_v1/solitaire/generated_images__20260820_183911_FAL.ai.png",
+        "sha256": "70814c1e196f38781c88e019ee1f48526a501e563f994be948ffd7af933d38b5",
+        "detected_format": "JPEG",
+        "dimensions": [768, 1024],
+        "shipped": false
+      },
+      "critique": {
+        "decision": "accept",
+        "notes": "clear emerald/brass identity; botanical emblem remains readable at 58x80; no text or rule state"
+      },
+      "derivation": {
+        "operations": "center crop 742x1024, Lanczos resize 290x400, libwebp quality 84",
+        "runtime_path": "assets/art/cards/solitaire_card_back_gag_v1.webp",
+        "sha256": "4854283217b75d6e719268b511dc76985122828b3cd899630be7a78b56ca729c",
+        "dimensions": [290, 400]
+      },
+      "runtime_reference": {
+        "preload": "main.gd::SOLITAIRE_CARD_BACK_TEXTURE",
+        "selection": "main.gd::_card_back_texture",
+        "draw": "main.gd::_draw_card_back",
+        "first_visible_beat": "stable gameplay before the first player action",
+        "runtime_sizes": ["72x100 stock", "58x80 tableau"],
+        "visible_instances_at_start": 11
+      }
+    },
+    {
+      "id": "solitaire_card_settle_gag_v1",
+      "game": "solitaire",
+      "kind": "sfx",
+      "role": "card-action material cadence",
+      "route": "GAG generate_audio pure API",
+      "provider": "ElevenLabs",
+      "model": "eleven_text_to_sound_v2",
+      "version": "v3",
+      "seed": null,
+      "prompt": "A polished full-bodied solitaire card-settle sound, around 0.75 seconds: crisp paper flick, soft felt thump, and a warm brushed-brass tick whose audible resonance fills the remaining tail. Tactile close-mic mobile game UI sound with even energy and balanced loudness, no long silence, no clipping, no music, no ambience, no voice.",
+      "gag_delivery": {
+        "digest": "c91c3127ac65a3872cfa6a2f9b5b0c18b6ddde7e0d891d75bde77d2525ad4916",
+        "master_path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/card_games/gag_v1/solitaire/sfx/solitaire_card_settle_gag_v1/v3/solitaire_card_settle_gag_v1_master.wav",
+        "master_sha256": "6a1ca73fe0424e7bf556b4904cede5b1035c718c7f9da9b737673603dbd85cdc",
+        "published_ogg_path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/card_games/gag_v1/solitaire/sfx/solitaire_card_settle_gag_v1/v3/solitaire_card_settle_gag_v1.ogg",
+        "published_ogg_sha256": "2d65314f311016eb1f21ca188648e1e9022f98803124221aec67fa33e5403bee",
+        "source_quality": {
+          "status": "issues_detected",
+          "failed_check": "loudness",
+          "duration_seconds": 0.778208,
+          "integrated_lufs": -19.39,
+          "true_peak_dbtp": -1.03
+        },
+        "source_master_shipped": false
+      },
+      "repair_and_derivation": {
+        "decision": "repair before engine",
+        "operations": "48 kHz mono OGG; +8 dB gain into -1.5 dB nominal look-ahead limiter; preserve the full 0.778 s cadence",
+        "runtime_path": "assets/audio/cards/solitaire_card_settle_gag_v1.ogg",
+        "sha256": "8e2033a3fad16f508f5faae4bb51c7a8477a8cc923c0177a71bdf67429ed55b9",
+        "measured_integrated_lufs": -17.3,
+        "measured_true_peak_dbtp": -1.3
+      },
+      "runtime_reference": {
+        "preload": "main.gd::SFX_SOLITAIRE_CARD_SETTLE",
+        "router": "main.gd::_catalog_event_sfx",
+        "events": ["card_draw", "card_recycle", "card_move", "foundation_place", "solitaire_win"],
+        "intensity": "event grade controls runtime pitch and gain"
+      }
+    }
+  ],
+  "shipping_gate": {
+    "source_masters_in_repository": false,
+    "unused_generations_in_repository": false,
+    "runtime_derivatives": 2,
+    "every_derivative_has_runtime_reference": true,
+    "stable_or_frequent_signature_asset": true,
+    "evidence_root": "docs/audit/solitaire-v2/candidate"
+  }
+}

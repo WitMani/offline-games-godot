@@ -1,0 +1,96 @@
+{
+  "captures": [
+    "00-stable.png",
+    "selection/01-intent.png",
+    "selection/02-anticipation.png",
+    "selection/03-impact.png",
+    "selection/04-settle.png",
+    "reject-empty/01-intent.png",
+    "reject-empty/02-anticipation.png",
+    "reject-empty/03-impact.png",
+    "reject-empty/04-settle.png",
+    "deal/01-intent.png",
+    "deal/02-anticipation.png",
+    "deal/03-impact.png",
+    "deal/04-settle.png",
+    "foundation/01-intent.png",
+    "foundation/02-anticipation.png",
+    "foundation/03-impact.png",
+    "foundation/04-settle.png",
+    "win/01-intent.png",
+    "win/02-anticipation.png",
+    "win/03-impact.png",
+    "win/04-settle.png"
+  ],
+  "continuous_peak_frames": {
+    "count": 36,
+    "directory": "/home/ubuntu/.local/share/godot/app_userdata/No WiFi Games/solitaire-v2-frames",
+    "encoding_fps": 30,
+    "sampled_progress": [
+      0.0,
+      0.98
+    ]
+  },
+  "continuous_peak_recording": "continuous/solitaire-win.webm",
+  "effects_mode": "full",
+  "language": "zh-CN",
+  "runtime_resources": {
+    "card_back": "res://assets/art/cards/solitaire_card_back_gag_v1.webp",
+    "sfx": "res://assets/audio/cards/solitaire_card_settle_gag_v1.ogg"
+  },
+  "state_snapshots": {
+    "milestone": {
+      "foundations": [
+        2,
+        1,
+        1,
+        0
+      ],
+      "game_id": "solitaire",
+      "moves": 1,
+      "score": 25,
+      "selected_col": -1,
+      "status": "playing",
+      "stock": 24,
+      "tableau": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "waste": 0
+    },
+    "win": {
+      "foundations": [
+        3,
+        2,
+        2,
+        1
+      ],
+      "game_id": "solitaire",
+      "moves": 1,
+      "score": 25,
+      "selected_col": -1,
+      "status": "won",
+      "stock": 24,
+      "tableau": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "waste": 0
+    }
+  },
+  "viewport": [
+    540,
+    960
+  ],
+  "web_stable_capture": "web/solitaire-web.png"
+}

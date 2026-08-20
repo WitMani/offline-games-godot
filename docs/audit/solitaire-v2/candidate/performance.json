@@ -1,0 +1,19 @@
+{
+  "active_effect_cap": 12,
+  "active_effects_observed": 2,
+  "average_frame_ms": 11.58825,
+  "max_frame_ms": 16.751,
+  "note": "Xvfb/llvmpipe comparative trace; not a physical-device FPS claim",
+  "p95_frame_ms": 14.052,
+  "renderer": "llvmpipe (LLVM 21.1.8, 256 bits)",
+  "runtime_asset_dimensions": [
+    290,
+    400
+  ],
+  "sample_count": 180,
+  "static_memory_bytes": 62115205,
+  "viewport": [
+    540,
+    960
+  ]
+}

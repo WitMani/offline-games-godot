@@ -109,7 +109,7 @@ func draw_event_fx(canvas: CanvasItem, effect: Dictionary, now: float, label_fon
 			"watermelon": _draw_fruit_event(canvas, position, color, grade, t, peak, fade)
 			"meowdoku": _draw_paw_event(canvas, position, color, kind, grade, t, fade)
 			"sudoku": _draw_logic_event(canvas, position, color, kind, grade, t, fade)
-			"solitaire", "tripeaks": _draw_card_event(canvas, position, color, grade, t, fade, symbol_font)
+			"solitaire", "tripeaks": _draw_card_event(canvas, game_id, kind, position, color, grade, t, peak, fade, symbol_font)
 			"mahjong": _draw_jade_event(canvas, position, color, grade, t, fade)
 			"tileclub": _draw_stitch_event(canvas, position, color, grade, t, fade)
 			"amaze_go": _draw_compass_event(canvas, position, color, grade, t, fade)
@@ -123,6 +123,8 @@ func draw_event_fx(canvas: CanvasItem, effect: Dictionary, now: float, label_fon
 			# Keep dynamic CJK feedback in the folio footer so it never covers a
 			# playable number or the section heading.
 			label_position = Vector2(270, 705.0 - peak * 4.0)
+		elif effect.has("label_position"):
+			label_position = effect["label_position"]
 		_draw_event_label(canvas, label_position, label, color, fade, label_font, 11 + mini(grade, 2))
 
 
@@ -188,13 +190,40 @@ func _draw_logic_event(canvas: CanvasItem, p: Vector2, color: Color, kind: Strin
 	canvas.draw_line(p - Vector2(0, radius * 0.72), p + Vector2(0, radius * 0.72), Color(color, 0.32 * fade), 1.5, true)
 
 
-func _draw_card_event(canvas: CanvasItem, p: Vector2, color: Color, grade: int, t: float, fade: float, symbol_font: Font) -> void:
-	var suits := ["♥", "♠", "◆", "♣"]
+func _draw_card_event(canvas: CanvasItem, game_id: String, kind: String, p: Vector2, color: Color, grade: int, t: float, peak: float, fade: float, symbol_font: Font) -> void:
+	var suits := ["♥", "♠", "♦", "♣"]
+	if game_id == "solitaire":
+		var foundation_event := "foundation" in kind or "win" in kind
+		var ring_count := grade if foundation_event else 1
+		for ring in range(ring_count):
+			var ring_t := clampf((t - float(ring) * 0.07) / 0.72, 0.0, 1.0)
+			if ring_t <= 0.0:
+				continue
+			var radius := 16.0 + ring_t * (22.0 + float(grade) * 5.0 + float(ring) * 6.0)
+			canvas.draw_arc(p, radius, -PI * 0.82, PI * 0.82, 28, Color("f8d98f", fade * (0.64 - float(ring) * 0.09)), 2.8, true)
+		if foundation_event:
+			var count := 2 + grade * 2
+			for index in range(count):
+				var angle := -PI * 0.5 + float(index) / float(maxi(1, count - 1)) * PI
+				var travel := 18.0 + t * (24.0 + float(grade) * 5.0)
+				var q := p + Vector2(cos(angle), sin(angle)) * travel + Vector2(0, t * t * 8.0)
+				canvas.draw_string(symbol_font, q, suits[index % suits.size()], HORIZONTAL_ALIGNMENT_CENTER, 16.0, 9 + grade, Color(color.lightened(0.16), fade))
+		if "win" in kind:
+			for side in [-1.0, 1.0]:
+				var stem_start := p + Vector2(18.0 * side, 17.0)
+				var stem_end := p + Vector2((42.0 + t * 18.0) * side, -28.0 - peak * 7.0)
+				canvas.draw_line(stem_start, stem_end, Color("f1c96f", 0.74 * fade), 3.0, true)
+				for leaf in range(4):
+					var leaf_t := (float(leaf) + 1.0) / 5.0
+					var leaf_center := stem_start.lerp(stem_end, leaf_t)
+					_draw_leaf(canvas, leaf_center, 5.0 + peak * 1.5, Color("8bc99b", fade), -0.8 * side)
+		return
+	var other_suits := ["♥", "♠", "◆", "♣"]
 	var count := 4 + grade * 2
 	for index in range(count):
 		var angle := float(index) / count * TAU - PI * 0.5
 		var q := p + Vector2(cos(angle), sin(angle)) * (18.0 + t * (24.0 + grade * 5.0)) + Vector2(0, t * t * 10.0)
-		var glyph: String = suits[index % suits.size()]
+		var glyph: String = other_suits[index % other_suits.size()]
 		canvas.draw_string(symbol_font, q, glyph, HORIZONTAL_ALIGNMENT_CENTER, 16.0, 10 + grade, Color(color.lightened(0.18), fade))
 	canvas.draw_arc(p, 20.0 + t * 32.0, 0, TAU, 32, Color("fff6dc", 0.56 * fade), 2.8, true)
 
