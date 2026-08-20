@@ -35,6 +35,7 @@ visual fixture. The evidence directory is
 | Four-grade impacts | `juice-grades/grade-{1..4}-impact.webp` | One through four rings, 10 through 22 crumbs, increasing result deformation, and distinct grade badges align with the same authoritative release event |
 | Legendary motion | `juice-grades/grade-4-legendary.webm` | 30 fps grade-4 impact-to-settle sequence, SHA-256 `afb381f538f3b4edb119a576f730679e62fdd9754d978ecec0c6d499020f7382` |
 | Deployed Web action | `juice-grades/web-acceptance.json`, `juice-grades/web-grade-1-after-release.png` | Public HTTPS browser action ended at score 8 / move 1, observed vibration pattern, and retained screenshot SHA-256 `53b363fa3cfdddf22693cae4a20fc204f1679ad22dabfa5c486a3828da5559ae` |
+| Web font-role regression | `juice-grades/web-font-acceptance.json`, `juice-grades/web-font-feedback.png` | Public HTTPS release routes token numerals to DejaVu Sans and animated Chinese feedback to the bundled Noto CJK subset; a bottom-row release retained the mixed label without missing glyphs |
 
 ## Dimension review
 
@@ -45,7 +46,7 @@ Scale: 0 broken, 1 prototype, 2 production, 3 distinctive.
 | Identity | 2 | Candy workshop and syrup ribbon are recognizable without the title; user review decides whether they are distinctive enough for level 3 |
 | Composition / hierarchy | 2 | Quiet central felt and edge-only props keep current choices dominant |
 | Shape / material craft | 2 | Contact shadow, rim, body, inset, highlight, and live numeral survive with FX removed |
-| Color / type / UI | 2 | Cream, teal, honey wood, and value colors have stable roles; numerals remain live and high contrast |
+| Color / type / UI | 2 | Cream, teal, honey wood, and value colors have stable roles; numerals remain live and high contrast; assigned-font coverage and deployed animated CJK copy pass |
 | States / progression | 2 | Base, selected, resolving, result, and high tiers use shape and posture as well as color |
 | Intent | 2 | The touched candy lifts, squashes, rims, and leans within the rendered input frame |
 | Anticipation | 2 | Thick cream ribbon, traveling pulse, and result label prepare release |
@@ -59,14 +60,16 @@ Scale: 0 broken, 1 prototype, 2 production, 3 distinctive.
 |---|---|
 | `merge2248_model_smoke.gd` | PASS, 10 probes |
 | `merge2248_integration_smoke.gd` | PASS, 10 probes including all four feedback grades; known exit-only resource warning unchanged |
+| `font_coverage_smoke.gd` | PASS, 7 assigned-font samples covering all 2248 grade callouts, mixed punctuation, and numeral copy |
 | `smoke.gd` | PASS, all 14 games |
 | Visual audit | PASS, stable through result plus 30-frame continuous capture |
 | Four-grade juice audit | PASS, real pointer/model releases for 2, 3, 5, and 8 nodes plus a 30-frame legendary sequence |
 | Web export | PASS, threads disabled, required HTML/JS/WASM/PCK present |
 | Browser boot | PASS on the public HTTPS URL in Chromium/SwiftShader on the release host; secure context and WebAssembly true, no page error or failed request |
 | Browser interaction | PASS at 540×960; a real equal-pair drag produced score 0→8 / move 0→1 and observed vibration calls `4`, `13`, `[20]` |
-| Aliyun atomic deploy | PASS, release `20260820T073724Z-9558d0cd783c` |
-| Public bundle integrity | PASS, HTML references `index.9558d0cd783c.pck` and `index.2b558bdb3c3a.wasm`; full HTTPS responses were 7,876,848 and 37,686,550 bytes and matched their SHA-256 fingerprints |
+| Aliyun atomic deploy | PASS, font-role release `20260820T080529Z-2ab124138087` |
+| Public bundle integrity | PASS, HTML references `index.2ab124138087.pck` and `index.2b558bdb3c3a.wasm`; release files are 7,876,864 and 37,686,550 bytes and match their SHA-256 fingerprints |
+| Deployed animated CJK | PASS at 540×960 in Chromium/SwiftShader; real bottom-row release produced score 0→8 / move 0→1 with no page error or failed request, and both the transient badge and settled header copy are readable |
 
 The grade-4, eight-node busy-event trace under EC2 Xvfb software GL is stored in
 `performance.json`: average 23.35 ms, p50 22.30 ms, p95 27.70 ms over 120

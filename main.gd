@@ -1510,7 +1510,7 @@ func _draw_merge2248_fx(juice_transform: Transform2D = Transform2D.IDENTITY) -> 
 		for point in effect.get("points", []):
 			transformed_points.append(juice_transform * Vector2(point))
 		visual_effect.points = transformed_points
-		merge2248_presenter.draw_merge_fx(self, visual_effect, elapsed, NUMBER_FONT)
+		merge2248_presenter.draw_merge_fx(self, visual_effect, elapsed, NUMBER_FONT, DISPLAY_FONT)
 	merge2248_fx = active
 
 # -----------------------------------------------------------------------------
@@ -3649,7 +3649,7 @@ func _draw_snake() -> void:
 		if i == 0:
 			draw_circle(body.get_center() + Vector2(3, -3), 2.0, WARM_PAPER if classic else COAL)
 	if classic:
-		_draw_text_font(NUMBER_FONT, "目标 120", Vector2(62, 770), 16, Color("a8b883"))
+		_draw_text_font(DISPLAY_FONT, "目标 120", Vector2(62, 770), 16, Color("a8b883"))
 		_draw_status_badge("LCD 经典模式", Vector2(360, 752), accent, true, 146)
 	else:
 		_draw_status_badge("本地挑战", Vector2(66, 752), accent, true, 112)

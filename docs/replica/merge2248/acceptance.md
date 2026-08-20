@@ -22,4 +22,6 @@ Automated probes live in `tools/merge2248_model_smoke.gd` and
 `tools/merge2248_integration_smoke.gd`; visual checkpoints live in
 `tools/merge2248_visual_audit.gd`; the four-grade event proof lives in
 `tools/merge2248_juice_visual_audit.gd`; and the bounded grade-4 busy-event
-trace lives in `tools/merge2248_performance_audit.gd`.
+trace lives in `tools/merge2248_performance_audit.gd`. Assigned-font coverage
+for generated grade labels, punctuation, and numerals lives in
+`tools/font_coverage_smoke.gd` and must also pass in a clean Web capture.

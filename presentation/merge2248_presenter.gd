@@ -120,7 +120,7 @@ func draw_token(
 	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
-func draw_merge_fx(canvas: CanvasItem, effect: Dictionary, now: float, font: Font) -> void:
+func draw_merge_fx(canvas: CanvasItem, effect: Dictionary, now: float, number_font: Font, label_font: Font) -> void:
 	var age := now - float(effect.get("started", now))
 	var points: Array = effect.get("points", [])
 	var values: Array = effect.get("values", [])
@@ -147,7 +147,7 @@ func draw_merge_fx(canvas: CanvasItem, effect: Dictionary, now: float, font: Fon
 			var echo_position: Vector2 = points[i].lerp(destination, local_t) + arc_offset
 			if grade >= 3:
 				canvas.draw_line(echo_position, destination, Color(CREAM, (1.0 - local_t) * 0.14), 2.0 + intensity * 0.5, true)
-			draw_token(canvas, echo_position, token_value, _value_color(token_value), false, font, now, Vector2.ONE * lerpf(0.96, 0.29 + intensity * 0.015, local_t), sin(local_t * PI) * 0.018 * float(grade - 1) * (-1.0 if i % 2 == 0 else 1.0), 1.0 - local_t * 0.46)
+			draw_token(canvas, echo_position, token_value, _value_color(token_value), false, number_font, now, Vector2.ONE * lerpf(0.96, 0.29 + intensity * 0.015, local_t), sin(local_t * PI) * 0.018 * float(grade - 1) * (-1.0 if i % 2 == 0 else 1.0), 1.0 - local_t * 0.46)
 		var pinch_alpha := 1.0 - gather
 		canvas.draw_circle(destination, 13.0 + gather * (17.0 + intensity * 3.0), Color(CREAM, (0.12 + intensity * 0.025) * pinch_alpha))
 
@@ -158,7 +158,7 @@ func draw_merge_fx(canvas: CanvasItem, effect: Dictionary, now: float, font: Fon
 	if age >= 0.085 and impact_t < 1.0:
 		var result_scale := _graded_pop_scale(impact_t, grade)
 		var result_rotation := _graded_pop_rotation(impact_t, grade, result)
-		draw_token(canvas, destination, result, color, false, font, now, result_scale, result_rotation)
+		draw_token(canvas, destination, result, color, false, number_font, now, result_scale, result_rotation)
 		if grade >= 3 and age < 0.19:
 			var flash := sin(clampf((age - 0.085) / 0.105, 0.0, 1.0) * PI)
 			canvas.draw_circle(destination, 45.0 + intensity * 9.0, Color(CREAM_LIGHT, flash * (0.035 + intensity * 0.018)))
@@ -194,8 +194,8 @@ func draw_merge_fx(canvas: CanvasItem, effect: Dictionary, now: float, font: Fon
 		_draw_rounded_box(canvas, badge_rect, 15.0, _with_alpha(_grade_color(grade), 0.96 * badge_fade))
 		var badge_label := "%s ×%d  +%d" % [_grade_label(grade), chain_length, gained]
 		var badge_size := 11 + grade
-		var badge_text := font.get_string_size(badge_label, HORIZONTAL_ALIGNMENT_LEFT, -1, badge_size)
-		canvas.draw_string(font, badge_center + Vector2(-badge_text.x * 0.5, badge_size * 0.35), badge_label, HORIZONTAL_ALIGNMENT_LEFT, -1, badge_size, Color(COCOA, badge_fade))
+		var badge_text := label_font.get_string_size(badge_label, HORIZONTAL_ALIGNMENT_LEFT, -1, badge_size)
+		canvas.draw_string(label_font, badge_center + Vector2(-badge_text.x * 0.5, badge_size * 0.35), badge_label, HORIZONTAL_ALIGNMENT_LEFT, -1, badge_size, Color(COCOA, badge_fade))
 
 
 func draw_recipe_label(canvas: CanvasItem, rect: Rect2, preview: int, font: Font, grade: int = 1, chain_length: int = 2, time: float = 0.0) -> void:

@@ -1,0 +1,32 @@
+{
+  "release": "20260820T080529Z-2ab124138087",
+  "url": "https://aliyun-ecs.tail17a64.ts.net:8788/",
+  "viewport": [540, 960],
+  "secure_context": true,
+  "webassembly": true,
+  "game_id": "merge2248",
+  "selected_pair": [[0, 7], [1, 7]],
+  "score_before": 0,
+  "score_after": 8,
+  "moves_after": 1,
+  "font_coverage_smoke": "PASS, 7 samples",
+  "font_roles": {
+    "token_numerals": "DejaVuSans.ttf",
+    "feedback_labels": "NotoSansCJKsc-Subset.otf"
+  },
+  "visual_review": "PASS: the animated CJK feedback label and mixed numeral/symbol copy render without missing glyphs",
+  "main_pack": {
+    "path": "index.2ab124138087.pck",
+    "bytes": 7876864,
+    "sha256": "2ab12413808727560aabf398e193ea3426f055b2ff90111a0703de4b8c9b6ab2"
+  },
+  "engine_wasm": {
+    "path": "index.2b558bdb3c3a.wasm",
+    "bytes": 37686550,
+    "sha256": "2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137"
+  },
+  "page_errors": [],
+  "failed_requests": [],
+  "screenshot": "web-font-feedback.png",
+  "screenshot_sha256": "9605eddb3629d85a2707777f3f1b37809bb7a433570b050e4c99fdcd97283735"
+}
