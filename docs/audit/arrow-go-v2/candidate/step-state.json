@@ -1,0 +1,39 @@
+{
+  "event": {
+    "duration": 0.52,
+    "font_role": "ui_cjk",
+    "game_id": "arrow_go",
+    "grade": 1,
+    "kind": "path_step",
+    "label": "箭流推进"
+  },
+  "game_id": "arrow_go",
+  "motion_kind": "path",
+  "moves": 1,
+  "object_fx": {
+    "direction": "(1, 0)",
+    "duration": 0.46,
+    "from": "(77.88889, 259.8889)",
+    "grade": 1,
+    "kind": "step",
+    "route_index": 1,
+    "to": "(125.6667, 259.8889)"
+  },
+  "painted_count": 2,
+  "player": [
+    1,
+    0
+  ],
+  "route": [
+    [
+      0,
+      0
+    ],
+    [
+      1,
+      0
+    ]
+  ],
+  "score": 5,
+  "status": "playing"
+}

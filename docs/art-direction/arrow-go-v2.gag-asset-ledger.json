@@ -1,0 +1,244 @@
+{
+  "schema_version": "offline-games-gag-ledger/v1",
+  "created_at": "2026-08-20T15:18:00Z",
+  "scope": ["arrow_go"],
+  "starting_commit": "d2a7dd040c54f5f652a03cd6e189f554d2f392ff",
+  "gag": {
+    "endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+    "transport": "MCP Streamable HTTP via direct Python client",
+    "server": "game-assets-generator",
+    "server_version_reported": "0.2.0",
+    "tools_count": 21,
+    "health_checked_at": "2026-08-20",
+    "execution_mode": {
+      "local_gpu": false,
+      "main_service_pytorch": false,
+      "semantic_embedding": "Gemini API",
+      "image": "fal.ai API",
+      "background_removal": "Remove.bg API",
+      "audio": "ElevenLabs API",
+      "openrouter_available": true
+    }
+  },
+  "semantic_searches": [
+    {
+      "id": "arrow_go_courier_harbor_search",
+      "query": "无文字 俯视 卡通 午夜风筝信使 纸翼滑翔机 靛蓝黄铜 珊瑚红 透明背景 游戏棋子 星港终点",
+      "result_count": 15,
+      "candidates": [
+        ["anim_sam_object_1_sam_cropped_spritesheet.png", 0.4035529329059038],
+        ["anim_sam_object_1_sam_cropped_spritesheet_7723672.png", 0.4035529329059038],
+        ["generated_images__20260820_183644_Gemini.png", 0.397564782785598],
+        ["2048-tile-surface-C6nXGAid.png", 0.38678888301313546],
+        ["2048-tile-surface.png", 0.38678888301313546],
+        ["dragons_anim_preview.png", 0.38587333359544096],
+        ["generated_images__20260820_184012_FAL.ai_nobg_20260820_184123.png", 0.3843588921411605],
+        ["anim_silksong_spritesheet.png", 0.3833333464405727],
+        ["anim_silksong_spritesheet_1207259.png", 0.3833333464405727],
+        ["Character_Player_Hornet_sam.png", 0.3818770136848758],
+        ["vfx-celebration-burst.png", 0.37791266404670826],
+        ["card-spring-scout.png", 0.3774372574843121],
+        ["conquest-world-ui-atlas-v3.png", 0.37657715235127753],
+        ["generated_images__20260820_184012_FAL.ai.png", 0.37549377013484536],
+        ["Enemy_Flyer_RedWinged.png", 0.37471433004391175]
+      ],
+      "reviewed_visual_candidates": [
+        ["anim_sam_object_1_sam_cropped_spritesheet.png", "rejected: pink masked humanoid sprite sheet, not a board-scale paper courier"],
+        ["generated_images__20260820_183644_Gemini.png", "rejected: paper compass reward with pseudo-glyphs and no courier/harbor role"],
+        ["Enemy_Flyer_RedWinged.png", "rejected: luminous red insect enemy with incompatible role and palette"],
+        ["2048-tile-surface.png", "rejected: brown glass tile with baked gear and cyan corner symbols"],
+        ["card-spring-scout.png", "rejected: card character rather than an orthographic token"]
+      ],
+      "decision": "reject all and generate",
+      "reason": "No result formed a no-text, top-down paper-wing courier plus sky-harbor family readable inside a 9x9 board."
+    },
+    {
+      "id": "arrow_go_blank_socket_search",
+      "query": "无箭头 无文字 正方形 风向机关空白底板 靛蓝珐琅 紫色布料 黄铜铆钉 卡通游戏格子 透明背景",
+      "result_count": 15,
+      "candidates": [
+        ["generated_images__20260820_183644_Gemini.png", 0.4339828367840591],
+        ["card-ui-chrome-atlas-chroma-v1.png", 0.41541564495479255],
+        ["generated_images__20260820_184012_FAL.ai_nobg_20260820_184123.png", 0.40457295020641354],
+        ["ui_atlas.png", 0.4040914194595349],
+        ["hero_44919.png", 0.3997347148213711],
+        ["card-rarity-frames-atlas-clean-v3-green-safe.png", 0.39710889944136507],
+        ["hero.png", 0.3961701922082519],
+        ["card-frame-sr.png", 0.3925037234578764],
+        ["card-rarity-frames-atlas-clean-v3-green-despill.png", 0.3912187262273937],
+        ["2048-tile-surface-C6nXGAid.png", 0.39105373906435],
+        ["2048-tile-surface.png", 0.39105373906435],
+        ["mat_semiconductor_104854.png", 0.39067951225544895],
+        ["card-frame-r.png", 0.38962231802116715],
+        ["generated_images__20260820_183633_Gemini.png", 0.38913717752665083],
+        ["card-rarity-frames-atlas-v2.png", 0.3887976202347838]
+      ],
+      "reviewed_visual_candidates": [
+        ["card-ui-chrome-atlas-chroma-v1.png", "rejected: generic fantasy card-frame atlas rather than a single wind socket"],
+        ["2048-tile-surface.png", "rejected: baked gear and corner markings would conflict with live arrows"],
+        ["generated_images__20260820_183644_Gemini.png", "rejected: generated pseudo-writing and reward semantics"],
+        ["ui_atlas.png", "rejected: heterogeneous UI sheet with no stable board-material role"]
+      ],
+      "decision": "reject all and generate",
+      "reason": "A repeated opening asset must have a completely quiet center so the code-native directional fin stays authoritative."
+    },
+    {
+      "id": "arrow_go_audio_search",
+      "query": "纸翼滑翔 咔嗒 微风掠过 风向标机关 星港停靠 盖章 铃声 短游戏音效",
+      "result_count": 15,
+      "candidates": [
+        ["d3fb372d8ab42f2a3c03201566490e02c861396c1faa7e38f7b5b50b8baca23d.mp3", 0.6444556749063202],
+        ["a88ced8bcb1daac8576de64faae24d7427bba06c933412c74a2e0f3070bdd5ae.mp3", 0.6418927796765256],
+        ["music_20260330_002207_peaceful_ambient_exploration_m_loop.mp3", 0.6316611426677585],
+        ["music_20260330_002207_peaceful_ambient_exploration_m.wav", 0.6261832534087282],
+        ["c6cfc5516c80b4655cad3dbccf928974fe96b0d34f4eceb07bc5d569b9348a80.mp3", 0.6200901330069846],
+        ["2c71a91dfb18f67352abb0fe85175390e4da47281801296fd9bccc73be033c2a.mp3", 0.6185845266304235],
+        ["f14e54d2856aece8cd66e1a7a8efd05da637b79f9b242a0f55253cb5babfde91.mp3", 0.6175295547253083],
+        ["3b07a3de99d0eec6fdc2ebb34f886c0b20bb1b9d03c5350fe1180737ba20b65d.mp3", 0.6149879179435641],
+        ["warning.wav", 0.6147702283342934],
+        ["warning_48078.wav", 0.6147702283342934],
+        ["fdf907a7efcfbeab84c003b5ce023cbfe989eba6f3c83c2c0d80127a9114df58.mp3", 0.6085493929410335],
+        ["sfx_20251213_095733_magic_spell_cast_spa_1.wav", 0.6082896639300003],
+        ["sfx_20251213_095733_magic_spell_cast_spa_1_64078.wav", 0.6082896639300003],
+        ["garden_boss_bgm.mp3", 0.6079957065655691],
+        ["music_20251213_154333_fast_paced_chase_music__urgent.mp3", 0.6079957065655691]
+      ],
+      "decision": "reject all and generate",
+      "reason": "Opaque hash names lacked role evidence; the named results were long-form exploration/boss/chase music, warnings or generic magic rather than repeatable paper-wing and harbor-dock cues."
+    }
+  ],
+  "common_image_style": "Premium warm cartoon midnight kite-courier board game art, tactile handmade paper and cloth, deep indigo enamel, aubergine textile, aged brass, ivory and restrained coral accents, chunky pocket-toy proportions, layered contact shadow body bevel and edge highlight, orthographic, readable at 40 pixels, not photoreal and not neon.",
+  "image_generations": [
+    {
+      "asset_id": "gag-image-20260820-225228-fal-wind-plate",
+      "status": "selected",
+      "provider": "fal.ai",
+      "model": "fal-ai/flux-pro/v1.1",
+      "seed": null,
+      "server_source": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/path_games/gag-v1/arrow_go/generated_images__20260820_225228_FAL.ai.png",
+      "source_encoding": "JPEG payload with .png suffix",
+      "source_sha256": "634db17cad28b9d80a03f031040e7aacf105eb51e46caa1d1951afedff012d7d",
+      "prompt": "One isolated production-ready blank square wind-vane socket tile for a 2D cartoon puzzle, exact orthographic top-down view. Chunky rounded-square aubergine flight-cloth cushion under a deep indigo-blue enamel center plate, warm aged-brass corner rivets, slim ivory paper inner bevel, soft dark contact shadow, bright worn edge highlight. The center must be completely empty and visually quiet so a live directional fin can be drawn over it. Exactly one tile only, centered and symmetrical, readable at 44 pixels. Absolutely no arrow, no chevron, no compass, no wing, no star, no gear, no icon, no letters, no words, no numbers, no symbols, no logo, no UI, no grid, no separate props. Plain neutral gray background with strong silhouette separation for later background removal.",
+      "derivations": [
+        {"tool": "remove_background", "provider": "removebg", "sha256": "3088d43d33b836d4cd5549c70e43927472fa3011e009f593620414325e441f24", "size": [500, 500]},
+        {"tool": "crop_image", "mode": "auto_trim", "padding": 6, "sha256": "0db53d1495482868694213ba4368484f55a03a16b3d540a9876cd167cca17169", "size": [346, 347]},
+        {"tool": "ffmpeg", "operation": "Lanczos-compatible scale into transparent 192x192 runtime canvas", "sha256": "7c94f74f1b6cc1d201d57bdd1e292e2d04ed73ba2c9ff62da390d8593770492b", "size": [192, 192]}
+      ],
+      "runtime_asset": "res://assets/art/catalog/path_games/gag/arrow_go_wind_plate_gag_v1.png",
+      "runtime_sha256": "7c94f74f1b6cc1d201d57bdd1e292e2d04ed73ba2c9ff62da390d8593770492b",
+      "first_visible_beat": "untouched opening board, repeated on all 81 cells at approximately 45x45",
+      "runtime_references": ["stable board material", "ordinary movement", "rejection", "waypoint", "completion", "result background remains visible under modal"]
+    },
+    {
+      "asset_id": "gag-image-20260820-225330-fal-courier-v1",
+      "status": "rejected",
+      "provider": "fal.ai",
+      "model": "fal-ai/flux-pro/v1.1",
+      "server_source": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/path_games/gag-v1/arrow_go/generated_images__20260820_225330_FAL.ai.png",
+      "source_encoding": "JPEG payload with .png suffix",
+      "source_sha256": "cfba53cb614f3e650577b2b5e02025065e5131d99a24d99e0c68e30c0501c3bb",
+      "prompt_summary": "top-down paper-wing courier intended to point right with blank surfaces",
+      "rejection_reason": "The silhouette pointed vertically upward and contained two baked gold star symbols, confusing direction and destination roles."
+    },
+    {
+      "asset_id": "gag-image-20260820-225759-fal-courier-v2",
+      "status": "selected_repair",
+      "provider": "fal.ai",
+      "model": "fal-ai/flux-pro/v1.1",
+      "seed": null,
+      "server_source": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/path_games/gag-v1/arrow_go/generated_images__20260820_225759_FAL.ai.png",
+      "source_encoding": "JPEG payload with .png suffix",
+      "source_sha256": "3de34860eeae6b1a03f7fa32dada1f9d66ae2673bc60513a62657cf138e0f749",
+      "prompt": "One isolated production-ready 2D cartoon player token, strict orthographic top-down view. The token is a HORIZONTAL paper-wing courier glider flying from LEFT TO RIGHT: its single sharp brass-capped NOSE touches the far RIGHT end; two short coral ribbon TAILS trail from the far LEFT end. The overall silhouette must be about 1.7 times wider than tall, like a compact side-pointing paper airplane, never a diamond and never vertically oriented. Folded ivory paper wings, deep indigo enamel fuselage, one small plain aged-brass center spool. Chunky pocket-toy proportions, soft dark contact shadow, clean worn edge highlight, readable at 42 pixels. Exactly one glider only, centered with generous blank margin. Absolutely no stars, no moon, no compass, no decorative glyphs, no face, no pilot, no bird, no animal, no weapon, no propeller, no letters, no words, no numbers, no arrow icon, no logo, no UI, no sky, no clouds, no grid, no separate props. Plain neutral gray background with strong silhouette separation for later background removal.",
+      "review_note": "The no-symbol silhouette passed, but fal.ai left the nose approximately 45 degrees above right; deterministic rotation repaired orientation without another stochastic style pass.",
+      "derivations": [
+        {"tool": "remove_background", "provider": "removebg", "sha256": "d059317d59857b0a215f429e972e17d14e94887932c7241d07b74166ef77cd84", "size": [500, 500]},
+        {"tool": "crop_image", "mode": "auto_trim", "padding": 6, "sha256": "5d0918620c8b4319985ce63de0057669a900c8fc208cb90b1da484ca2d17871d", "size": [330, 310]},
+        {"tool": "ffmpeg", "operation": "rotate=PI/4 with transparent expanded canvas, scale/pad to 192x192", "sha256": "2e726e25b6c295d3b948bef538b0227da3e4460767497e646db7033805f8f35e", "size": [192, 192]},
+        {"tool": "ffmpeg", "operation": "transpose=1 deterministic down-facing derivative", "sha256": "32a64feed8c0bd0d889714ba19412bfdc3985ffb8c4485683b241ef7f38b2604", "size": [192, 192]}
+      ],
+      "runtime_assets": [
+        ["res://assets/art/catalog/path_games/gag/arrow_go_courier_right_gag_v1.png", "2e726e25b6c295d3b948bef538b0227da3e4460767497e646db7033805f8f35e"],
+        ["res://assets/art/catalog/path_games/gag/arrow_go_courier_down_gag_v1.png", "32a64feed8c0bd0d889714ba19412bfdc3985ffb8c4485683b241ef7f38b2604"]
+      ],
+      "first_visible_beat": "untouched opening board at [0,0], approximately 43x43",
+      "runtime_references": ["stable player token", "ordinary-step travel", "crosswind recoil", "right-to-down route turn", "terminal docking", "result plaque"]
+    },
+    {
+      "asset_id": "gag-image-20260820-225904-fal-harbor",
+      "status": "selected",
+      "provider": "fal.ai",
+      "model": "fal-ai/flux-pro/v1.1",
+      "seed": null,
+      "server_source": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/path_games/gag-v1/arrow_go/generated_images__20260820_225904_FAL.ai.png",
+      "source_encoding": "JPEG payload with .png suffix",
+      "source_sha256": "bc063d32494e2ae6a1dc3afc7d48fdc60a8cf92dcf1aa3ec3f04278e97669d88",
+      "prompt": "One isolated production-ready 2D cartoon destination token, exact orthographic top-down view: a compact circular midnight sky-harbor rosette. Deep indigo enamel landing bowl, six broad ivory folded-paper cloud petals, chunky aged-brass outer studs, one bold warm-gold four-point landing light in the exact center, and two restrained coral ribbon tabs. Tactile handmade pocket board-game piece with layered bevel, clean silhouette and soft contact shadow, readable at 42 pixels. Exactly one centered circular token only with generous blank margin. No arrow, no compass, no letters, no words, no numbers, no decorative pseudo-glyphs, no face, no character, no vehicle, no logo, no UI, no map, no grid, no sky scene, no extra props. Plain neutral gray background with strong silhouette separation for later background removal.",
+      "derivations": [
+        {"tool": "remove_background", "provider": "removebg", "sha256": "b3a3b396b59d68d7dd49a63093d04975a6e12659a256564ace1a176f4cba8f8d", "size": [500, 500]},
+        {"tool": "crop_image", "mode": "auto_trim", "padding": 6, "sha256": "f3e5b328c7c11d34e6b5646c63969ac18609ebcd6c7c51ab09a2b8b21e8987ec", "size": [389, 390]},
+        {"tool": "ffmpeg", "operation": "scale into transparent 192x192 runtime canvas", "sha256": "6ac5c0c32e5c22836625c1eb1e0bb5e7bbc9be9c91a2aa2634b6a3c8f026bf79", "size": [192, 192]}
+      ],
+      "runtime_asset": "res://assets/art/catalog/path_games/gag/arrow_go_harbor_gag_v1.png",
+      "runtime_sha256": "6ac5c0c32e5c22836625c1eb1e0bb5e7bbc9be9c91a2aa2634b6a3c8f026bf79",
+      "first_visible_beat": "untouched opening board at target [8,8], approximately 46x46",
+      "runtime_references": ["stable destination", "terminal iris/ray response", "result plaque"]
+    }
+  ],
+  "audio_generations": [
+    {
+      "asset_id": "arrow_go_kite_step",
+      "version": "v1",
+      "provider": "elevenlabs",
+      "model": "eleven_text_to_sound_v2",
+      "delivery_digest": "9a0610739ee4bc8cf08bb83be844136b34b088959103e4db5e6892eced24c789",
+      "prompt": "A very short tactile cartoon puzzle movement sound: one small folded paper wing flicks through a soft puff of night air, followed by a tiny brass wind-vane click and a light thread-pin tap. Warm handmade, quick attack, fast clean decay, subtle enough for repeated moves, no voice, no speech, no music, no ambience.",
+      "variations": 2,
+      "selected_variation": 1,
+      "source_master_remote": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/path_games/gag-v1/arrow_go/sfx/arrow_go_kite_step/v1/sfx/arrow_go_kite_step/v1/arrow_go_kite_step_01_master.wav",
+      "source_sha256": "13c1b7efdece86575e400da0a0f66995d036db4ddbd9ce45c6cc5473b6470c0d",
+      "source_qa": {"status": "issues_detected", "failed_check": "loudness", "duration_seconds": 0.487792, "sample_rate": 48000, "channels": 1, "measured_lufs": -22.35, "measured_true_peak_db": -1.18, "leading_silence_ms": 0.0, "trailing_silence_ms": 0.0},
+      "derivation": "GAG published primary OGG copied byte-for-byte; the quieter loudness is intentional for a frequent move layer beneath the grade-4 dock cue.",
+      "runtime_asset": "res://assets/audio/catalog/path_games/gag/arrow_go_kite_step_gag_v1.ogg",
+      "runtime_sha256": "af778d06bdbfe61e82c0a2c599a35e4c2f25da8cceba634ed6e54213333f358e",
+      "runtime_qa": {"duration_seconds": 0.487792, "sample_rate": 48000, "channels": 1, "measured_lufs": -22.5, "measured_true_peak_db": -1.0},
+      "runtime_reference": "arrow_go path_step grades 1 and 2 with grade-dependent pitch/gain"
+    },
+    {
+      "asset_id": "arrow_go_harbor_dock",
+      "version": "v1",
+      "provider": "elevenlabs",
+      "model": "eleven_text_to_sound_v2",
+      "delivery_digest": "20c53b4783bf9de6f9cb682df13f67075d1b741d8adf2c842b5ce8e7d0b3e976",
+      "prompt": "A short satisfying cartoon delivery completion sound: a paper glider slips into a padded sky harbor, a small brass iris stamps shut with a warm thump, coral ribbon cinches, then one restrained bright glass-and-wood chime. Clear compact impact and clean decay, no voice, no speech, no music, no ambience.",
+      "variations": 2,
+      "selected_variation": 2,
+      "source_master_remote": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/path_games/gag-v1/arrow_go/sfx/arrow_go_harbor_dock/v1/sfx/arrow_go_harbor_dock/v1/arrow_go_harbor_dock_02_master.wav",
+      "source_sha256": "aa5be94d1cae144e99b917cf4e00c96a8eb3fe8403415a22c504d2330002a7bd",
+      "source_qa": {"status": "issues_detected", "failed_check": "loudness", "duration_seconds": 0.864583, "sample_rate": 48000, "channels": 1, "measured_lufs": -17.06, "measured_true_peak_db": -2.70, "leading_silence_ms": 0.0, "trailing_silence_ms": 0.0},
+      "derivation": "ffmpeg loudnorm target I=-16/TP=-2/LRA=5; 48 kHz mono; libvorbis q5",
+      "runtime_asset": "res://assets/audio/catalog/path_games/gag/arrow_go_harbor_dock_gag_v1.ogg",
+      "runtime_sha256": "2fa028f08202076d7210c31af40c8c1597bd1f0dbeb9825d7b38a7cad051a07f",
+      "runtime_qa": {"duration_seconds": 0.864583, "sample_rate": 48000, "channels": 1, "measured_lufs": -16.7, "measured_true_peak_db": -2.0},
+      "runtime_reference": "arrow_go path_complete grade 4"
+    }
+  ],
+  "runtime_contract": {
+    "stable_frequent_signature": "The GAG wind plate is visible 81 times on the untouched opening board; the courier and harbor are also visible before input.",
+    "live_authoritative_layers": ["9x9 directional fins", "visited state", "ordered route", "waypoint knots", "all CJK/Latin copy"],
+    "semantic_feedback": [
+      ["path_step grade 1", "courier travels exact edge, coral ribbon settles, one local ring, frequent GAG step cue, light haptic"],
+      ["path_step grade 2", "five-step brass knot, doubled rings/ribbons, stronger shake/haptic, pitched GAG step cue"],
+      ["path_reject_arrow grade 2", "same courier recoils at current cell, crosswind bars and red rejection marks, state stays inert"],
+      ["path_reject_edge grade 1", "same-object edge recoil with bounded rejection"],
+      ["path_complete grade 4", "down-facing courier docks into harbor, iris/rays expand, route remains, strong shake/haptic, separate GAG dock cue and result plaque"]
+    ],
+    "audio_review_scope": "waveform, duration, loudness, true peak, import hash and runtime route only; no subjective listening claim"
+  },
+  "shipping_boundary": {
+    "source_masters_in_repository": 0,
+    "rejected_generations_in_repository": 0,
+    "only_runtime_derivatives_ship": true,
+    "ephemeral_download_urls": "omitted because signed URLs expire"
+  }
+}

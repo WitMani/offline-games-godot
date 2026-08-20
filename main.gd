@@ -60,6 +60,10 @@ const TILECLUB_GAG_BADGE_ATLAS_TEXTURE: Texture2D = preload("res://assets/art/ca
 const TILECLUB_GAG_SHELL_TEXTURE: Texture2D = preload("res://assets/art/catalog/tile_games/gag/tileclub_shell_badge_gag_v1.png")
 const AMAZE_GO_GAG_SURVEYOR_TEXTURE: Texture2D = preload("res://assets/art/catalog/path_games/gag/amaze_go_surveyor_gag_v1.png")
 const AMAZE_GO_GAG_BEACON_TEXTURE: Texture2D = preload("res://assets/art/catalog/path_games/gag/amaze_go_beacon_gag_v1.png")
+const ARROW_GO_GAG_WIND_PLATE_TEXTURE: Texture2D = preload("res://assets/art/catalog/path_games/gag/arrow_go_wind_plate_gag_v1.png")
+const ARROW_GO_GAG_COURIER_RIGHT_TEXTURE: Texture2D = preload("res://assets/art/catalog/path_games/gag/arrow_go_courier_right_gag_v1.png")
+const ARROW_GO_GAG_COURIER_DOWN_TEXTURE: Texture2D = preload("res://assets/art/catalog/path_games/gag/arrow_go_courier_down_gag_v1.png")
+const ARROW_GO_GAG_HARBOR_TEXTURE: Texture2D = preload("res://assets/art/catalog/path_games/gag/arrow_go_harbor_gag_v1.png")
 const SNAKE_RULES = preload("res://snake_model.gd")
 const SNAKE_GB_RULES = preload("res://models/snake_gb_model.gd")
 const SNAKES_ARENA_RULES = preload("res://models/snakes_arena_model.gd")
@@ -94,6 +98,8 @@ const SFX_MAHJONG_GAG_PAIR: AudioStream = preload("res://assets/audio/catalog/ti
 const SFX_TILECLUB_GAG_MATCH: AudioStream = preload("res://assets/audio/catalog/tile_games/gag/fabric_triple_stitch_gag_v1.ogg")
 const SFX_AMAZE_GO_GAG_RATCHET: AudioStream = preload("res://assets/audio/catalog/path_games/gag/amaze_go_survey_ratchet_gag_v1.ogg")
 const SFX_AMAZE_GO_GAG_SEAL: AudioStream = preload("res://assets/audio/catalog/path_games/gag/amaze_go_destination_seal_gag_v1.ogg")
+const SFX_ARROW_GO_GAG_KITE_STEP: AudioStream = preload("res://assets/audio/catalog/path_games/gag/arrow_go_kite_step_gag_v1.ogg")
+const SFX_ARROW_GO_GAG_HARBOR_DOCK: AudioStream = preload("res://assets/audio/catalog/path_games/gag/arrow_go_harbor_dock_gag_v1.ogg")
 
 var catalog: Array = [
 	{"id":"merge2248", "title":"2248", "subtitle":"数字连线", "group":"数字", "accent":Color("ffbf2f"), "desc":"八方向连接数字，把相邻数合成到 2048"},
@@ -171,6 +177,9 @@ var tileclub_object_fx: Dictionary = {}
 var amaze_go_object_fx: Dictionary = {}
 var amaze_go_route: Array[Vector2i] = []
 var amaze_go_facing := Vector2i.RIGHT
+var arrow_go_object_fx: Dictionary = {}
+var arrow_go_route: Array[Vector2i] = []
+var arrow_go_facing := Vector2i.RIGHT
 var catalog_fx: Array[Dictionary] = []
 var catalog_fx_serial := 0
 var merge2248_drag_active := false
@@ -365,7 +374,7 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 		"duration": duration,
 		"seed": catalog_fx_serial,
 	}
-	if game_id in ["sudoku", "meowdoku", "mahjong", "tileclub", "amaze_go"]:
+	if game_id in ["sudoku", "meowdoku", "mahjong", "tileclub", "amaze_go", "arrow_go"]:
 		effect["font_role"] = "ui_cjk"
 	effect.merge(metadata, true)
 	catalog_fx.append(effect)
@@ -432,6 +441,12 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 		elif event_sfx == SFX_AMAZE_GO_GAG_SEAL:
 			event_volume = -7.5
 			event_pitch = 1.0
+		elif event_sfx == SFX_ARROW_GO_GAG_KITE_STEP:
+			event_volume = -3.2 + float(event_grade) * 0.4
+			event_pitch = 0.96 + float(event_grade) * 0.055
+		elif event_sfx == SFX_ARROW_GO_GAG_HARBOR_DOCK:
+			event_volume = -1.0
+			event_pitch = 1.0
 		elif game_id == "tileclub" and event_sfx == SFX_SNAKE_REJECT:
 			event_volume = -15.0 + float(event_grade)
 			event_pitch = 0.88 + float(event_grade) * 0.025
@@ -457,6 +472,10 @@ func _catalog_event_sfx(kind: String, grade: int) -> AudioStream:
 		return SFX_AMAZE_GO_GAG_RATCHET
 	if game_id == "amaze_go" and kind == "path_complete":
 		return SFX_AMAZE_GO_GAG_SEAL
+	if game_id == "arrow_go" and kind == "path_step":
+		return SFX_ARROW_GO_GAG_KITE_STEP
+	if game_id == "arrow_go" and kind == "path_complete":
+		return SFX_ARROW_GO_GAG_HARBOR_DOCK
 	return SFX_SNAKE_EAT if grade >= 2 else SFX_SNAKE_KEY
 
 func _play_logic_event_sfx(kind: String, grade: int) -> void:
@@ -1315,6 +1334,24 @@ func _draw_result_overlay(won: bool) -> void:
 		_draw_center_font(UI_FONT, "得分 %d · 步数 %d" % [int(state.get("score", 0)), int(state.get("moves", 0))], Vector2(270, 504), 16, Color(blueprint_ink, 0.88))
 		_draw_center_font(UI_FONT, "点击右上角“重开”继续挑战", Vector2(270, 548), 13, Color(blueprint_ink, 0.66))
 		return
+	if game_id == "arrow_go":
+		var night_ink := Color("22305b")
+		var brass := Color("d5a95c")
+		draw_rect(Rect2(0, 112, 540, 848), Color("12091e", 0.74))
+		_draw_panel(Rect2(55, 345, 430, 250), Color("06030c", 0.38), Color.TRANSPARENT, 18, 0)
+		_draw_panel(Rect2(48, 338, 444, 250), Color("fff0d1"), brass, 16, 3)
+		for seam in range(5):
+			var seam_y := 360.0 + float(seam) * 45.0
+			draw_line(Vector2(66, seam_y), Vector2(474, seam_y + 4.0), Color(night_ink, 0.085), 1.0)
+		_draw_arrow_go_texture(ARROW_GO_GAG_COURIER_RIGHT_TEXTURE, Vector2(206, 390), 58.0, Color.WHITE)
+		draw_line(Vector2(237, 390), Vector2(299, 390), Color("d76b5c", 0.78), 5.0, true)
+		for knot in range(4):
+			draw_circle(Vector2(248 + knot * 13, 390), 2.7, Color("f4c66c"))
+		_draw_arrow_go_texture(ARROW_GO_GAG_HARBOR_TEXTURE, Vector2(330, 390), 64.0, Color.WHITE)
+		_draw_center_font(DISPLAY_FONT, "航信送达", Vector2(270, 462), 29, night_ink)
+		_draw_center_font(UI_FONT, "得分 %d · 步数 %d" % [int(state.get("score", 0)), int(state.get("moves", 0))], Vector2(270, 504), 16, Color(night_ink, 0.88))
+		_draw_center_font(UI_FONT, "点击右上角“重开”继续挑战", Vector2(270, 548), 13, Color(night_ink, 0.66))
+		return
 	draw_rect(Rect2(0, 112, 540, 848), Color(COAL, 0.72))
 	var color := GREEN if won else RED
 	_draw_panel(Rect2(48, 338, 444, 238), Color("111a2e", 0.985), Color(color, 0.82), 18, 2)
@@ -1386,6 +1423,16 @@ func _draw_motion_overlay() -> void:
 				var rover_scale := 1.0 + sin(progress * PI) * 0.10
 				_draw_amaze_go_texture(AMAZE_GO_GAG_SURVEYOR_TEXTURE, planar_position, 58.0 * rover_scale, Color.WHITE)
 				_draw_amaze_go_heading(planar_position, amaze_go_facing, 28.0 * rover_scale, 0.92)
+			elif game_id == "arrow_go":
+				var planar_position := motion_from.lerp(motion_to, eased) + Vector2(0, -7.0 * sin(progress * PI))
+				draw_line(motion_from + Vector2(1.2, 2.0), planar_position + Vector2(1.2, 2.0), Color("05030c", 0.56), 9.0, true)
+				draw_line(motion_from, planar_position, Color("e87463", 0.88), 5.0, true)
+				for knot in range(3):
+					var knot_t := (float(knot) + 1.0) / 4.0
+					var knot_position := motion_from.lerp(planar_position, knot_t)
+					draw_circle(knot_position, 2.0, Color("ffe0ac", 0.82 * alpha))
+				var courier_scale := 1.0 + sin(progress * PI) * 0.12
+				_draw_arrow_go_texture(_arrow_go_courier_texture(arrow_go_facing), planar_position, 43.0 * courier_scale, Color.WHITE)
 			else:
 				draw_line(motion_from, position, Color(motion_color, 0.46 * alpha), 8.0)
 				draw_circle(position, 11.0 + sin(progress * PI) * 4.0, Color(motion_color, 0.92))
@@ -5061,10 +5108,17 @@ func _init_amaze() -> void:
 	amaze_go_object_fx = {}
 	amaze_go_route.clear()
 	amaze_go_facing = Vector2i.RIGHT
+	arrow_go_object_fx = {}
+	arrow_go_route.clear()
+	arrow_go_facing = Vector2i.RIGHT
 	if game_id == "amaze_go":
 		# Presentation-only route memory. Rules continue to read state.painted;
 		# this ordered copy exists solely to render a legible surveyed trail.
 		amaze_go_route.append(Vector2i.ZERO)
+	elif game_id == "arrow_go":
+		# Ordered presentation evidence mirrors successful moves but is never read
+		# by the frozen path rules. Generated art cannot mutate this trail.
+		arrow_go_route.append(Vector2i.ZERO)
 
 func _amaze_tap(pos: Vector2) -> void:
 	if state.get("status") != "playing":
@@ -5086,10 +5140,20 @@ func _amaze_step(direction: Vector2i) -> void:
 	var size_grid := int(state["size"])
 	if game_id == "arrow_go":
 		var arrow: Array = state["arrows"][int(player[1])][int(player[0])]
-		if direction != Vector2i(int(arrow[0]), int(arrow[1])):
+		var expected_direction := Vector2i(int(arrow[0]), int(arrow[1]))
+		if direction != expected_direction:
+			arrow_go_object_fx = {
+				"kind": "crosswind_reject",
+				"started": elapsed,
+				"duration": 0.48,
+				"grade": 2,
+				"from": _path_cell_center(int(player[0]), int(player[1]), size_grid),
+				"expected": expected_direction,
+				"attempted": direction,
+			}
 			_flash_feedback("箭流只允许%s" % _direction_name(arrow), RED)
 			_impact(_path_cell_center(int(player[0]), int(player[1]), size_grid), RED, 0.48)
-			_start_catalog_event("path_reject_arrow", _path_cell_center(int(player[0]), int(player[1]), size_grid), RED, 2, "逆着箭流", 0.62)
+			_start_catalog_event("path_reject_arrow", _path_cell_center(int(player[0]), int(player[1]), size_grid), RED, 2, "逆着箭流", 0.62, {"expected":[expected_direction.x, expected_direction.y], "attempted":[direction.x, direction.y], "label_position":Vector2(270, 711)})
 			return
 	if game_id == "amaze_go" and _maze_blocks(int(player[0]), int(player[1]), direction):
 		var wall_center := _path_cell_center(int(player[0]), int(player[1]), size_grid) + Vector2(direction) * (430.0 / float(size_grid)) * 0.5
@@ -5125,7 +5189,17 @@ func _amaze_step(direction: Vector2i) -> void:
 				"segment_a": edge_center - edge_tangent * (430.0 / float(size_grid)) * 0.48,
 				"segment_b": edge_center + edge_tangent * (430.0 / float(size_grid)) * 0.48,
 			}
-		_start_catalog_event("path_reject_edge", _path_cell_center(int(player[0]), int(player[1]), size_grid), RED, 1, "已到边界", 0.54)
+		elif game_id == "arrow_go":
+			arrow_go_object_fx = {
+				"kind": "edge_reject",
+				"started": elapsed,
+				"duration": 0.38,
+				"grade": 1,
+				"from": _path_cell_center(int(player[0]), int(player[1]), size_grid),
+				"expected": direction,
+				"attempted": direction,
+			}
+		_start_catalog_event("path_reject_edge", _path_cell_center(int(player[0]), int(player[1]), size_grid), RED, 1, "已到边界", 0.54, {"direction":[direction.x, direction.y], "label_position":Vector2(270, 711)} if game_id == "arrow_go" else {})
 		return
 	var from_position := _path_cell_center(int(player[0]), int(player[1]), size_grid)
 	player[0] = next.x
@@ -5137,6 +5211,9 @@ func _amaze_step(direction: Vector2i) -> void:
 	if game_id == "amaze_go":
 		amaze_go_route.append(next)
 		amaze_go_facing = direction
+	elif game_id == "arrow_go":
+		arrow_go_route.append(next)
+		arrow_go_facing = direction
 	var to_position := _path_cell_center(next.x, next.y, size_grid)
 	_impact(to_position, _catalog_item(game_id).accent, 0.30)
 	_start_motion("path", from_position, to_position, _catalog_item(game_id).accent, "", 0.24)
@@ -5154,7 +5231,18 @@ func _amaze_step(direction: Vector2i) -> void:
 			"direction": direction,
 			"route_index": amaze_go_route.size() - 1,
 		}
-	_start_catalog_event("path_step", to_position, _catalog_item(game_id).accent, path_grade, path_label, 0.52 if path_grade == 1 else 0.70)
+	elif game_id == "arrow_go":
+		arrow_go_object_fx = {
+			"kind": "waypoint" if path_grade > 1 else "step",
+			"started": elapsed,
+			"duration": 0.74 if path_grade > 1 else 0.46,
+			"grade": path_grade,
+			"from": from_position,
+			"to": to_position,
+			"direction": direction,
+			"route_index": arrow_go_route.size() - 1,
+		}
+	_start_catalog_event("path_step", to_position, _catalog_item(game_id).accent, path_grade, path_label, 0.52 if path_grade == 1 else 0.70, {"direction":[direction.x, direction.y], "label_position":Vector2(270, 711)} if game_id == "arrow_go" else {})
 	_log_event("path_step", {"x":next.x, "y":next.y})
 	var target: Array = state["target"]
 	var reached_goal := next.x == int(target[0]) and next.y == int(target[1])
@@ -5172,7 +5260,18 @@ func _amaze_step(direction: Vector2i) -> void:
 				"direction": direction,
 				"route_index": amaze_go_route.size() - 1,
 			}
-		_start_catalog_event("path_complete", to_position, GOLD, 4, "全域完成", 1.12)
+		elif game_id == "arrow_go":
+			arrow_go_object_fx = {
+				"kind": "complete",
+				"started": elapsed,
+				"duration": 1.18,
+				"grade": 4,
+				"from": from_position,
+				"to": to_position,
+				"direction": direction,
+				"route_index": arrow_go_route.size() - 1,
+			}
+		_start_catalog_event("path_complete", to_position, GOLD, 4, "全域完成", 1.18 if game_id == "arrow_go" else 1.12, {"direction":[direction.x, direction.y], "label_position":Vector2(270, 711)} if game_id == "arrow_go" else {})
 		state["status"] = "won"
 		state["score"] = int(state["score"]) + 100
 		_capture("path_win_%s" % game_id)
@@ -5194,6 +5293,9 @@ func _amaze_hint() -> void:
 func _draw_amaze() -> void:
 	if game_id == "amaze_go":
 		_draw_amaze_go()
+		return
+	if game_id == "arrow_go":
+		_draw_arrow_go()
 		return
 	var grid_size := int(state["size"])
 	var cell := 430.0 / grid_size
@@ -5251,6 +5353,186 @@ func _draw_amaze() -> void:
 		_draw_status_badge("轨迹 %d 格" % painted_count, Vector2(54, 692), accent, true, 124)
 		_draw_text("穿过蓝图迷宫，已走路径会持续点亮", Vector2(54, 746), 12, BRIGHT_MUTED)
 	_draw_text("目标在右下角", Vector2(388, 715), 12, Color(BRIGHT_MUTED, 0.78)) if game_id != "amaze" else _draw_text("覆盖全部区域", Vector2(388, 715), 12, Color(BRIGHT_MUTED, 0.78))
+
+func _draw_arrow_go() -> void:
+	var grid_size := int(state["size"])
+	var cell := 430.0 / float(grid_size)
+	var origin := Vector2(54, 236)
+	var board_rect := Rect2(origin, Vector2(430, 430))
+	var painted: Array = state["painted"]
+	var aubergine := Color("211738")
+	var brass := Color("d5aa5d")
+	var ivory := Color("fff0cf")
+	var coral := Color("e87463")
+
+	_draw_section_heading("午夜风筝邮局", "相邻格点击或方向键移动", Color("d9b7ff"))
+	_draw_panel(Rect2(origin - Vector2(15, 13), Vector2(460, 460)), Color("090613", 0.46), Color.TRANSPARENT, 18, 0)
+	_draw_panel(Rect2(origin - Vector2(11, 11), Vector2(452, 452)), aubergine, Color(brass, 0.82), 14, 3)
+	draw_rect(board_rect, Color("16102a"))
+	for seam in range(10):
+		var seam_y := board_rect.position.y + 10.0 + float(seam) * 44.0
+		draw_line(Vector2(board_rect.position.x, seam_y), Vector2(board_rect.end.x, seam_y + 8.0), Color("e7c5ef", 0.025), 1.0)
+
+	# The GAG wind socket is stable and frequent: all 81 opening cells use the
+	# authored material. Directional fins remain live so art can never disagree
+	# with the frozen arrow matrix.
+	for y in range(grid_size):
+		for x in range(grid_size):
+			var center := _path_cell_center(x, y, grid_size)
+			draw_circle(center + Vector2(1.5, 2.4), cell * 0.43, Color("05030b", 0.32))
+			_draw_arrow_go_texture(ARROW_GO_GAG_WIND_PLATE_TEXTURE, center, cell * 0.955, Color.WHITE)
+			if bool(painted[y][x]):
+				draw_circle(center, cell * 0.265, Color(coral, 0.17))
+				draw_arc(center, cell * 0.32, 0, TAU, 22, Color("ffd39b", 0.28), 1.2, true)
+
+	# Presentation-only ordered route. Authoritative movement still reads the
+	# arrow matrix and painted grid above.
+	for route_index in range(1, arrow_go_route.size()):
+		var previous: Vector2i = arrow_go_route[route_index - 1]
+		var current: Vector2i = arrow_go_route[route_index]
+		var from_position := _path_cell_center(previous.x, previous.y, grid_size)
+		var to_position := _path_cell_center(current.x, current.y, grid_size)
+		draw_line(from_position + Vector2(1.4, 2.2), to_position + Vector2(1.4, 2.2), Color("05030c", 0.56), 9.0, true)
+		draw_line(from_position, to_position, Color(coral, 0.88), 5.2, true)
+		draw_line(from_position, to_position, Color("ffd1b0", 0.52), 1.2, true)
+	for route_index in range(arrow_go_route.size()):
+		var route_node: Vector2i = arrow_go_route[route_index]
+		var route_position := _path_cell_center(route_node.x, route_node.y, grid_size)
+		var waypoint := route_index > 0 and route_index % 5 == 0
+		draw_circle(route_position, 4.7 if waypoint else 3.5, Color("341527", 0.92))
+		draw_circle(route_position, 2.8 if waypoint else 1.9, Color(brass if waypoint else ivory, 0.94))
+
+	var player: Array = state["player"]
+	var player_cell := Vector2i(int(player[0]), int(player[1]))
+	for y in range(grid_size):
+		for x in range(grid_size):
+			var center := _path_cell_center(x, y, grid_size)
+			var arrow: Array = state["arrows"][y][x]
+			_draw_arrow_go_vane(center, Vector2i(int(arrow[0]), int(arrow[1])), cell, bool(painted[y][x]), Vector2i(x, y) == player_cell)
+
+	var target: Array = state["target"]
+	var target_position := _path_cell_center(int(target[0]), int(target[1]), grid_size)
+	var player_position := _path_cell_center(player_cell.x, player_cell.y, grid_size)
+	var object_kind := str(arrow_go_object_fx.get("kind", ""))
+	var object_age := elapsed - float(arrow_go_object_fx.get("started", -10.0))
+	var object_duration := maxf(0.001, float(arrow_go_object_fx.get("duration", 0.0)))
+	var object_active := object_age >= 0.0 and object_age < object_duration
+	var object_t := clampf(object_age / object_duration, 0.0, 1.0) if object_active else 1.0
+	var harbor_scale := 1.0 + sin(elapsed * 2.3) * 0.025
+	if object_active and object_kind == "complete":
+		harbor_scale += sin(clampf(object_t / 0.38, 0.0, 1.0) * PI) * 0.28
+	for ring in range(2):
+		draw_circle(target_position, (24.0 + float(ring) * 6.0) * harbor_scale, Color("f3c76f", 0.11 - float(ring) * 0.025))
+	_draw_arrow_go_texture(ARROW_GO_GAG_HARBOR_TEXTURE, target_position, 46.0 * harbor_scale, Color.WHITE)
+
+	if object_active and object_kind in ["step", "waypoint", "complete"]:
+		var event_position: Vector2 = arrow_go_object_fx.get("to", player_position)
+		var event_grade := clampi(int(arrow_go_object_fx.get("grade", 1)), 1, 4)
+		var event_peak := sin(clampf(object_t / 0.58, 0.0, 1.0) * PI)
+		var event_fade := 1.0 - clampf((object_t - 0.56) / 0.44, 0.0, 1.0)
+		for ring in range(event_grade):
+			var ring_t := clampf((object_t - float(ring) * 0.055) / 0.78, 0.0, 1.0)
+			if ring_t > 0.0:
+				draw_arc(event_position, 11.0 + ring_t * (13.0 + float(ring) * 7.0), 0, TAU, 26, Color("ffe1a0", event_fade * (0.62 - float(ring) * 0.09)), 2.1, true)
+		var ribbon_count := 4 + event_grade * 2
+		for ribbon in range(ribbon_count):
+			var angle := TAU * float(ribbon) / float(ribbon_count) + object_t * 0.24
+			var ribbon_position := event_position + Vector2(cos(angle), sin(angle)) * (14.0 + object_t * (10.0 + event_grade * 4.0))
+			var tangent := Vector2(-sin(angle), cos(angle))
+			draw_line(ribbon_position - tangent * 2.8, ribbon_position + tangent * 2.8, Color(coral, event_fade * 0.88), 2.0, true)
+		if object_kind == "waypoint":
+			draw_circle(event_position, 10.0 + event_peak * 4.0, Color(brass, 0.26 * event_fade))
+			draw_arc(event_position, 12.0 + event_peak * 6.0, 0, TAU, 20, Color(ivory, 0.78 * event_fade), 2.4, true)
+		elif object_kind == "complete":
+			for ray in range(12):
+				var ray_angle := TAU * float(ray) / 12.0
+				var ray_from := target_position + Vector2(cos(ray_angle), sin(ray_angle)) * (25.0 + event_peak * 2.0)
+				var ray_to := target_position + Vector2(cos(ray_angle), sin(ray_angle)) * (39.0 + event_peak * 12.0)
+				draw_line(ray_from, ray_to, Color("ffe7a8", event_fade * 0.82), 2.3, true)
+
+	if object_active and object_kind in ["crosswind_reject", "edge_reject"]:
+		var attempted := Vector2(arrow_go_object_fx.get("attempted", Vector2i.LEFT)).normalized()
+		var side := Vector2(-attempted.y, attempted.x)
+		var reject_fade := 1.0 - object_t
+		for gust in range(3):
+			var gust_offset := (float(gust) - 1.0) * 8.0
+			var gust_center := player_position + attempted * (10.0 + object_t * 18.0) + side * gust_offset
+			draw_arc(gust_center, 8.0 + float(gust) * 2.0, -PI * 0.68, PI * 0.32, 14, Color("ff8a8e", reject_fade * (0.82 - float(gust) * 0.14)), 2.2, true)
+		draw_line(player_position - side * 13.0, player_position + side * 13.0, Color("ffd1d1", reject_fade * 0.72), 3.0, true)
+
+	if not _arrow_go_motion_active():
+		var local_arrow: Array = state["arrows"][player_cell.y][player_cell.x]
+		var expected_direction := Vector2i(int(local_arrow[0]), int(local_arrow[1]))
+		var courier_position := player_position + _arrow_go_reject_offset()
+		draw_circle(courier_position + Vector2(1.5, 3.0), 18.0, Color("05030b", 0.34))
+		_draw_arrow_go_texture(_arrow_go_courier_texture(expected_direction), courier_position, 43.0, Color.WHITE)
+
+	_draw_status_badge("航线 %d 格" % _painted_count(), Vector2(54, 692), Color("d7b4fa"), true, 128)
+	_draw_text("顺着每格风向，把纸翼信使送进星港", Vector2(54, 746), 12, Color("f5dfd1", 0.88))
+	_draw_text("星港在右下角", Vector2(392, 715), 12, Color("f0c878", 0.84))
+
+func _draw_arrow_go_texture(texture: Texture2D, center: Vector2, diameter: float, modulate: Color) -> void:
+	if texture == null:
+		return
+	var texture_size := texture.get_size()
+	var longest := maxf(texture_size.x, texture_size.y)
+	if longest <= 0.0:
+		return
+	var draw_size := texture_size * (diameter / longest)
+	draw_texture_rect(texture, Rect2(center - draw_size * 0.5, draw_size), false, modulate)
+
+func _draw_arrow_go_vane(center: Vector2, direction: Vector2i, cell: float, visited: bool, current: bool) -> void:
+	var heading := Vector2(direction).normalized()
+	if heading == Vector2.ZERO:
+		return
+	var side := Vector2(-heading.y, heading.x)
+	var tip := center + heading * cell * 0.255
+	var shoulder := center + heading * cell * 0.035
+	var tail := center - heading * cell * 0.205
+	var points := PackedVector2Array([
+		tip,
+		shoulder + side * cell * 0.105,
+		shoulder + side * cell * 0.052,
+		tail + side * cell * 0.052,
+		tail - side * cell * 0.052,
+		shoulder - side * cell * 0.052,
+		shoulder - side * cell * 0.105,
+	])
+	var shadow := PackedVector2Array()
+	for point in points:
+		shadow.append(point + Vector2(1.3, 1.8))
+	draw_colored_polygon(shadow, Color("05030b", 0.58))
+	var fin_color := Color("f3bd68") if visited else Color("fff0d1")
+	if current:
+		fin_color = Color("ffcb72")
+	draw_colored_polygon(points, fin_color)
+	draw_line(tail, shoulder, Color("74422f", 0.86), maxf(1.4, cell * 0.035), true)
+	draw_circle(center - heading * cell * 0.08, cell * 0.055, Color("6b3d2c"))
+	draw_circle(center - heading * cell * 0.08 - Vector2(0.6, 0.7), cell * 0.026, Color("ffe1a1"))
+	if current:
+		draw_arc(center, cell * (0.34 + sin(elapsed * 4.0) * 0.015), 0, TAU, 24, Color("ffd584", 0.66), 2.0, true)
+
+func _arrow_go_courier_texture(direction: Vector2i) -> Texture2D:
+	return ARROW_GO_GAG_COURIER_DOWN_TEXTURE if direction.y > 0 else ARROW_GO_GAG_COURIER_RIGHT_TEXTURE
+
+func _arrow_go_motion_active() -> bool:
+	if game_id != "arrow_go" or motion_kind != "path" or motion_duration <= 0.0:
+		return false
+	var age := elapsed - motion_started
+	return age >= 0.0 and age < motion_duration
+
+func _arrow_go_reject_offset() -> Vector2:
+	var kind := str(arrow_go_object_fx.get("kind", ""))
+	if kind not in ["crosswind_reject", "edge_reject"]:
+		return Vector2.ZERO
+	var age := elapsed - float(arrow_go_object_fx.get("started", -10.0))
+	var duration := maxf(0.001, float(arrow_go_object_fx.get("duration", 0.0)))
+	if age < 0.0 or age >= duration:
+		return Vector2.ZERO
+	var attempted := Vector2(arrow_go_object_fx.get("attempted", Vector2i.LEFT)).normalized()
+	var side := Vector2(-attempted.y, attempted.x)
+	var envelope := pow(1.0 - age / duration, 1.7)
+	return -attempted * abs(sin(age * 70.0)) * 6.5 * envelope + side * sin(age * 46.0) * 2.8 * envelope
 
 func _draw_amaze_go() -> void:
 	var grid_size := int(state["size"])

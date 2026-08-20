@@ -1,0 +1,55 @@
+{
+  "event": {
+    "duration": 0.7,
+    "font_role": "ui_cjk",
+    "game_id": "arrow_go",
+    "grade": 2,
+    "kind": "path_step",
+    "label": "轨迹 ×5"
+  },
+  "game_id": "arrow_go",
+  "motion_kind": "path",
+  "moves": 5,
+  "object_fx": {
+    "direction": "(1, 0)",
+    "duration": 0.74,
+    "from": "(269.0, 259.8889)",
+    "grade": 2,
+    "kind": "waypoint",
+    "route_index": 5,
+    "to": "(316.7778, 259.8889)"
+  },
+  "painted_count": 6,
+  "player": [
+    5,
+    0
+  ],
+  "route": [
+    [
+      0,
+      0
+    ],
+    [
+      1,
+      0
+    ],
+    [
+      2,
+      0
+    ],
+    [
+      3,
+      0
+    ],
+    [
+      4,
+      0
+    ],
+    [
+      5,
+      0
+    ]
+  ],
+  "score": 25,
+  "status": "playing"
+}

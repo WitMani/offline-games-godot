@@ -1,0 +1,131 @@
+{
+  "result": "PASS",
+  "game_id": "arrow_go",
+  "viewport": [540, 960],
+  "baseline": {
+    "stable": {
+      "path": "../baseline/stable.png",
+      "sha256": "39bb477130a450069b8a8068cec8d9d488395c4511fe2c3fdd93c7004825295b"
+    },
+    "step": {
+      "path": "../baseline/step.png",
+      "sha256": "cad464bf12494c5e66d28bf52bef980b97d6ce554e238a11d93cd8ff2abdaecb"
+    }
+  },
+  "stable_signature": {
+    "frame": "00-stable.webp",
+    "frame_sha256": "17d9512feb662a0bdbadebb2039a3f8aed89a49e7f082b8d88c1b328745aaa7f",
+    "wind_plate": {
+      "runtime_path": "res://assets/art/catalog/path_games/gag/arrow_go_wind_plate_gag_v1.png",
+      "sha256": "7c94f74f1b6cc1d201d57bdd1e292e2d04ed73ba2c9ff62da390d8593770492b",
+      "visible_instances_on_untouched_board": 81
+    },
+    "courier": {
+      "runtime_path": "res://assets/art/catalog/path_games/gag/arrow_go_courier_right_gag_v1.png",
+      "sha256": "2e726e25b6c295d3b948bef538b0227da3e4460767497e646db7033805f8f35e",
+      "position": [0, 0],
+      "visible_on_untouched_board": true
+    },
+    "harbor": {
+      "runtime_path": "res://assets/art/catalog/path_games/gag/arrow_go_harbor_gag_v1.png",
+      "sha256": "6ac5c0c32e5c22836625c1eb1e0bb5e7bbc9be9c91a2aa2634b6a3c8f026bf79",
+      "position": [8, 8],
+      "visible_on_untouched_board": true
+    },
+    "generated_gameplay_text": false,
+    "code_native_live_layers": [
+      "9x9 arrows",
+      "visited overlays",
+      "ordered coral route",
+      "five-step knots",
+      "labels",
+      "score",
+      "result copy"
+    ]
+  },
+  "semantic_sequences": [
+    {
+      "name": "ordinary legal courier step",
+      "intent": "01-step-intent.webp",
+      "anticipation": "02-step-travel.webp",
+      "impact": "03-step-impact.webp",
+      "impact_sha256": "48db878ecd09265e6dd038da0738aa8a6422db4acec593d4d652b7c4d12816e0",
+      "settle": "04-step-settle.webp",
+      "recovery": "05-step-recovery.webp",
+      "state": "step-state.json",
+      "authoritative_delta": "player [0,0] to [1,0], destination painted, score +5, moves +1, streak +1",
+      "runtime_audio": "res://assets/audio/catalog/path_games/gag/arrow_go_kite_step_gag_v1.ogg"
+    },
+    {
+      "name": "wrong-direction crosswind rejection",
+      "intent": "06-reject-intent.webp",
+      "impact": "07-reject-impact.webp",
+      "impact_sha256": "f3eb97516b6208ddffdae8acdfb9ed6c985e9530222b21aea26f1410886f5c26",
+      "recoil": "08-reject-recoil.webp",
+      "recovery": "09-reject-recovery.webp",
+      "state": "reject-state.json",
+      "authoritative_delta": "none",
+      "object_response": "the same courier recoils inside [0,0], the live vane stays right, and attempted-down crosswind bars hit that cell"
+    },
+    {
+      "name": "five-step airmail waypoint",
+      "intent": "10-waypoint-intent.webp",
+      "anticipation": "11-waypoint-travel.webp",
+      "impact": "12-waypoint-impact.webp",
+      "impact_sha256": "a8690414394155a9ee310c0c0e255ca8fd4c4fbbd3510845cf2df1744e7bc5c4",
+      "settle": "13-waypoint-settle.webp",
+      "recovery": "14-waypoint-recovery.webp",
+      "state": "waypoint-state.json",
+      "grade": 2,
+      "settled_evidence": "coral route and a larger brass fifth knot remain after effects"
+    },
+    {
+      "name": "grade-4 sky-harbor docking",
+      "intent": "15-complete-intent.webp",
+      "anticipation": "16-complete-anticipation.webp",
+      "impact": "17-complete-impact.webp",
+      "impact_sha256": "5695126d7ff485b861cf9f325c1fe3ccab2262ed8871b1efb892b5e094146b82",
+      "dock": "18-complete-dock.webp",
+      "result_entrance": "19-result-entrance.webp",
+      "result_stable": "20-result-stable.webp",
+      "result_stable_sha256": "670915d91018d2881051e1893f92ffdd16f8eedb61e3459356179a103b776935",
+      "recovery": "21-result-recovery.webp",
+      "state": "complete-state.json",
+      "grade": 4,
+      "authoritative_delta": "final legal down step, target painted, score +105, moves +1, streak +1, status won",
+      "runtime_audio": "res://assets/audio/catalog/path_games/gag/arrow_go_harbor_dock_gag_v1.ogg"
+    }
+  ],
+  "continuous": {
+    "ordinary_step": {
+      "path": "continuous/arrow-go-step.webm",
+      "frames": 20,
+      "fps": 30,
+      "duration_seconds": 0.666,
+      "sha256": "5ae001b245837a47dfb261620a6cc4a6f92909953b9415bfa66d0f36dac28acc"
+    },
+    "completion": {
+      "path": "continuous/arrow-go-grade4-dock.webm",
+      "frames": 42,
+      "fps": 30,
+      "duration_seconds": 1.4,
+      "sha256": "5d2896c10ff567aedb1571974acee06afd93f5c3e1c68416dd8253519c410881"
+    }
+  },
+  "comparisons": {
+    "stable": {"path": "../stable-comparison.webp", "sha256": "6d7b115255ab0984f3bfa951ece2b66da977bbe8927027bce6456b1d256d770a"},
+    "step": {"path": "../step-comparison.webp", "sha256": "e83c2f74ca60257a916f211708154b9bbfcd3e4e734d22c753d8fb78f3301005"}
+  },
+  "web": {
+    "local": "web/local-web-acceptance.json",
+    "aliyun": "web/aliyun-web-acceptance.json",
+    "actual_action": "tap adjacent cell [1,0] through the visible canvas",
+    "result": "pending clean export"
+  },
+  "shipping_boundary": {
+    "runtime_derivatives": 6,
+    "source_masters_in_repository": 0,
+    "rejected_candidates_in_repository": 0,
+    "pck_scan": "pending clean export"
+  }
+}

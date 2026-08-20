@@ -1,0 +1,34 @@
+{
+  "event": {
+    "duration": 0.62,
+    "font_role": "ui_cjk",
+    "game_id": "arrow_go",
+    "grade": 2,
+    "kind": "path_reject_arrow",
+    "label": "逆着箭流"
+  },
+  "game_id": "arrow_go",
+  "motion_kind": "",
+  "moves": 0,
+  "object_fx": {
+    "attempted": "(0, 1)",
+    "duration": 0.48,
+    "expected": "(1, 0)",
+    "from": "(77.88889, 259.8889)",
+    "grade": 2,
+    "kind": "crosswind_reject"
+  },
+  "painted_count": 1,
+  "player": [
+    0,
+    0
+  ],
+  "route": [
+    [
+      0,
+      0
+    ]
+  ],
+  "score": 0,
+  "status": "playing"
+}

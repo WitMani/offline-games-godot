@@ -56,13 +56,18 @@ func draw_environment(canvas: CanvasItem, game_id: String, view_size: Vector2, e
 				]), Color("745a9d", 0.14))
 				canvas.draw_line(Vector2(center_x - 126, 650), Vector2(center_x, 226), Color("e9baff", 0.12), 3.0)
 		"arrow_go":
-			canvas.draw_rect(Rect2(0, 112, view_size.x, view_size.y - 112), Color("17122f"))
-			for lane in range(7):
-				var y := 244.0 + float(lane) * 83.0
-				var shift := fposmod(elapsed * (14.0 + lane) + lane * 39.0, 96.0)
-				for x in range(-1, 7):
-					_draw_chevron(canvas, Vector2(float(x) * 96.0 + shift, y), Vector2.RIGHT, 12.0, Color("b69cff", 0.045 + float(lane % 2) * 0.025))
-			canvas.draw_circle(Vector2(470, 820), 110, Color("704fe4", 0.05))
+			canvas.draw_rect(Rect2(0, 112, view_size.x, view_size.y - 112), Color("1c102a"))
+			# Quiet flight-cloth seams support the generated board pieces without
+			# introducing false arrows outside the authoritative grid.
+			for seam in range(12):
+				var y := 172.0 + float(seam) * 61.0
+				var drift := sin(elapsed * 0.22 + float(seam) * 0.71) * 7.0
+				canvas.draw_line(Vector2(-20, y + drift), Vector2(560, y + 18.0 + drift), Color("efcde8", 0.022 + float(seam % 3) * 0.007), 1.0)
+			for stud in range(8):
+				var p := Vector2(32.0 + fposmod(float(stud * 173), 476.0), 186.0 + fposmod(float(stud * 109), 674.0))
+				canvas.draw_circle(p + Vector2(1, 2), 4.0, Color("08030c", 0.22))
+				canvas.draw_circle(p, 2.4, Color("d3a45b", 0.17))
+			canvas.draw_circle(Vector2(470, 820), 110, Color("c66c77", 0.035))
 		"amaze":
 			canvas.draw_rect(Rect2(0, 112, view_size.x, view_size.y - 112), Color("143229"))
 			for blob in range(16):
@@ -113,7 +118,7 @@ func draw_event_fx(canvas: CanvasItem, effect: Dictionary, now: float, label_fon
 			"mahjong": _draw_jade_event(canvas, position, color, grade, t, fade)
 			"tileclub": _draw_stitch_event(canvas, position, color, grade, t, fade)
 			"amaze_go": _draw_compass_event(canvas, position, color, grade, t, fade)
-			"arrow_go": _draw_arrow_event(canvas, position, color, grade, t, fade)
+			"arrow_go": _draw_arrow_event(canvas, position, color, grade, t, fade, effect.get("direction", [1, 0]))
 			"amaze": _draw_paint_event(canvas, position, color, grade, t, fade)
 
 	var label := str(effect.get("label", ""))
@@ -269,10 +274,18 @@ func _draw_compass_event(canvas: CanvasItem, p: Vector2, color: Color, grade: in
 	_draw_brass_compass(canvas, p, 18.0 + t * (28.0 + grade * 5.0), Color(color, 0.74 * fade), t * PI * 0.75)
 
 
-func _draw_arrow_event(canvas: CanvasItem, p: Vector2, color: Color, grade: int, t: float, fade: float) -> void:
+func _draw_arrow_event(canvas: CanvasItem, p: Vector2, color: Color, grade: int, t: float, fade: float, direction_value: Variant) -> void:
+	var direction := Vector2.RIGHT
+	if direction_value is Array and direction_value.size() >= 2:
+		direction = Vector2(float(direction_value[0]), float(direction_value[1])).normalized()
+	elif direction_value is Vector2i or direction_value is Vector2:
+		direction = Vector2(direction_value).normalized()
+	if direction == Vector2.ZERO:
+		direction = Vector2.RIGHT
+	var side := Vector2(-direction.y, direction.x)
 	for index in range(3 + grade):
 		var distance := -18.0 + float(index) * 14.0 + t * 30.0
-		_draw_chevron(canvas, p + Vector2(distance, 0), Vector2.RIGHT, 10.0 + grade, Color(color, fade * (0.8 - index * 0.07)))
+		_draw_chevron(canvas, p + direction * distance + side * sin(float(index) * 1.7) * 2.0, direction, 10.0 + grade, Color(color, fade * (0.8 - index * 0.07)))
 	canvas.draw_arc(p, 17.0 + t * 34.0, 0, TAU, 30, Color(color.lightened(0.24), 0.42 * fade), 2.0, true)
 
 
