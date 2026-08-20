@@ -1,0 +1,10 @@
+{
+  "starting_commit": "370a98572d2f7e258d4090ee73112b0810372609",
+  "average_ms": 39.8714916666667,
+  "max_ms": 95.204,
+  "p50_ms": 37.014,
+  "p95_ms": 57.789,
+  "renderer": "gl_compatibility",
+  "samples": 120,
+  "note": "Same EC2 Xvfb software-GL audit script in a detached starting-commit worktree"
+}

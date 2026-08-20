@@ -13,4 +13,5 @@
 
 Automated probes live in `tools/merge2248_model_smoke.gd` and
 `tools/merge2248_integration_smoke.gd`; visual checkpoints live in
-`tools/merge2248_visual_audit.gd`.
+`tools/merge2248_visual_audit.gd`, and the bounded busy-event trace lives in
+`tools/merge2248_performance_audit.gd`.

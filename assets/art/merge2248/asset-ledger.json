@@ -16,6 +16,29 @@
         "no game pieces",
         "central play area remains low contrast"
       ]
+    },
+    {
+      "path": "candy_workshop_bg_v2.webp",
+      "role": "2248 portrait candy-workshop environment background",
+      "origin": "generated-original",
+      "generator": "OpenAI built-in image generation after GAG semantic-search and OpenRouter provider failures",
+      "generated_at": "2026-08-20",
+      "source_delivery": "/home/ubuntu/.codex/generated_images/01a01920-0e77-7c41-bbe0-7d1001a763fb/exec-c7fc8b6d-aa24-4a03-953e-dc8710d2632f.png",
+      "sha256": "b41c3d5d512d47f4e43a24bac35bbf4538272a8ef67c6a0ab489048904d2686a",
+      "transform": "ffmpeg Lanczos scale to 540x960; WebP quality 88",
+      "prompt_summary": "Quiet premium candy-workshop tabletop with warm wood edges and a low-detail deep-teal central cloth workspace.",
+      "runtime_reference": "res://assets/art/merge2248/candy_workshop_bg_v2.webp",
+      "shipped": true,
+      "constraints": [
+        "original artwork",
+        "background layer only",
+        "no text, numbers, board, buttons, or logo",
+        "central play area remains low detail"
+      ],
+      "gag_attempts": [
+        "semantic search failed: Gemini API key missing",
+        "OpenRouter generation failed: provider not found"
+      ]
     }
   ]
 }

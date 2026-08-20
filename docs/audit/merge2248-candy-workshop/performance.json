@@ -1,0 +1,9 @@
+{
+  "average_ms": 22.2480333333333,
+  "max_ms": 49.697,
+  "note": "EC2 Xvfb software-GL trace; regression guard, not end-user GPU telemetry",
+  "p50_ms": 21.324,
+  "p95_ms": 26.981,
+  "renderer": "gl_compatibility",
+  "samples": 120
+}
