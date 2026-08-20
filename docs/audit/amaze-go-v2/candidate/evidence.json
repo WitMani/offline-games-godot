@@ -1,0 +1,107 @@
+{
+  "result": "PASS",
+  "game_id": "amaze_go",
+  "viewport": [540, 960],
+  "baseline": {
+    "stable": {
+      "path": "../baseline/stable.png",
+      "sha256": "3809af57bf354da825a1a0ebbbda7bebd8e101adbdfee3c4899d7ecc0e605a82"
+    },
+    "step": {
+      "path": "../baseline/step.png",
+      "sha256": "dfb072919e907fa826c7571599889c74a0b2be27389e43a38ff0fd7bbdf68b0f"
+    }
+  },
+  "stable_signature": {
+    "frame": "00-stable.webp",
+    "surveyor": {
+      "runtime_path": "res://assets/art/catalog/path_games/gag/amaze_go_surveyor_gag_v1.png",
+      "sha256": "baeb571dcb42962905a0f7c8dd8ff15f71625e7954739fb57cba746e62d4eddc",
+      "position": [0, 0],
+      "visible_on_untouched_board": true
+    },
+    "beacon": {
+      "runtime_path": "res://assets/art/catalog/path_games/gag/amaze_go_beacon_gag_v1.png",
+      "sha256": "15ac1714e7d0bce2331b6c5280d2b6366598453d7ea9cd4299ffbe7e0282e6c8",
+      "position": [5, 5],
+      "visible_on_untouched_board": true
+    },
+    "generated_gameplay_text": false,
+    "code_native_live_layers": ["walls", "route", "rivets", "labels", "score", "result copy"]
+  },
+  "semantic_sequences": [
+    {
+      "name": "ordinary legal survey step",
+      "intent": "01-step-intent.webp",
+      "anticipation": "02-step-travel.webp",
+      "impact": "03-step-impact.webp",
+      "settle": "04-step-settle.webp",
+      "recovery": "05-step-recovery.webp",
+      "state": "step-state.json",
+      "authoritative_delta": "player [0,0] to [1,0], destination painted, score +5, moves +1, streak +1",
+      "runtime_audio": "res://assets/audio/catalog/path_games/gag/amaze_go_survey_ratchet_gag_v1.ogg"
+    },
+    {
+      "name": "raised ruler wall rejection",
+      "intent": "06-wall-intent.webp",
+      "impact": "07-wall-impact.webp",
+      "recoil": "08-wall-recoil.webp",
+      "recovery": "09-wall-recovery.webp",
+      "state": "wall-state.json",
+      "authoritative_delta": "none",
+      "object_response": "surveyor recoil and exact contacted brass wall segment turns coral-red"
+    },
+    {
+      "name": "five-step waypoint",
+      "intent": "10-waypoint-intent.webp",
+      "anticipation": "11-waypoint-travel.webp",
+      "impact": "12-waypoint-impact.webp",
+      "settle": "13-waypoint-settle.webp",
+      "recovery": "14-waypoint-recovery.webp",
+      "state": "waypoint-state.json",
+      "grade": 2
+    },
+    {
+      "name": "destination certification",
+      "intent": "15-complete-intent.webp",
+      "anticipation": "16-complete-anticipation.webp",
+      "impact": "17-complete-impact.webp",
+      "seal": "18-complete-seal.webp",
+      "result_entrance": "19-result-entrance.webp",
+      "result_stable": "20-result-stable.webp",
+      "recovery": "21-result-recovery.webp",
+      "state": "complete-state.json",
+      "grade": 4,
+      "authoritative_delta": "final legal step, target painted, score +105, moves +1, streak +1, status won",
+      "runtime_audio": "res://assets/audio/catalog/path_games/gag/amaze_go_destination_seal_gag_v1.ogg"
+    }
+  ],
+  "continuous": {
+    "ordinary_step": {
+      "path": "continuous/amaze-go-step.webm",
+      "frames": 20,
+      "fps": 30,
+      "duration_seconds": 0.666,
+      "sha256": "752975bc5fae1f36e000fdd72fb50e7c367caae5aa6631612843437441f135ac"
+    },
+    "completion": {
+      "path": "continuous/amaze-go-complete.webm",
+      "frames": 42,
+      "fps": 30,
+      "duration_seconds": 1.4,
+      "sha256": "ef42acc47246d5b7aa26be450d0d52a4c7d802523b1870671ffa6a2799336a57"
+    }
+  },
+  "web": {
+    "local": "web/local-web-acceptance.json",
+    "aliyun": "web/aliyun-web-acceptance.json",
+    "actual_action": "tap adjacent cell [1,0] through the visible canvas",
+    "result": "PASS"
+  },
+  "shipping_boundary": {
+    "runtime_derivatives": 4,
+    "source_masters_in_repository": 0,
+    "rejected_candidates_in_repository": 0,
+    "pck_scan": "PASS"
+  }
+}

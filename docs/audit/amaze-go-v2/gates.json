@@ -1,0 +1,121 @@
+{
+  "result": "PASS",
+  "scope": "amaze_go only",
+  "source": {
+    "starting_commit": "fab3f93b43eead360bbf9a828c427fedbf6823af",
+    "feature_commit": "ee2c6ce968224bb89600d956264a9e2d16dc20c2",
+    "clean_web_acceptance_commit": "f4ad47ba51276965084c05b2b5f529598a3a8e91",
+    "deployed_source_commit": "f4ad47ba51276965084c05b2b5f529598a3a8e91",
+    "gameplay_rules_changed": false,
+    "shared_path_game_rules_changed": false
+  },
+  "gag": {
+    "mode": "HOME-WSL MCP pure API",
+    "server_version_reported": "0.2.0",
+    "semantic_searches": 2,
+    "visual_runtime_assets": 2,
+    "audio_runtime_assets": 2,
+    "stable_playable_instances": 2,
+    "source_masters_in_repository": 0,
+    "rejected_candidates_in_repository": 0,
+    "subjective_audio_listening_claimed": false,
+    "result": "PASS"
+  },
+  "automated": {
+    "amaze_go_mechanics": {"assertions": 61, "result": "PASS"},
+    "amaze_go_art": {"assertions": 176, "result": "PASS"},
+    "tileclub_regression": {"assertions": 223, "result": "PASS"},
+    "mahjong_regression": {"assertions": 116, "result": "PASS"},
+    "sudoku_regression": {"assertions": 103, "result": "PASS"},
+    "meowdoku_regression": {"assertions": 88, "result": "PASS"},
+    "solitaire_regression": {"assertions": 67, "result": "PASS"},
+    "tripeaks_regression": {"assertions": 62, "result": "PASS"},
+    "merge2048_regression": {"assertions": 7, "result": "PASS"},
+    "merge2248_integration": {"assertions": 10, "result": "PASS"},
+    "merge2248_model": {"assertions": 10, "result": "PASS"},
+    "watermelon_regression": {"assertions": 9, "result": "PASS"},
+    "rules": {"assertions": 6, "result": "PASS"},
+    "catalog_art": {"assertions": 10, "result": "PASS"},
+    "font_coverage": {"assertions": 65, "result": "PASS"},
+    "font_subset": {"required_glyphs": 3877, "bytes": 1815516, "result": "PASS"},
+    "cover_assets": {"games": 14, "result": "PASS"},
+    "home_buttons": {"games": 14, "result": "PASS"},
+    "all_games": {"games": 14, "result": "PASS"}
+  },
+  "visual": {
+    "viewport": [540, 960],
+    "candidate_frames": 22,
+    "baseline_frames": 2,
+    "continuous_step": {
+      "frames": 20,
+      "fps": 30,
+      "duration_seconds": 0.666,
+      "sha256": "752975bc5fae1f36e000fdd72fb50e7c367caae5aa6631612843437441f135ac"
+    },
+    "continuous_complete": {
+      "frames": 42,
+      "fps": 30,
+      "duration_seconds": 1.4,
+      "sha256": "ef42acc47246d5b7aa26be450d0d52a4c7d802523b1870671ffa6a2799336a57"
+    },
+    "generated_text_present": false,
+    "stable_signature_review": "PASS",
+    "wall_contact_review": "PASS",
+    "result_contrast_review": "PASS"
+  },
+  "performance": {
+    "renderer": "llvmpipe (LLVM 21.1.8, 256 bits)",
+    "stable": {
+      "sample_count": 120,
+      "average_frame_ms": 9.750125,
+      "p95_frame_ms": 12.092,
+      "max_frame_ms": 15.368
+    },
+    "busy": {
+      "sample_count": 180,
+      "average_frame_ms": 10.3863666666667,
+      "p95_frame_ms": 13.107,
+      "max_frame_ms": 16.923
+    },
+    "active_effect_cap": 12,
+    "result": "PASS"
+  },
+  "clean_export": {
+    "source": "git archive of feature commit ee2c6ce968224bb89600d956264a9e2d16dc20c2",
+    "pck": "index.5653beec85c6.pck",
+    "pck_sha256": "5653beec85c6d8a464cb5e33ac4829af268ae2bcc11a26f0b4542db3dbd77f20",
+    "engine": "index.2b558bdb3c3a.wasm",
+    "engine_sha256": "2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137",
+    "amaze_go_runtime_assets_in_pck": 4,
+    "amaze_go_source_master_scan": "PASS",
+    "browser_actual_action": "PASS",
+    "console_errors": 0,
+    "request_failures": 0,
+    "bad_responses": 0,
+    "result": "PASS"
+  },
+  "aliyun": {
+    "release": "20260820T143312Z-8a91a10f0ccd",
+    "url": "https://aliyun-ecs.tail17a64.ts.net:8788/?release=20260820T143312Z-8a91a10f0ccd",
+    "pck": "index.8a91a10f0ccd.pck",
+    "pck_sha256": "8a91a10f0ccdb725ac1d09bde7dc1dcdf18a057708d74dc75ec5cfb3e4e799e1",
+    "engine": "index.2b558bdb3c3a.wasm",
+    "engine_sha256": "2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137",
+    "previous_pack_retained": "index.182852a0f846.pck",
+    "ready_seconds_cold_ec2_to_aliyun": 261.619,
+    "actual_action": {
+      "player_before": [0, 0],
+      "player_after": [1, 0],
+      "destination_painted_before": false,
+      "destination_painted_after": true,
+      "score_after": 5,
+      "moves_after": 1,
+      "streak_after": 1,
+      "status_after": "playing"
+    },
+    "console_errors": 0,
+    "request_failures": 0,
+    "bad_responses": 0,
+    "result": "PASS"
+  }
+}

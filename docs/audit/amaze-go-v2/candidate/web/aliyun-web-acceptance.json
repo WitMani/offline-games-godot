@@ -1,0 +1,93 @@
+{
+  "result": "PASS",
+  "release": "20260820T143312Z-8a91a10f0ccd",
+  "source_commit": "f4ad47ba51276965084c05b2b5f529598a3a8e91",
+  "url": "https://aliyun-ecs.tail17a64.ts.net:8788/?release=20260820T143312Z-8a91a10f0ccd",
+  "ready_seconds": 261.619,
+  "secure_context": true,
+  "webassembly": true,
+  "canvas_count": 1,
+  "probe_error": null,
+  "artifacts": {
+    "pck": {
+      "name": "index.8a91a10f0ccd.pck",
+      "sha256": "8a91a10f0ccdb725ac1d09bde7dc1dcdf18a057708d74dc75ec5cfb3e4e799e1",
+      "bytes": 13976508,
+      "gzip_bytes": 13817027,
+      "http_status": 200,
+      "cache_control": "public, max-age=31536000, immutable",
+      "content_encoding": "gzip"
+    },
+    "engine": {
+      "name": "index.2b558bdb3c3a.wasm",
+      "sha256": "2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137",
+      "bytes": 37686550,
+      "gzip_bytes": 9392911,
+      "http_status": 200,
+      "cache_control": "public, max-age=31536000, immutable",
+      "content_encoding": "gzip"
+    },
+    "pck_contains": [
+      "res://assets/art/catalog/path_games/gag/amaze_go_surveyor_gag_v1.png",
+      "res://assets/art/catalog/path_games/gag/amaze_go_beacon_gag_v1.png",
+      "res://assets/audio/catalog/path_games/gag/amaze_go_survey_ratchet_gag_v1.ogg",
+      "res://assets/audio/catalog/path_games/gag/amaze_go_destination_seal_gag_v1.ogg"
+    ],
+    "amaze_go_source_master_scan": "PASS",
+    "amaze_go_rejected_candidate_scan": "PASS",
+    "previous_pack_retained": "index.182852a0f846.pck"
+  },
+  "initial": {
+    "game_id": "amaze_go",
+    "state": {
+      "player": [
+        0,
+        0
+      ],
+      "destination_painted": false,
+      "score": 0,
+      "moves": 0,
+      "streak": 0,
+      "status": "playing"
+    },
+    "grid_size": 6
+  },
+  "actual_action": {
+    "name": "tap adjacent cell [1,0]",
+    "before": {
+      "player": [
+        0,
+        0
+      ],
+      "destination_painted": false,
+      "score": 0,
+      "moves": 0,
+      "streak": 0,
+      "status": "playing"
+    },
+    "after": {
+      "player": [
+        1,
+        0
+      ],
+      "destination_painted": true,
+      "score": 5,
+      "moves": 1,
+      "streak": 1,
+      "status": "playing"
+    }
+  },
+  "console_errors": [],
+  "request_failures": [],
+  "bad_responses": [],
+  "screenshots": {
+    "stable": {
+      "path": "amaze-go-aliyun-stable.png",
+      "sha256": "19f1c9f6346ad0725636e6f9dfafbc19972613ee70faea90eba6baf6a311e7ff"
+    },
+    "after_step": {
+      "path": "amaze-go-aliyun-after-step.png",
+      "sha256": "410db177cae9a87cbf47fc39bc0e74c90d3a5e42bd61b87f1670a52de7892709"
+    }
+  }
+}
