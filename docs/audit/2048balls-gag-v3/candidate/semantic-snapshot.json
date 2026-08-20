@@ -1,0 +1,51 @@
+{
+  "asset_family": [
+    "fruit_01_lemon.png",
+    "fruit_02_orange.png",
+    "fruit_03_apple.png",
+    "fruit_04_grape.png",
+    "fruit_05_watermelon.png",
+    "juice_merge_burst.png",
+    "orchard_recipe_tray_gag_v3.webp"
+  ],
+  "events": [
+    {
+      "duration": 0.96,
+      "game_id": "watermelon",
+      "grade": 4,
+      "kind": "fruit_harvest_complete",
+      "label": "目标 256 达成 · 向 2048",
+      "result_id": 3
+    }
+  ],
+  "game_id": "watermelon",
+  "mechanics": "continuous aim, fixed-step falling circles, free collision, equal-contact merge, danger grace, open targets",
+  "state": {
+    "aim_x": 270.0,
+    "balls": [
+      {
+        "danger_time": 0.0,
+        "id": 3,
+        "position": [265.0, 609.81],
+        "radius": 29.0,
+        "shot_id": 204,
+        "tier": 8,
+        "value": 256,
+        "velocity": [0.0, -30.954]
+      }
+    ],
+    "best": 256,
+    "game_id": "watermelon",
+    "highest_tier": 8,
+    "moves": 0,
+    "next": 1,
+    "next_tier": 1,
+    "next_value": 2,
+    "score": 256,
+    "status": "playing",
+    "target_tier": 11,
+    "target_value": 2048,
+    "tick": 114
+  },
+  "viewport": [540, 960]
+}

@@ -1,0 +1,94 @@
+{
+  "checked_at": "2026-08-20T19:10:00Z",
+  "implementation_commit": "7d98923b18147cac96964da28534522dfca581bb",
+  "scope": "2048 Balls only",
+  "result": "PASS_INTERNAL_CANDIDATE",
+  "original_contract": {
+    "target": "Voodoo 2048 Balls 3D / Apple id1485247734",
+    "private_evidence_not_shipped": true,
+    "continuous_aim": "PASS",
+    "visible_fall": "PASS",
+    "free_circle_contacts": "PASS",
+    "equal_contact_merge": "PASS",
+    "danger_grace_failure": "PASS",
+    "open_256_to_2048_progression": "PASS",
+    "legacy_columns_or_score1000_win_present": false
+  },
+  "gag": {
+    "endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+    "version": "1.29.0",
+    "mode": "pure API",
+    "semantic_search_first": true,
+    "new_stable_signature": "assets/art/2048balls/orchard_recipe_tray_gag_v3.webp",
+    "new_stable_signature_sha256": "ebfa46b46d2beee1027347fbf383735897fb17e4a4371c45584c635612829dce",
+    "runtime_visual_paths": 7,
+    "runtime_audio_paths": 3,
+    "source_masters_shipped": 0
+  },
+  "tests": {
+    "watermelon_model": {"assertions": 34, "result": "PASS"},
+    "watermelon_integration": {"assertions": 30, "result": "PASS"},
+    "watermelon_presentation": {"scenario_groups": 9, "result": "PASS"},
+    "rules": {"assertions": 6, "result": "PASS"},
+    "catalog_art": {"games": 10, "result": "PASS"},
+    "font_coverage": {"cases": 65, "result": "PASS"},
+    "font_subset": {"required_glyphs": 3879, "bytes": 1816916, "result": "PASS"},
+    "all_smoke_scripts": {"passed": 28, "total": 28, "result": "PASS"},
+    "all_games": {"passed": 14, "total": 14, "result": "PASS"}
+  },
+  "performance": {
+    "environment": "Xvfb / llvmpipe LLVM 21.1.8 / 540x960",
+    "scenario": "18-ball free-physics pile plus six capped grade-four envelopes",
+    "sample_count": 180,
+    "average_frame_ms": 17.5324222222222,
+    "p95_frame_ms": 21.372,
+    "max_frame_ms": 26.952,
+    "result": "PASS_COMPARATIVE"
+  },
+  "clean_web_export": {
+    "source": "git archive 7d98923b18147cac96964da28534522dfca581bb",
+    "pck": {
+      "file": "index.185c0986ccda.pck",
+      "bytes": 14342628,
+      "gzip_bytes": 14157499,
+      "sha256": "185c0986ccdac224b00c1c7b8d1e851823af073c16100f42004370b3c38ae924"
+    },
+    "wasm": {
+      "file": "index.2b558bdb3c3a.wasm",
+      "bytes": 37686550,
+      "gzip_bytes": 9392911,
+      "sha256": "2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137"
+    },
+    "javascript": {
+      "file": "index.2b558bdb3c3a.js",
+      "bytes": 315759,
+      "gzip_bytes": 78270,
+      "sha256": "e3f56ee40e6f84371053db06692cfac15e2c8659547b11c6b2dfa1996dabd981"
+    },
+    "runtime_paths_present": 7,
+    "source_or_intermediate_identifiers_present": 0,
+    "result": "PASS"
+  },
+  "browser": {
+    "url": "http://127.0.0.1:18948/",
+    "secure_context": true,
+    "product": "Google Chrome headless / SwiftShader WebGL2",
+    "real_pointer_releases": 2,
+    "visible_fall": true,
+    "equal_contact_merge": true,
+    "restart_preserves_best": true,
+    "pck_loaded": true,
+    "wasm_loaded": true,
+    "console_errors": [],
+    "page_errors": [],
+    "request_failures": [],
+    "result": "PASS"
+  },
+  "public_deployment": {
+    "status": "PENDING",
+    "url": "https://aliyun-ecs.tail17a64.ts.net:8788/"
+  },
+  "user_acceptance": false,
+  "merge": false,
+  "push": false
+}

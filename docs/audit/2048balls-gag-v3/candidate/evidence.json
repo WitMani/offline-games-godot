@@ -1,0 +1,31 @@
+{
+  "implementation_commit": "7d98923b18147cac96964da28534522dfca581bb",
+  "viewport": [540, 960],
+  "selected_visuals": [
+    {"path": "00-stable-family-and-tray.webp", "sha256": "eb4e78e3816d3a6910f887674cf348c7ab5aeb789a4579dca1d30850cf20f0f1"},
+    {"path": "10-continuous-aim.webp", "sha256": "768b3a30d8aca40fd62a9d5d6d999f6d86476eaf556a040886ec9a1f213ead72"},
+    {"path": "12-visible-fall.webp", "sha256": "b2fb7f2b12262440d6ea4f863b08873655d9a1e1ffb06a558a4fcc280d7c1392"},
+    {"path": "13-physics-contact.webp", "sha256": "40de5817d59b5b3ff3b6afc21038610508a0b4b6c01cd841095fa25f82439e26"},
+    {"path": "21-grade2-impact.webp", "sha256": "3a024d5abc1ab94ee19317dd27962cdb5c1f3137d011861abca5bbce525ea4a2"},
+    {"path": "25-grade3-chain.webp", "sha256": "ec202e2bb9d19eda4c695b7050b0bb9c1d1637add95650947d2da7ee959eb68b"},
+    {"path": "31-grade4-cascade.webp", "sha256": "cf23378977b3685e0e89b47668bca8cc1434f70360353a19e83067058d6c3d24"},
+    {"path": "40-blocked-rejection.webp", "sha256": "68b8a6ef73ba0a40224715188f2dfeb5646c74576b7b5c6a02ba03b7a47b14df"},
+    {"path": "50-target-open-progress.webp", "sha256": "a161b5e9d014d3d5ee3157cfa554e4a3f23ba5efab673717ae8b05c87ea87aaf"},
+    {"path": "contact-sheet.webp", "sha256": "f06cfe624b29a1d9fe678d6a22b9e7366a4d4aa985a2ae561a56afe385faa6ac"}
+  ],
+  "continuous_peak": {
+    "path": "continuous-grade4-cascade.webm",
+    "frames": 24,
+    "sample_rate_fps": 60,
+    "sha256": "aff07367911d58fb814db2039aafe21aa26df0046c74f16b094caad1bcadfd94"
+  },
+  "web": {
+    "screenshot": "10-web-merge.png",
+    "screenshot_sha256": "3984e8711f348a8ef4d1c42ec32f9c7da7986698706799f279e100647180ab60",
+    "report": "web-acceptance.json",
+    "result": "PASS"
+  },
+  "semantic_snapshot": "semantic-snapshot.json",
+  "performance": "performance.json",
+  "gates": "gates.json"
+}
