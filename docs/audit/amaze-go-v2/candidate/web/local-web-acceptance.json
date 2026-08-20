@@ -1,0 +1,84 @@
+{
+  "result": "PASS",
+  "source": "clean git archive of feature commit ee2c6ce968224bb89600d956264a9e2d16dc20c2",
+  "url": "http://127.0.0.1:18792/index.html?release=ee2c6ce",
+  "ready_seconds": 1.396,
+  "secure_context": true,
+  "webassembly": true,
+  "canvas_count": 1,
+  "probe_error": null,
+  "clean_export": {
+    "html_sha256": "0bab290207b74c068d3885a4153efd40cc1c0fc9196dc4a4392894f50205bbdc",
+    "pck": {
+      "name": "index.5653beec85c6.pck",
+      "sha256": "5653beec85c6d8a464cb5e33ac4829af268ae2bcc11a26f0b4542db3dbd77f20",
+      "bytes": 13976508
+    },
+    "engine": {
+      "name": "index.2b558bdb3c3a.wasm",
+      "sha256": "2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137",
+      "bytes": 37686550
+    },
+    "pck_contains": [
+      "res://assets/art/catalog/path_games/gag/amaze_go_surveyor_gag_v1.png",
+      "res://assets/art/catalog/path_games/gag/amaze_go_beacon_gag_v1.png",
+      "res://assets/audio/catalog/path_games/gag/amaze_go_survey_ratchet_gag_v1.ogg",
+      "res://assets/audio/catalog/path_games/gag/amaze_go_destination_seal_gag_v1.ogg"
+    ],
+    "amaze_go_source_master_scan": "PASS",
+    "amaze_go_rejected_candidate_scan": "PASS"
+  },
+  "initial": {
+    "game_id": "amaze_go",
+    "state": {
+      "player": [
+        0,
+        0
+      ],
+      "destination_painted": false,
+      "score": 0,
+      "moves": 0,
+      "streak": 0,
+      "status": "playing"
+    },
+    "grid_size": 6
+  },
+  "actual_action": {
+    "name": "tap adjacent cell [1,0]",
+    "before": {
+      "player": [
+        0,
+        0
+      ],
+      "destination_painted": false,
+      "score": 0,
+      "moves": 0,
+      "streak": 0,
+      "status": "playing"
+    },
+    "after": {
+      "player": [
+        1,
+        0
+      ],
+      "destination_painted": true,
+      "score": 5,
+      "moves": 1,
+      "streak": 1,
+      "status": "playing"
+    }
+  },
+  "console_errors": [],
+  "request_failures": [],
+  "bad_responses": [],
+  "screenshots": {
+    "stable": {
+      "path": "amaze-go-local-stable.png",
+      "sha256": "34adbf67ab3701c34da1da5330a720c4c8ce18d2e2ee2f378136dd96521ff538"
+    },
+    "after_step": {
+      "path": "amaze-go-local-after-step.png",
+      "sha256": "ea1dfe10557ecf455dff55cfdb4207de2e0c1e2cece7b25edf50ec39e2184527"
+    }
+  }
+}
