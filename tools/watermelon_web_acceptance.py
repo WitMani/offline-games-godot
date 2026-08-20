@@ -8,6 +8,7 @@ import json
 import time
 from pathlib import Path
 
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import sync_playwright
 
 
@@ -15,6 +16,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("base_url")
     parser.add_argument("output_dir")
+    parser.add_argument("--load-timeout-ms", type=int, default=60_000)
     args = parser.parse_args()
 
     output_dir = Path(args.output_dir)
@@ -23,6 +25,8 @@ def main() -> int:
     page_errors: list[str] = []
     request_failures: list[str] = []
     responses: dict[str, dict[str, object]] = {}
+    finished_requests: dict[str, int] = {}
+    started_at = time.monotonic()
 
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(
@@ -45,6 +49,12 @@ def main() -> int:
         )
         page.on("pageerror", lambda error: page_errors.append(str(error)))
         page.on("requestfailed", lambda request: request_failures.append(request.url))
+        page.on(
+            "requestfinished",
+            lambda request: finished_requests.__setitem__(
+                request.url, round((time.monotonic() - started_at) * 1000)
+            ),
+        )
 
         def remember_response(response) -> None:
             suffix = Path(response.url.split("?", 1)[0]).suffix.lower()
@@ -58,11 +68,64 @@ def main() -> int:
                 }
 
         page.on("response", remember_response)
-        page.goto(args.base_url, wait_until="domcontentloaded", timeout=60_000)
-        page.wait_for_function(
-            "window.__gameAcceptance && window.__gameAcceptance.getState().ready === true",
-            timeout=60_000,
-        )
+        try:
+            page.goto(
+                args.base_url,
+                wait_until="domcontentloaded",
+                timeout=args.load_timeout_ms,
+            )
+            page.wait_for_function(
+                "window.__gameAcceptance && "
+                "window.__gameAcceptance.getState().ready === true",
+                timeout=args.load_timeout_ms,
+            )
+        except PlaywrightTimeoutError as error:
+            browser_state = page.evaluate(
+                """() => {
+                    const progress = document.getElementById('status-progress');
+                    const notice = document.getElementById('status-notice');
+                    return {
+                        secure_context: window.isSecureContext,
+                        document_ready_state: document.readyState,
+                        engine_probe: window.__offlineGamesWebProbe || null,
+                        acceptance_present: Boolean(window.__gameAcceptance),
+                        progress: progress ? {
+                            value: progress.value,
+                            max: progress.max,
+                            visible: getComputedStyle(progress).display !== 'none',
+                        } : null,
+                        notice: notice ? notice.innerText : '',
+                    };
+                }"""
+            )
+            page.screenshot(path=str(output_dir / "00-load-timeout.png"), full_page=True)
+            timeout_report = {
+                "observed_at_unix": int(time.time()),
+                "base_url": args.base_url,
+                "browser": "Google Chrome headless / SwiftShader WebGL2",
+                "viewport": [540, 960],
+                "load_timeout_ms": args.load_timeout_ms,
+                "elapsed_ms": round((time.monotonic() - started_at) * 1000),
+                "result": "TIMEOUT",
+                "error": str(error),
+                "browser_state": browser_state,
+                "bundle_responses": responses,
+                "finished_requests_ms": finished_requests,
+                "console_errors": console_errors,
+                "page_errors": page_errors,
+                "request_failures": request_failures,
+            }
+            (output_dir / "web-acceptance-timeout.json").write_text(
+                json.dumps(timeout_report, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            browser.close()
+            print("WATERMELON_WEB_ACCEPTANCE=TIMEOUT")
+            print(
+                "WATERMELON_WEB_REPORT="
+                f"{output_dir / 'web-acceptance-timeout.json'}"
+            )
+            return 2
         page.wait_for_timeout(800)
         home_state = page.evaluate("window.__gameAcceptance.getState()")
         secure_context = page.evaluate("window.isSecureContext")

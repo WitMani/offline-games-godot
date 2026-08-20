@@ -25,6 +25,15 @@
     "report": "web-acceptance.json",
     "result": "PASS"
   },
+  "public_web": {
+    "release": "20260820T191125Z-185c0986ccda",
+    "url": "https://aliyun-ecs.tail17a64.ts.net:8788/?release=20260820T191125Z-185c0986ccda",
+    "screenshot": "public/10-web-merge.png",
+    "screenshot_sha256": "a903ae5f9e83becc1a7363bebecff547be17fb9bfdd7d8e6ef5fff387f681b36",
+    "report": "public/web-acceptance.json",
+    "report_sha256": "279fd95afe70a9c9eba8c305151a107d2e6e7d19f17c8f7180de46bf2b7f0c6f",
+    "result": "PASS"
+  },
   "semantic_snapshot": "semantic-snapshot.json",
   "performance": "performance.json",
   "gates": "gates.json"

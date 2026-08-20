@@ -59,6 +59,9 @@ contact squash, avoiding a duplicated fake fall.
   remains playing.
 - `candidate/10-web-merge.png`: exact clean PCK in Chrome/SwiftShader after two
   real pointer releases and an equal-contact merge.
+- `candidate/public/10-web-merge.png` and
+  `candidate/public/web-acceptance.json`: the fingerprinted Aliyun release
+  after the same real pointer sequence.
 
 Manual frame review found the five values and power-of-two labels readable, the
 tray continuously visible, the aim/fall/contact sequence coherent, and grades
@@ -82,6 +85,10 @@ envelope.
 - Localhost secure-context Chrome PASS: real pointer aim/release, visible
   falling phase, floor contact, second-ball merge, restart/best persistence,
   PCK/WASM responses, and zero console/page/request errors.
+- Aliyun secure-context Chrome PASS on release
+  `20260820T191125Z-185c0986ccda`: the served PCK/WASM hashes match the clean
+  local acceptance bundle exactly; the same two-release merge and restart path
+  passed with zero console/page/request errors.
 
 ## Honest limitations
 
@@ -90,6 +97,9 @@ envelope.
   conservative choices.
 - Headless audio proves routing and asset loading, not subjective loudness on a
   physical device. Browser vibration and device performance remain unclaimed.
+- The EC2-to-Aliyun cold path exceeded 180 seconds before a retry passed within
+  a 300-second limit. This is a real cold-start latency limitation, not hidden
+  as a runtime pass/fail issue; a warm client cache is expected to be faster.
 - No matched external user review has accepted “surpasses original.”
-- This branch is not merged or pushed. Public deployment status is recorded in
-  `candidate/gates.json` and must not be inferred from this document.
+- This branch is not merged or pushed. Only the exact clean review artifact is
+  deployed to the private Tailscale Aliyun endpoint.

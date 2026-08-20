@@ -1,0 +1,211 @@
+{
+  "observed_at_unix": 1787253720,
+  "base_url": "https://aliyun-ecs.tail17a64.ts.net:8788/?release=20260820T191125Z-185c0986ccda",
+  "browser": "Google Chrome headless / SwiftShader WebGL2",
+  "viewport": [
+    540,
+    960
+  ],
+  "checks": {
+    "secure_context": true,
+    "ready": true,
+    "catalog_14": true,
+    "entry_free_physics_contract": true,
+    "continuous_pointer_x": true,
+    "visible_falling_phase": true,
+    "settled_contact": true,
+    "equal_contact_merge": true,
+    "restart_preserves_best": true,
+    "pck_loaded": true,
+    "wasm_loaded": true,
+    "runtime_errors_clear": true
+  },
+  "result": "PASS",
+  "bundle_responses": {
+    "https://aliyun-ecs.tail17a64.ts.net:8788/index.2b558bdb3c3a.js": {
+      "status": 200,
+      "ok": true,
+      "content_type": "application/javascript",
+      "content_length": "78270",
+      "content_encoding": "gzip"
+    },
+    "https://aliyun-ecs.tail17a64.ts.net:8788/index.185c0986ccda.pck": {
+      "status": 200,
+      "ok": true,
+      "content_type": "application/octet-stream",
+      "content_length": "14157499",
+      "content_encoding": "gzip"
+    },
+    "https://aliyun-ecs.tail17a64.ts.net:8788/index.2b558bdb3c3a.wasm": {
+      "status": 200,
+      "ok": true,
+      "content_type": "application/wasm",
+      "content_length": "9392911",
+      "content_encoding": "gzip"
+    }
+  },
+  "console_errors": [],
+  "page_errors": [],
+  "request_failures": [],
+  "entry_state": {
+    "catalog_size": 14,
+    "game_id": "watermelon",
+    "ready": true,
+    "screen": "game",
+    "state": {
+      "aim_x": 270,
+      "balls": [],
+      "best": 0,
+      "game_id": "watermelon",
+      "highest_tier": 0,
+      "moves": 0,
+      "next": 1,
+      "next_tier": 1,
+      "next_value": 2,
+      "score": 0,
+      "status": "playing",
+      "target_tier": 8,
+      "target_value": 256,
+      "tick": 117
+    }
+  },
+  "falling_state": {
+    "catalog_size": 14,
+    "game_id": "watermelon",
+    "ready": true,
+    "screen": "game",
+    "state": {
+      "aim_x": 337,
+      "balls": [
+        {
+          "danger_time": 0,
+          "id": 1,
+          "position": [
+            337,
+            346.659
+          ],
+          "radius": 16.75,
+          "shot_id": 1,
+          "tier": 1,
+          "value": 2,
+          "velocity": [
+            0,
+            186.041
+          ]
+        }
+      ],
+      "best": 0,
+      "game_id": "watermelon",
+      "highest_tier": 1,
+      "moves": 1,
+      "next": 1,
+      "next_tier": 1,
+      "next_value": 2,
+      "score": 0,
+      "status": "playing",
+      "target_tier": 8,
+      "target_value": 256,
+      "tick": 250
+    }
+  },
+  "settled_state": {
+    "catalog_size": 14,
+    "game_id": "watermelon",
+    "ready": true,
+    "screen": "game",
+    "state": {
+      "aim_x": 337,
+      "balls": [
+        {
+          "danger_time": 0,
+          "id": 1,
+          "position": [
+            337,
+            651.022
+          ],
+          "radius": 16.75,
+          "shot_id": 1,
+          "tier": 1,
+          "value": 2,
+          "velocity": [
+            0,
+            23.114
+          ]
+        }
+      ],
+      "best": 0,
+      "game_id": "watermelon",
+      "highest_tier": 1,
+      "moves": 1,
+      "next": 1,
+      "next_tier": 1,
+      "next_value": 2,
+      "score": 0,
+      "status": "playing",
+      "target_tier": 8,
+      "target_value": 256,
+      "tick": 352
+    }
+  },
+  "merged_state": {
+    "catalog_size": 14,
+    "game_id": "watermelon",
+    "ready": true,
+    "screen": "game",
+    "state": {
+      "aim_x": 337,
+      "balls": [
+        {
+          "danger_time": 0,
+          "id": 3,
+          "position": [
+            337,
+            663.5
+          ],
+          "radius": 18.5,
+          "shot_id": 2,
+          "tier": 2,
+          "value": 4,
+          "velocity": [
+            0,
+            0
+          ]
+        }
+      ],
+      "best": 4,
+      "game_id": "watermelon",
+      "highest_tier": 2,
+      "moves": 2,
+      "next": 1,
+      "next_tier": 1,
+      "next_value": 2,
+      "score": 4,
+      "status": "playing",
+      "target_tier": 8,
+      "target_value": 256,
+      "tick": 588
+    }
+  },
+  "restart_state": {
+    "catalog_size": 14,
+    "game_id": "watermelon",
+    "ready": true,
+    "screen": "game",
+    "state": {
+      "aim_x": 270,
+      "balls": [],
+      "best": 4,
+      "game_id": "watermelon",
+      "highest_tier": 0,
+      "moves": 0,
+      "next": 1,
+      "next_tier": 1,
+      "next_value": 2,
+      "score": 0,
+      "status": "playing",
+      "target_tier": 8,
+      "target_value": 256,
+      "tick": 4
+    }
+  }
+}
