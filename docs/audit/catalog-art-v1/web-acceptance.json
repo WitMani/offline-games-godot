@@ -19,6 +19,16 @@
       "file": "index.2b558bdb3c3a.js",
       "sha256": "e3f56ee40e6f84371053db06692cfac15e2c8659547b11c6b2dfa1996dabd981",
       "bytes": 315759
+    },
+    "audio_worklet": {
+      "file": "index.2b558bdb3c3a.audio.worklet.js",
+      "sha256": "5b476a9c9ce642c0ee4256436d1bc31d9c38f868aca0f9a8e2a57c18d2dec2a3",
+      "bytes": 7298
+    },
+    "audio_position_worklet": {
+      "file": "index.2b558bdb3c3a.audio.position.worklet.js",
+      "sha256": "be33985bc7160d6bf9646f259cd86b259cd67b02ccb297ee5c44f8ac84327bc8",
+      "bytes": 2973
     }
   },
   "exact_artifact_browser_smoke": {
@@ -34,7 +44,7 @@
     "screenshot": "web-dynamic-font.png"
   },
   "environment_note": {
-    "headless_audio": "Chrome SwiftShader reported PositionWorklet creation failure; canvas boot and game interaction continued. This is retained as headless-environment noise, not claimed as an audio-device pass.",
+    "headless_audio": "Both deployed audio worklets were hash-matched and loaded without errors. Headless Chrome retained only the expected autoplay warning before user gesture; this is not claimed as a physical audio-output pass.",
     "ec2_to_aliyun_throughput": "The public Tailscale HTTPS path measured about 88-155 KB/s from this EC2, so a cold 49 MB engine+pack browser fetch did not finish inside the 180-second remote smoke. Atomic HTTP health and exact deployed hashes passed; the exact live artifact was booted locally to separate bundle integrity from that transport bottleneck."
   }
 }
