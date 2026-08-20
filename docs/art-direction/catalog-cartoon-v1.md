@@ -125,6 +125,7 @@ Grades are a shared importance vocabulary, not a rigid effect recipe. Grade 1 is
 - Asset size: source PNGs remain outside the game; runtime plates are 540 × 960 WebP. The full rebuild font is under `.gdignore` and excluded from Web export.
 - Reduced channel fallback: every event remains understandable from changed object state plus local shape/motion if audio, vibration, or camera is unavailable.
 - Busy-event trace: [busy-event-performance.json](../audit/catalog-art-v1/busy-event-performance.json) records 180 Xvfb/llvmpipe frames with the 12-effect cap; it is a regression trace, not a physical-device FPS claim.
+- Web acceptance: [web-acceptance.json](../audit/catalog-art-v1/web-acceptance.json) records the fingerprinted Aliyun release hashes and exact-artifact boot; [web-dynamic-font.png](../audit/catalog-art-v1/web-dynamic-font.png) proves the live animated CJK label path.
 
 ## Feasibility and approval
 

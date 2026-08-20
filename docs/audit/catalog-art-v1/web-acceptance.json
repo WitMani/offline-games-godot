@@ -1,0 +1,40 @@
+{
+  "checked_at": "2026-08-20T08:48:00Z",
+  "implementation_commit": "1cc8678",
+  "release_id": "20260820T084239Z-5c6f50de09dc",
+  "public_url": "https://aliyun-ecs.tail17a64.ts.net:8788/",
+  "public_atomic_health": "PASS",
+  "fingerprints": {
+    "pck": {
+      "file": "index.5c6f50de09dc.pck",
+      "sha256": "5c6f50de09dc996fcb3394c48aa05e4c3c91d6e6a50f865235bd853db971ebe3",
+      "bytes": 11505360
+    },
+    "wasm": {
+      "file": "index.2b558bdb3c3a.wasm",
+      "sha256": "2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137",
+      "bytes": 37686550
+    },
+    "javascript": {
+      "file": "index.2b558bdb3c3a.js",
+      "sha256": "e3f56ee40e6f84371053db06692cfac15e2c8659547b11c6b2dfa1996dabd981",
+      "bytes": 315759
+    }
+  },
+  "exact_artifact_browser_smoke": {
+    "http_status": 200,
+    "loading_overlay_removed": true,
+    "canvas": [540, 960],
+    "fingerprinted_pck_loaded": true,
+    "fingerprinted_wasm_loaded": true,
+    "selected_game": "merge2048",
+    "interaction": "left move",
+    "dynamic_label": "木作合成 · +4",
+    "dynamic_label_font_result": "PASS: no tofu, mojibake, clipping, or numeral-role substitution",
+    "screenshot": "web-dynamic-font.png"
+  },
+  "environment_note": {
+    "headless_audio": "Chrome SwiftShader reported PositionWorklet creation failure; canvas boot and game interaction continued. This is retained as headless-environment noise, not claimed as an audio-device pass.",
+    "ec2_to_aliyun_throughput": "The public Tailscale HTTPS path measured about 88-155 KB/s from this EC2, so a cold 49 MB engine+pack browser fetch did not finish inside the 180-second remote smoke. Atomic HTTP health and exact deployed hashes passed; the exact live artifact was booted locally to separate bundle integrity from that transport bottleneck."
+  }
+}
