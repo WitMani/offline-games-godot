@@ -116,7 +116,7 @@
       2,
       0
     ],
-    "event_age": 0.163024666666667,
+    "event_age": 0.139136,
     "font_role": "ui_cjk",
     "grade": 2,
     "kind": "logic_error",
@@ -125,7 +125,7 @@
       2,
       0
     ],
-    "selected_age": 0.163024666666667
+    "selected_age": 0.139136
   },
   "score": 0,
   "selected": [

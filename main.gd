@@ -2252,9 +2252,13 @@ func _sudoku_complete() -> bool:
 func _draw_sudoku() -> void:
 	if game_id == "meowdoku":
 		var meow_accent := Color("e16c9f")
-		_draw_section_heading("猫爪手账", "选格后输入数字", meow_accent)
+		var meow_ink := Color("67344d")
+		var meow_detail := "选格后输入数字"
+		_draw_text_font(DISPLAY_FONT, "猫爪手账", Vector2(30, 207), 18, meow_ink)
+		_draw_text(meow_detail, Vector2(508 - UI_FONT.get_string_size(meow_detail, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x, 205), 11, Color("80536a"))
+		draw_line(Vector2(30, 216), Vector2(510, 216), Color(meow_accent, 0.44), 2.0)
 		logic_game_presenter.draw_board(self, game_id, state, elapsed, NUMBER_FONT)
-		_draw_text("同行、同列与九宫同步定位", Vector2(47, 706), 13, Color("f1dce7"))
+		_draw_text("同行、同列与九宫同步定位", Vector2(47, 706), 13, Color("73435b"))
 		return
 	var origin := Vector2(47, 236)
 	var cell := 49.5
