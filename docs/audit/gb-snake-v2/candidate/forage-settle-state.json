@@ -1,0 +1,47 @@
+{
+  "direction": [
+    1,
+    0
+  ],
+  "food": [
+    6,
+    2
+  ],
+  "game_id": "snake_classic",
+  "moves": 2,
+  "object_fx": {
+    "cell": "(8, 11)",
+    "duration": 0.54,
+    "grade": 2,
+    "kind": "forage",
+    "pending_growth": 1
+  },
+  "pending_growth": 0,
+  "score": 5,
+  "segments": [
+    [
+      9,
+      11
+    ],
+    [
+      8,
+      11
+    ],
+    [
+      7,
+      11
+    ],
+    [
+      6,
+      11
+    ],
+    [
+      5,
+      11
+    ]
+  ],
+  "status": "playing",
+  "terminal_reason": "",
+  "turn_queue": [],
+  "visual_kind": "eat"
+}

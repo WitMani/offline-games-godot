@@ -1,0 +1,248 @@
+{
+  "schema": "offline-games/gag-asset-ledger/v2",
+  "game_id": "snake_classic",
+  "slice": "GB Snake field telemetry presentation",
+  "created_at": "2026-08-20T16:16:00Z",
+  "production_mode": "GAG pure API; no local GPU inference required",
+  "service": {
+    "production_endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+    "server_name": "game-assets-generator",
+    "server_version": "1.29.0",
+    "host": "HOME-WSL",
+    "system": {
+      "detected_gpu": false,
+      "main_service_pytorch": "not installed",
+      "pure_api_available": true,
+      "available_providers_used": ["gemini", "fal", "elevenlabs", "removebg"]
+    },
+    "configuration_drift": {
+      "registered_in_process_tool": "EC2 instance with mock-only provider and missing Gemini key",
+      "decision": "rejected before production; its failed calls are not counted as semantic searches",
+      "resolution": "used the live HOME-WSL streamable-HTTP MCP"
+    }
+  },
+  "semantic_searches": [
+    {
+      "query": "复古军绿色掌机 LCD 单色像素蛇头 身体节 食物诱饵 萤火虫 标本胶囊 游戏精灵 透明背景",
+      "kinds": ["image"],
+      "limit": 15,
+      "returned": 15,
+      "provider": "Gemini embedding"
+    },
+    {
+      "query": "军绿色野外研究掌机 蛇形徽章 黄铜珐琅 生态监测仪 徽章 透明背景 卡通游戏素材",
+      "kinds": ["image"],
+      "limit": 15,
+      "returned": 15,
+      "provider": "Gemini embedding"
+    },
+    {
+      "query": "复古掌机 贪食蛇 转向 咔嗒 吃食物 扫描确认 撞击 通关 短游戏音效",
+      "kinds": ["audio"],
+      "limit": 15,
+      "returned": 15,
+      "provider": "Gemini embedding"
+    }
+  ],
+  "reviewed_library_candidates": [
+    {
+      "name": "enemy_cobra_idle_spritesheet_cropped.png",
+      "score": 0.37400795628077094,
+      "sha256": "612e1e458f4efefc7d7adc6f27e122f48d7c451adacca33c080a751f288068d3",
+      "decision": "rejected",
+      "reason": "purple/red many-eyed combat cobra; wrong role, palette and small-scale readability"
+    },
+    {
+      "name": "scrap_circuit.png",
+      "score": 0.4204972702701896,
+      "sha256": "0af093e0fda817c1fa2df0fa5785f21aaae0754499fc2216ce4a4252fe9694c7",
+      "decision": "rejected",
+      "reason": "material family is close, but the object is circuit scrap rather than a snake identity or lure"
+    },
+    {
+      "name": "20260123_212157_pixel_art_green_ghos_gemini.png",
+      "score": 0.4114101915348639,
+      "sha256": "05bd67aa3b84e2fc755a7aac6fb67c21dd062236ebce7f43a502b78f7f01358b",
+      "decision": "rejected",
+      "reason": "wrong subject and full-color ghost shading"
+    },
+    {
+      "name": "20260109_121300_Game_icon_sprite_she_gemini.png",
+      "score": 0.40822754773009157,
+      "sha256": "216cd1212b10c91a7a7e374cc448841b8bdeff94e57058e0ec7702490407e32d",
+      "decision": "rejected",
+      "reason": "cyan asset-sheet soup rather than one readable game object"
+    },
+    {
+      "name": "20260109_011640_cute_cartoon_turtle_gemini.png",
+      "score": 0.37886941197524376,
+      "sha256": "f8fefe2602e8c01b5e3dada2829d8acdc911a064241ef806198da8ad77752936",
+      "decision": "rejected",
+      "reason": "explorer theme is adjacent, but species and soft full-color rendering are wrong"
+    },
+    {
+      "name": "audio search set: exploration music, boss/chase music, generic warnings, magic and coin cues",
+      "decision": "rejected",
+      "reason": "long-form or semantically generic; unsuitable for frequent forage and terminal register events"
+    }
+  ],
+  "generations": [
+    {
+      "id": "head-v1",
+      "kind": "image",
+      "provider": "fal",
+      "model": "fal-ai/flux-pro/v1.1",
+      "size": "square_hd",
+      "prompt": "One isolated production-ready MONOCHROME LCD PIXEL GLYPH for a premium retro handheld Snake game: a compact friendly FIELD SERPENT HEAD pointing exactly LEFT TO RIGHT. Broad rounded wedge snout at the far RIGHT, short neck cut flat at the far LEFT, one large square readable eye, two tiny forward sensor prongs, one simple cheek scale notch. Strict 1-bit dark olive-black silhouette with a few transparent-looking cutout gaps, chunky authentic 16-by-16 pixel-art geometry enlarged with hard nearest-neighbor edges, no antialiasing, no gradients, no glow. Exactly one head only, centered, generous blank margin. No body, no full snake, no food, no circle badge, no letters, no words, no numbers, no arrows, no UI, no grid, no logo, no extra props. Plain pure white background for later background removal.",
+      "source_archive_path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/snake_games/gag-v2/gb_snake/generated_images__20260820_235159_FAL.ai.png",
+      "source_container": "JPEG payload in generated .png path",
+      "source_dimensions": [1024, 1024],
+      "source_sha256": "7d67f62afe64248c3c807e18b19a6858e54c7e148a3f94f7c6a14d50177accfc",
+      "critique": "readable head, but it points left and includes a long neck/tail despite the prompt",
+      "decision": "selected_repair"
+    },
+    {
+      "id": "lure-v1",
+      "kind": "image",
+      "provider": "fal",
+      "model": "fal-ai/flux-pro/v1.1",
+      "size": "square_hd",
+      "prompt": "One isolated production-ready MONOCHROME LCD PIXEL GLYPH for the same premium retro field-telemetry Snake game: one symmetric SPECIMEN LURE shaped like a small seed capsule crossed with a firefly beacon. Chunky round seed body, one central diamond phosphor core cutout, two tiny leaf or antenna tabs, clear silhouette at 14 pixels. Strict 1-bit dark olive-black pixel art enlarged with hard nearest-neighbor edges, no antialiasing, no gradients, no color, no glow. Exactly one lure only, centered, generous blank margin. No snake, no fruit, no bottle, no letters, no words, no numbers, no UI, no grid, no logo, no extra props. Plain pure white background for later background removal.",
+      "source_archive_path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/snake_games/gag-v2/gb_snake/generated_images__20260820_235217_FAL.ai.png",
+      "source_sha256": "c5e570480e65516e342d2d8432916477a2cafc2688a5ec9c99123def9e1df70d",
+      "critique": "baked oval plate and pseudo-writing violate the no-text/no-badge constraint",
+      "decision": "rejected"
+    },
+    {
+      "id": "seal-v1",
+      "kind": "image",
+      "provider": "fal",
+      "model": "fal-ai/flux-pro/v1.1",
+      "size": "square_hd",
+      "prompt": "One isolated production-ready 2D cartoon FIELD HERPETOLOGY INSTRUMENT SEAL for an aged military-green handheld game. Compact circular aged-brass outer rim with four chunky studs, muted olive enamel center, one bold dark inlaid S-curving serpent silhouette around a small specimen seed, restrained coral-red calibration tick at the bottom, tactile worn bevel and one warm highlight. Orthographic front view, readable at 42 pixels, premium pocket-tool proportions. Exactly one centered badge with generous margin. Absolutely no letters, no words, no numbers, no pseudo-writing, no shield, no skull, no weapon, no neon, no UI, no logo, no separate props. Plain neutral gray background with strong silhouette separation for later background removal.",
+      "source_archive_path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/snake_games/gag-v2/gb_snake/generated_images__20260820_235233_FAL.ai.png",
+      "source_container": "JPEG payload in generated .png path",
+      "source_dimensions": [1024, 1024],
+      "source_sha256": "31d917c33289f6a19e78a5c42490d5b021414dea93ec17b68c177ef0e6e66f49",
+      "critique": "eight studs instead of four, but silhouette, materials, calibration tick and lack of text are production-fit",
+      "decision": "selected"
+    },
+    {
+      "id": "lure-v2",
+      "kind": "image",
+      "provider": "fal",
+      "model": "fal-ai/flux-pro/v1.1",
+      "size": "square_hd",
+      "prompt": "One isolated tiny retro LCD FOOD TOKEN: a single plump seed pod shaped like a friendly beetle, strict front view. One chunky oval body, two short antenna tabs, one small diamond-shaped cutout in the center, two tiny feet. Solid dark olive-black 1-bit pixel silhouette with only three simple interior cutout pixels, authentic hard square pixel steps, designed to remain readable at 14 by 14 pixels. The object must NOT be inside any circle, plate, coin, badge, label, frame or interface. Exactly one seed-beetle only, centered with huge pure-white empty space. No snake, no plant stem, no flower, no fruit, no bottle, no letters, no words, no numbers, no marks, no pseudo-writing, no UI, no border, no logo, no extra objects, no shadow, no glow, no gradient.",
+      "source_archive_path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/snake_games/gag-v2/gb_snake/generated_images__20260820_235620_FAL.ai.png",
+      "source_container": "JPEG payload in generated .png path",
+      "source_dimensions": [1024, 1024],
+      "source_sha256": "809752407e0f67ab68bf4119e834cbde67ecd0f100c02528b85f1f0fde638537",
+      "critique": "single clean seed-beetle silhouette with central cutout; no text, plate or extra object",
+      "decision": "selected"
+    },
+    {
+      "id": "gb_snake_specimen_collect",
+      "kind": "sfx",
+      "provider": "elevenlabs",
+      "mode": "sfx",
+      "requested_duration_seconds": 0.7,
+      "variations": 2,
+      "prompt": "A very short tactile retro handheld specimen-collect sound: one dry LCD pixel click, a tiny seed capsule pluck, then two restrained low-bit field-scanner beeps with a warm miniature speaker character. Fast clean attack and decay, satisfying but subtle enough for frequent Snake food pickups, no voice, no speech, no music, no ambience, no long reverb.",
+      "asset_id": "gb_snake_specimen_collect",
+      "version": "v1",
+      "digest": "3d11cfaf2bcbb9d25a27016f86a5dee12b3210e850e2408cee20ab182d841d23",
+      "source_report_status": "issues_detected",
+      "decision": "variation_2 selected by measurable duration, loudness availability and near-zero trailing silence; no subjective listening claim"
+    },
+    {
+      "id": "gb_snake_field_log_complete",
+      "kind": "sfx",
+      "provider": "elevenlabs",
+      "mode": "sfx",
+      "requested_duration_seconds": 1.2,
+      "variations": 2,
+      "prompt": "A compact triumphant retro handheld field-recorder completion cue: a firm mechanical register clack, a quick rising three-step low-bit telemetry chirp, a warm aged-brass seal stamp, then one short glassy phosphor ping. Premium tactile pocket instrument, clear terminal reward and clean decay, no voice, no speech, no melody bed, no ambience, no long reverb.",
+      "asset_id": "gb_snake_field_log_complete",
+      "version": "v1",
+      "digest": "73f07b1a3a0a7ac250febce24c7cf4eaf363435443c7ba8f55fe916a2f8d8eb6",
+      "source_report_status": "issues_detected",
+      "decision": "variation_2 selected because it has zero trailing silence versus 275.438 ms in variation_1; no subjective listening claim"
+    }
+  ],
+  "background_removal": {
+    "provider": "removebg",
+    "calls": 3,
+    "outputs": [
+      {"role": "head", "dimensions": [500, 500], "sha256": "533866484df9e1f876bcabbfc986bb48c5f189567c2e98efca0f78bf75d247f0"},
+      {"role": "lure-v2", "dimensions": [500, 500], "sha256": "4f871cb6c631976f939819f7c3ae3b87a4fc0a35e95ade7b258685ba6e04fbc8"},
+      {"role": "seal", "dimensions": [500, 500], "sha256": "57b0734c832c493ac426ab1ec8d921c5019417aa64f4db400377558a9ac2cf64"}
+    ]
+  },
+  "runtime_assets": [
+    {
+      "path": "res://assets/art/snakes/gag/gb_snake_head_gag_v2.png",
+      "source_generation": "head-v1",
+      "derivation": "Remove.bg; crop 226:156 at 96:158; deterministic horizontal flip to repair wrong source direction; nearest-neighbor scale to 64x44",
+      "dimensions": [64, 44],
+      "sha256": "b31eb852f4844151fc5be6ce85408c079290526292be8feffc9ef7836c57f3d5",
+      "first_visible_beat": "ordinary opening snake head",
+      "runtime_size": "approximately 19.2x13.2 px, rotated from authoritative direction",
+      "bindings": ["stable head", "accepted-turn focus", "rejected-turn ghost", "crash compression"]
+    },
+    {
+      "path": "res://assets/art/snakes/gag/gb_snake_lure_gag_v2.png",
+      "source_generation": "lure-v2",
+      "derivation": "Remove.bg; crop 196:294 at 238:116; nearest-neighbor scale to 48x64",
+      "dimensions": [48, 64],
+      "sha256": "0c2ab2985a5007f23b785d32ec20d8001489bd0c9d5b09f0e9f9d017432a1607",
+      "first_visible_beat": "ordinary opening food cell",
+      "runtime_size": "approximately 11.8x15.8 px with bounded phosphor pulse",
+      "bindings": ["stable food", "forage lock", "forage contraction"]
+    },
+    {
+      "path": "res://assets/art/snakes/gag/gb_snake_field_seal_gag_v2.png",
+      "source_generation": "seal-v1",
+      "derivation": "Remove.bg; crop 390:390 at 55:52; Lanczos scale to 192x192",
+      "dimensions": [192, 192],
+      "sha256": "8b078efc3ccf496cde71f05bfc55a9b6cf1cc6cafe630a6f53def5fe2a5ec47e",
+      "first_visible_beat": "ordinary opening hardware identity above LCD",
+      "runtime_size": "54x54 px stable; bounded pulse at decade and completion",
+      "bindings": ["stable field identity", "grade-3 field log", "grade-4 completion"]
+    },
+    {
+      "path": "res://assets/audio/snake/gag/gb_snake_specimen_collect_gag_v2.ogg",
+      "source_generation": "gb_snake_specimen_collect variation_2",
+      "source_ogg_sha256": "79a11aa489325361da0e45b8c101de41c97b84d7b28cbca0446108b56bc9a7ac",
+      "source_qa": {"duration_seconds": 0.438708, "sample_rate": 48000, "channels": 1, "gag_lufs": -22.35, "gag_true_peak_db": -1.03, "trailing_silence_ms": 0.125, "status": "issues_detected"},
+      "derivation": "ffmpeg acompressor threshold=0.25 ratio=4 attack=1 release=50 makeup=1.6; volume=2.0; alimiter=0.84 level=false; 48 kHz mono; libvorbis q5",
+      "runtime_qa": {"duration_seconds": 0.438708, "sample_rate": 48000, "channels": 1, "measured_lufs": -19.9, "measured_peak_dbfs": -1.5},
+      "sha256": "35d0d69c32474ab5ba1ca65d2b6a458c0b3a5604adbf8ecda480aaf6c967b861",
+      "bindings": ["grade-2 forage", "grade-3 decade layer"]
+    },
+    {
+      "path": "res://assets/audio/snake/gag/gb_snake_field_log_complete_gag_v2.ogg",
+      "source_generation": "gb_snake_field_log_complete variation_2",
+      "source_ogg_sha256": "4a9cf16c31f60ccdb1e17bf3f94a2b832bfc1d99cbba734bc308d841a5085bc3",
+      "source_qa": {"duration_seconds": 0.913708, "sample_rate": 48000, "channels": 1, "gag_lufs": -17.05, "gag_true_peak_db": -4.45, "trailing_silence_ms": 0.0, "status": "issues_detected"},
+      "derivation": "ffmpeg volume=1.15; alimiter=0.794 level=false; 48 kHz mono; libvorbis q5",
+      "runtime_qa": {"duration_seconds": 0.917333, "sample_rate": 48000, "channels": 1, "measured_lufs": -16.1, "measured_peak_dbfs": -3.5},
+      "sha256": "49e2f9b89d473b69adc31d06d6234268521332fb3a5718780ca473824b609aff",
+      "bindings": ["grade-4 length-120 completion"]
+    }
+  ],
+  "post_generation_index": {
+    "attempted": 7,
+    "indexed": 3,
+    "failed": 4,
+    "failure_scope": "generated OGG files were not accepted by the image-oriented index path",
+    "verification_search": "three generated images returned within the archive scope; audio runtime verification uses exact delivery metadata, hashes and engine routing"
+  },
+  "shipping_boundary": {
+    "runtime_derivatives": 5,
+    "source_masters_in_repository": 0,
+    "rejected_candidates_in_repository": 0,
+    "generated_text_in_images": false,
+    "source_archive_owner": "HOME-WSL GAG archive"
+  }
+}

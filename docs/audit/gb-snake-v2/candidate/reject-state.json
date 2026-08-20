@@ -1,0 +1,43 @@
+{
+  "direction": [
+    1,
+    0
+  ],
+  "food": [
+    11,
+    11
+  ],
+  "game_id": "snake_classic",
+  "moves": 0,
+  "object_fx": {
+    "direction": "(-1, 0)",
+    "duration": 0.28,
+    "grade": 1,
+    "kind": "turn_rejected",
+    "reason": "reverse"
+  },
+  "pending_growth": 0,
+  "score": 4,
+  "segments": [
+    [
+      7,
+      11
+    ],
+    [
+      6,
+      11
+    ],
+    [
+      5,
+      11
+    ],
+    [
+      4,
+      11
+    ]
+  ],
+  "status": "playing",
+  "terminal_reason": "",
+  "turn_queue": [],
+  "visual_kind": ""
+}

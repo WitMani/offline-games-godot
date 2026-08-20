@@ -1,0 +1,44 @@
+{
+  "direction": [
+    1,
+    0
+  ],
+  "food": [
+    3,
+    3
+  ],
+  "game_id": "snake_classic",
+  "moves": 0,
+  "object_fx": {
+    "cell": "(15, 8)",
+    "direction": "(1, 0)",
+    "duration": 0.78,
+    "grade": 4,
+    "kind": "crash",
+    "reason": "wall_hit"
+  },
+  "pending_growth": 0,
+  "score": 4,
+  "segments": [
+    [
+      14,
+      8
+    ],
+    [
+      13,
+      8
+    ],
+    [
+      12,
+      8
+    ],
+    [
+      11,
+      8
+    ]
+  ],
+  "status": "over",
+  "terminal_reason": "wall",
+  "turn_queue": [],
+  "visual_kind": "crash"
+}

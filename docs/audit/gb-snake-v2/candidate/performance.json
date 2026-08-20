@@ -1,0 +1,26 @@
+{
+  "busy": {
+    "average_frame_ms": 5.45047222222222,
+    "max_frame_ms": 11.527,
+    "p95_frame_ms": 7.306,
+    "peak_static_memory_bytes": 61057908,
+    "sample_count": 180
+  },
+  "busy_case": "grade-4 completion sweep, pulsing GAG seal, 22 capped phosphor pixels and the same 119-cell board retriggered every 60 frames",
+  "game_id": "snake_classic",
+  "note": "Software-renderer regression trace; not a physical-device FPS claim.",
+  "renderer": "llvmpipe (LLVM 21.1.8, 256 bits)",
+  "runtime": "Godot 4.6-stable (official) / Xvfb llvmpipe",
+  "stable": {
+    "average_frame_ms": 5.14475833333333,
+    "max_frame_ms": 8.622,
+    "p95_frame_ms": 6.286,
+    "peak_static_memory_bytes": 60887530,
+    "sample_count": 120
+  },
+  "stable_case": "119 authoritative body cells plus ordinary-visible GAG head, lure and external field seal",
+  "viewport": [
+    540,
+    960
+  ]
+}

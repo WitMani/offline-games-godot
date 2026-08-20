@@ -1,0 +1,67 @@
+{
+  "direction": [
+    1,
+    0
+  ],
+  "food": [
+    2,
+    2
+  ],
+  "game_id": "snake_classic",
+  "moves": 1,
+  "object_fx": {
+    "cell": "(4, 11)",
+    "duration": 0.82,
+    "grade": 3,
+    "kind": "field_log",
+    "score": 10
+  },
+  "pending_growth": 0,
+  "score": 10,
+  "segments": [
+    [
+      13,
+      11
+    ],
+    [
+      12,
+      11
+    ],
+    [
+      11,
+      11
+    ],
+    [
+      10,
+      11
+    ],
+    [
+      9,
+      11
+    ],
+    [
+      8,
+      11
+    ],
+    [
+      7,
+      11
+    ],
+    [
+      6,
+      11
+    ],
+    [
+      5,
+      11
+    ],
+    [
+      4,
+      11
+    ]
+  ],
+  "status": "playing",
+  "terminal_reason": "",
+  "turn_queue": [],
+  "visual_kind": "milestone"
+}

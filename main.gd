@@ -51,6 +51,9 @@ const HOME_COVER_TEXTURES := {
 const MERGE2248_BG_TEXTURE: Texture2D = preload("res://assets/art/merge2248/candy_workshop_bg_v2.webp")
 const SNAKE_GARDEN_TEXTURE: Texture2D = preload("res://assets/art/snake/modern_garden.webp")
 const SNAKE_GB_TEXTURE: Texture2D = preload("res://assets/art/snakes/gb_handheld.webp")
+const SNAKE_GB_GAG_HEAD_TEXTURE: Texture2D = preload("res://assets/art/snakes/gag/gb_snake_head_gag_v2.png")
+const SNAKE_GB_GAG_LURE_TEXTURE: Texture2D = preload("res://assets/art/snakes/gag/gb_snake_lure_gag_v2.png")
+const SNAKE_GB_GAG_FIELD_SEAL_TEXTURE: Texture2D = preload("res://assets/art/snakes/gag/gb_snake_field_seal_gag_v2.png")
 const SNAKES_DOODLE_TEXTURE: Texture2D = preload("res://assets/art/snakes/arena_doodles.webp")
 const SOLITAIRE_CARD_BACK_TEXTURE: Texture2D = preload("res://assets/art/cards/solitaire_card_back_gag_v1.webp")
 const TRIPEAKS_CARD_BACK_TEXTURE: Texture2D = preload("res://assets/art/cards/tripeaks_card_back_gag_v1.webp")
@@ -79,6 +82,8 @@ const SFX_SNAKE_REJECT: AudioStream = preload("res://assets/audio/snake/reject.w
 const SFX_SNAKE_EAT: AudioStream = preload("res://assets/audio/snake/eat.wav")
 const SFX_SNAKE_CRASH: AudioStream = preload("res://assets/audio/snake/crash.wav")
 const SFX_SNAKE_WIN: AudioStream = preload("res://assets/audio/snake/win.wav")
+const SFX_SNAKE_GB_GAG_COLLECT: AudioStream = preload("res://assets/audio/snake/gag/gb_snake_specimen_collect_gag_v2.ogg")
+const SFX_SNAKE_GB_GAG_COMPLETE: AudioStream = preload("res://assets/audio/snake/gag/gb_snake_field_log_complete_gag_v2.ogg")
 const SFX_FRUIT_DROP: AudioStream = preload("res://assets/audio/2048balls/fruit_drop.ogg")
 const SFX_FRUIT_MERGE: AudioStream = preload("res://assets/audio/2048balls/fruit_merge.ogg")
 const SFX_FRUIT_CASCADE: AudioStream = preload("res://assets/audio/2048balls/fruit_cascade.ogg")
@@ -201,6 +206,7 @@ var snake_fx_kind := ""
 var snake_fx_started := -10.0
 var snake_fx_cell := Vector2i.ZERO
 var snake_fx_direction := Vector2i.RIGHT
+var snake_gb_object_fx: Dictionary = {}
 var snake_result_ready_at := -1.0
 var snake_lcd_flash_until := -1.0
 var snake_score_bump_until := -1.0
@@ -2632,6 +2638,7 @@ func _init_snake_gb() -> void:
 	snake_previous_cells.clear()
 	snake_fx_kind = ""
 	snake_fx_direction = Vector2i.RIGHT
+	snake_gb_object_fx.clear()
 	snake_result_ready_at = -1.0
 	snake_lcd_flash_until = -1.0
 	snake_score_bump_until = -1.0
@@ -2665,11 +2672,20 @@ func _snake_gb_dispatch(events: Array[Dictionary]) -> void:
 			"turn_accepted":
 				snake_button_direction = _snake_vector(event.get("direction", Vector2i.ZERO))
 				snake_button_until = elapsed + 0.11
+				snake_gb_object_fx = {
+					"kind":"turn_accepted", "grade":1, "started":elapsed,
+					"duration":0.28, "direction":snake_button_direction
+				}
 				_play_sfx(SFX_SNAKE_KEY, -10.0, 0.90 + float(posmod(snake_gb_model.step_index, 4)) * 0.035)
 				_haptic(8)
 			"turn_rejected":
 				snake_reject_direction = _snake_vector(event.get("direction", Vector2i.ZERO))
 				snake_reject_until = elapsed + 0.14
+				snake_gb_object_fx = {
+					"kind":"turn_rejected", "grade":1, "started":elapsed,
+					"duration":0.28, "direction":snake_reject_direction,
+					"reason":str(event.get("reason", "invalid"))
+				}
 				_play_sfx(SFX_SNAKE_REJECT, -14.0, 0.78)
 			"moved":
 				if bool(event.get("tail_vacated", false)):
@@ -2678,20 +2694,44 @@ func _snake_gb_dispatch(events: Array[Dictionary]) -> void:
 				snake_fx_kind = "eat"
 				snake_fx_started = elapsed
 				snake_fx_cell = _snake_vector(event.get("at", Vector2i.ZERO))
+				snake_gb_object_fx = {
+					"kind":"forage", "grade":2, "started":elapsed,
+					"duration":0.54, "cell":snake_fx_cell,
+					"pending_growth":int(event.get("pending_growth", 1))
+				}
 				snake_lcd_flash_until = elapsed + 0.09
 				snake_score_bump_until = elapsed + 0.22
 				_snake_gb_emit_pixels(snake_fx_cell, 10, "eat")
 				snake_float_labels.append({"cell":snake_fx_cell, "started":elapsed, "text":"+1"})
-				_play_sfx(SFX_SNAKE_EAT, -8.0, 1.12)
+				_play_sfx(SFX_SNAKE_GB_GAG_COLLECT, -6.5, 0.98 + float(posmod(int(state.get("score", 4)), 3)) * 0.025)
 				_haptic(18)
 				_log_event("snake_gb_food", {"length":int(state.get("score", 4))})
 			"growth_materialized":
 				snake_score_bump_until = elapsed + 0.24
+				var reached_length := int(event.get("score", state.get("score", 4)))
+				if reached_length < int(state.get("target_length", 120)) and reached_length % 10 == 0:
+					snake_fx_kind = "milestone"
+					snake_fx_started = elapsed
+					snake_fx_cell = _snake_vector(event.get("at", snake_gb_model.segments.back()))
+					snake_gb_object_fx = {
+						"kind":"field_log", "grade":3, "started":elapsed,
+						"duration":0.82, "cell":snake_fx_cell, "score":reached_length
+					}
+					_snake_gb_emit_pixels(snake_fx_cell, 16, "milestone")
+					_play_sfx(SFX_SNAKE_GB_GAG_COLLECT, -4.5, 0.78)
+					_play_sfx(SFX_SNAKE_KEY, -9.0, 1.16)
+					_haptic(28)
+					_log_event("snake_gb_field_log", {"length":reached_length, "grade":3})
 			"wall_hit", "self_hit":
 				snake_fx_kind = "crash"
 				snake_fx_started = elapsed
 				snake_fx_cell = _snake_vector(event.get("to", Vector2i.ZERO))
 				snake_fx_direction = snake_gb_model.direction
+				snake_gb_object_fx = {
+					"kind":"crash", "grade":4, "started":elapsed,
+					"duration":0.78, "cell":snake_fx_cell,
+					"direction":snake_fx_direction, "reason":kind
+				}
 				snake_result_ready_at = elapsed + 0.62
 				_snake_gb_emit_pixels(snake_fx_cell, 14, "crash")
 				_play_sfx(SFX_SNAKE_CRASH, -5.0, 0.82)
@@ -2701,10 +2741,15 @@ func _snake_gb_dispatch(events: Array[Dictionary]) -> void:
 				snake_fx_kind = "win"
 				snake_fx_started = elapsed
 				snake_fx_cell = _snake_vector(event.get("at", snake_gb_model.segments[0]))
+				snake_gb_object_fx = {
+					"kind":"complete", "grade":4, "started":elapsed,
+					"duration":1.56, "cell":snake_fx_cell,
+					"score":int(event.get("score", 120))
+				}
 				snake_result_ready_at = elapsed + 0.72
 				_snake_gb_emit_pixels(snake_fx_cell, 22, "win")
-				_play_sfx(SFX_SNAKE_WIN, -4.5, 0.94)
-				_haptic(70)
+				_play_sfx(SFX_SNAKE_GB_GAG_COMPLETE, -3.5, 1.0)
+				_haptic(82)
 				_capture("snake_gb_win")
 
 func _snake_gb_emit_pixels(cell: Vector2i, count: int, kind: String) -> void:
@@ -3267,20 +3312,69 @@ func _snake_gb_impact_point(cell_value: Variant) -> Vector2:
 	point.y = clampf(point.y, origin.y, origin.y + float(height) * cell_size)
 	return point
 
+func _snake_gb_object_fx_age() -> float:
+	return elapsed - float(snake_gb_object_fx.get("started", -10.0))
+
+func _snake_gb_feedback_offset() -> Vector2:
+	var kind := str(snake_gb_object_fx.get("kind", ""))
+	var age := _snake_gb_object_fx_age()
+	match kind:
+		"crash":
+			if age >= 0.0 and age < 0.34:
+				var force := (1.0 - age / 0.34) * 4.2
+				var sign_value := 1.0 if int(age * 92.0) % 2 == 0 else -1.0
+				return Vector2(sign_value * force, sign_value * force * 0.34)
+		"field_log":
+			if age >= 0.0 and age < 0.42:
+				var force := sin(age * 68.0) * (1.0 - age / 0.42) * 1.8
+				return Vector2(force, -absf(force) * 0.34)
+		"complete":
+			if age >= 0.12 and age < 0.64:
+				var force := sin(age * 55.0) * (1.0 - age / 0.64) * 1.45
+				return Vector2(force, -force * 0.24)
+	return Vector2.ZERO
+
+func _draw_snake_gb_texture_center(texture: Texture2D, center: Vector2, size_value: Vector2, modulate := Color.WHITE) -> void:
+	draw_texture_rect(texture, Rect2(center - size_value * 0.5, size_value), false, modulate)
+
+func _draw_snake_gb_head(center: Vector2, direction: Vector2i, alpha := 1.0, scale_value := 1.0, stretch := Vector2.ONE) -> void:
+	var safe_direction := direction if direction != Vector2i.ZERO else Vector2i.RIGHT
+	var angle := Vector2(safe_direction).angle()
+	var size_value := Vector2(19.2, 13.2) * scale_value * stretch
+	draw_set_transform(center, angle, Vector2.ONE)
+	draw_texture_rect(SNAKE_GB_GAG_HEAD_TEXTURE, Rect2(-size_value * 0.5, size_value), false, Color(0.60, 0.68, 0.42, alpha))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+func _draw_snake_gb_lure(center: Vector2, scale_value := 1.0, alpha := 1.0) -> void:
+	var size_value := Vector2(11.8, 15.8) * scale_value
+	_draw_snake_gb_texture_center(SNAKE_GB_GAG_LURE_TEXTURE, center, size_value, Color(0.66, 0.72, 0.45, alpha))
+
+func _draw_snake_gb_field_seal(offset: Vector2) -> void:
+	var kind := str(snake_gb_object_fx.get("kind", ""))
+	var age := _snake_gb_object_fx_age()
+	var pulse := 0.0
+	if kind == "field_log" and age >= 0.0 and age < 0.82:
+		pulse = sin(clampf(age / 0.82, 0.0, 1.0) * PI) * 0.12
+	elif kind == "complete" and age >= 0.0 and age < 1.56:
+		pulse = sin(clampf(age / 1.56, 0.0, 1.0) * PI) * 0.18
+	var center := Vector2(270, 105) + offset * 0.58
+	var size_value := Vector2.ONE * 54.0 * (1.0 + pulse)
+	if pulse > 0.015:
+		draw_circle(center, 34.0 + pulse * 34.0, Color("e8c96e", pulse * 0.34))
+		draw_arc(center, 30.0 + pulse * 28.0, -PI * 0.90, PI * 0.90, 38, Color("f6df8e", pulse * 2.4), 2.0)
+	_draw_snake_gb_texture_center(SNAKE_GB_GAG_FIELD_SEAL_TEXTURE, center, size_value)
+
 func _draw_snake_gb_experience() -> void:
 	draw_texture_rect(SNAKE_GB_TEXTURE, Rect2(Vector2.ZERO, VIEW_SIZE), false)
-	var crash_age := elapsed - snake_fx_started
-	var shake := Vector2.ZERO
-	if snake_fx_kind == "crash" and crash_age >= 0.0 and crash_age < 0.30:
-		var force := (1.0 - crash_age / 0.30) * 3.5
-		shake = Vector2(force if int(crash_age * 88.0) % 2 == 0 else -force, force * 0.36)
+	var shake := _snake_gb_feedback_offset()
 	_draw_panel(Rect2(12, 18, 90, 50), Color("9b9361", 0.86), Color("d7c792", 0.34), 14, 1)
 	_draw_panel(Rect2(438, 18, 90, 50), Color("9b9361", 0.86), Color("d7c792", 0.34), 14, 1)
 	_draw_center("收盒", Vector2(57, 44), 13, Color("27271d"))
 	_draw_center("重开", Vector2(483, 44), 13, Color("27271d"))
-	_draw_center_font(LATIN_FONT, "GB SNAKE", Vector2(270, 119), 20, Color("c9bd85"))
+	_draw_snake_gb_field_seal(shake)
+	_draw_center_font(LATIN_FONT, "GB SNAKE · FIELD LOG", Vector2(270, 149) + shake * 0.58, 11, Color("c9bd85"))
 	_draw_snake_gb_lcd(shake)
-	_draw_snake_gb_controls()
+	_draw_snake_gb_controls(shake * 0.36)
 	_draw_snake_gb_fx(shake)
 	var status := str(state.get("status", "playing"))
 	if status != "playing" and snake_result_ready_at > 0.0 and elapsed >= snake_result_ready_at:
@@ -3320,12 +3414,18 @@ func _draw_snake_gb_lcd(offset: Vector2) -> void:
 		draw_rect(Rect2(origin + Vector2(ghost_cell) * cell + Vector2(2, 2) + offset, Vector2(cell - 4, cell - 4)), Color(lcd_ink, alpha * 0.18))
 	var food_cell := _snake_vector(state.get("food", [11, 11]))
 	var food_center := _snake_gb_cell_center(food_cell) + offset
-	var food_pulse := 0.72 + sin(elapsed * 8.5) * 0.20
-	draw_rect(Rect2(food_center - Vector2(4.6, 4.6), Vector2(9.2, 9.2)), Color(lcd_ink, food_pulse))
-	draw_rect(Rect2(food_center - Vector2(1.4, 7.2), Vector2(2.8, 3.0)), Color(lcd_ink, food_pulse))
+	var food_pulse := 0.88 + (sin(elapsed * 6.6) + 1.0) * 0.055
+	var food_scale := 1.0 + sin(elapsed * 6.6) * 0.045
+	_draw_snake_gb_lure(food_center, food_scale, food_pulse)
+	var lock_alpha := 0.20 + (sin(elapsed * 3.8) + 1.0) * 0.055
+	for corner in [Vector2(-1, -1), Vector2(1, -1), Vector2(1, 1), Vector2(-1, 1)]:
+		var anchor: Vector2 = food_center + Vector2(corner) * 8.7
+		draw_line(anchor, anchor - Vector2(corner.x, 0) * 3.2, Color(lcd_mid, lock_alpha), 1.0)
+		draw_line(anchor, anchor - Vector2(0, corner.y) * 3.2, Color(lcd_mid, lock_alpha), 1.0)
 	var segments: Array = state.get("segments", [])
 	var move_progress := clampf((elapsed - snake_move_started) / 0.18, 0.0, 1.0)
 	var phosphor_progress := floorf(move_progress * 3.0) / 3.0
+	var visual_head_center := Vector2.ZERO
 	for index in range(segments.size() - 1, -1, -1):
 		var segment := _snake_vector(segments[index])
 		var visual := Vector2(segment)
@@ -3333,33 +3433,72 @@ func _draw_snake_gb_lcd(offset: Vector2) -> void:
 			visual = Vector2(_snake_vector(snake_previous_cells[index])).lerp(Vector2(segment), phosphor_progress)
 		var rect := Rect2(origin + visual * cell + Vector2(1.5, 1.5) + offset, Vector2(cell - 3.0, cell - 3.0))
 		var body_alpha := 1.0 if index == 0 else 0.90 - minf(0.18, float(index) * 0.004)
-		draw_rect(rect, Color(lcd_ink, body_alpha))
-		draw_line(rect.position + Vector2(1.5, 1.5), Vector2(rect.end.x - 1.5, rect.position.y + 1.5), Color("8b9c65", 0.26), 1.0)
 		if index == 0:
 			var direction := _snake_vector(state.get("direction", [1, 0]))
-			var eye_side := Vector2(-direction.y, direction.x)
-			var eye := rect.get_center() + Vector2(direction) * 2.6 + eye_side * 2.2
-			draw_rect(Rect2(eye - Vector2.ONE, Vector2(2, 2)), Color("b9c58d"))
+			visual_head_center = rect.get_center()
+			_draw_snake_gb_head(visual_head_center, direction, body_alpha, 1.0)
+		else:
+			draw_rect(rect, Color(lcd_ink, body_alpha))
+			if index % 3 == 0:
+				draw_rect(Rect2(rect.position, Vector2(2.0, 2.0)), Color(lcd_mid, 0.46))
+				draw_rect(Rect2(rect.end - Vector2(2.0, 2.0), Vector2(2.0, 2.0)), Color(lcd_mid, 0.46))
+			var scale_mark := rect.get_center() + Vector2(-2.0 if index % 2 == 0 else 1.0, -2.0)
+			draw_rect(Rect2(scale_mark, Vector2(2.4, 1.3)), Color("8b9c65", 0.27))
+	var fx_kind := str(snake_gb_object_fx.get("kind", ""))
+	var fx_age := _snake_gb_object_fx_age()
+	var fx_duration := maxf(0.01, float(snake_gb_object_fx.get("duration", 0.28)))
+	if visual_head_center != Vector2.ZERO and fx_age >= 0.0 and fx_age < fx_duration:
+		var fx_progress := clampf(fx_age / fx_duration, 0.0, 1.0)
+		if fx_kind == "turn_accepted":
+			var requested := _snake_vector(snake_gb_object_fx.get("direction", Vector2i.RIGHT))
+			var forward := Vector2(requested)
+			var side := Vector2(-forward.y, forward.x)
+			var bracket_alpha := sin(fx_progress * PI) * 0.86
+			for side_sign in [-1.0, 1.0]:
+				var bracket: Vector2 = visual_head_center + side * float(side_sign) * 9.4 + forward * 1.8
+				draw_line(bracket - forward * 4.2, bracket + forward * 4.2, Color(lcd_ink, bracket_alpha), 1.5)
+				draw_line(bracket + forward * 4.2, bracket + forward * 6.4 - side * side_sign * 2.0, Color(lcd_ink, bracket_alpha), 1.5)
+		elif fx_kind == "turn_rejected":
+			var rejected := _snake_vector(snake_gb_object_fx.get("direction", Vector2i.LEFT))
+			var kick := sin(fx_progress * PI) * 6.0
+			_draw_snake_gb_head(visual_head_center + Vector2(rejected) * kick, rejected, (1.0 - fx_progress) * 0.22, 0.88)
+			draw_line(visual_head_center - Vector2(5, 5), visual_head_center + Vector2(5, 5), Color(lcd_ink, (1.0 - fx_progress) * 0.62), 1.5)
+			draw_line(visual_head_center + Vector2(-5, 5), visual_head_center + Vector2(5, -5), Color(lcd_ink, (1.0 - fx_progress) * 0.62), 1.5)
+	var recorded_logs := clampi(int(state.get("score", 4)) / 10, 0, 12)
+	for log_index in range(12):
+		var notch_x := 123.0 + float(log_index) * 26.5
+		var filled := log_index < recorded_logs
+		var notch_height := 6.0 if filled else 3.0
+		var notch_alpha := 0.88 if filled else 0.20
+		if fx_kind == "field_log" and log_index == recorded_logs - 1 and fx_age >= 0.0 and fx_age < fx_duration:
+			notch_height += sin(clampf(fx_age / fx_duration, 0.0, 1.0) * PI) * 5.0
+			notch_alpha = 1.0
+		draw_rect(Rect2(Vector2(notch_x, 496.0 - notch_height) + offset, Vector2(3.0, notch_height)), Color(lcd_ink, notch_alpha))
 	for y in range(int(screen_rect.position.y + 3), int(screen_rect.end.y - 3), 3):
 		draw_line(Vector2(screen_rect.position.x + 4, y), Vector2(screen_rect.end.x - 4, y), Color("1d2618", 0.026), 1.0)
 	var glare := PackedVector2Array([screen_rect.position + Vector2(16, 7), screen_rect.position + Vector2(104, 7), screen_rect.position + Vector2(47, 114)])
 	draw_colored_polygon(glare, Color("f4f1c5", 0.035))
 
-func _draw_snake_gb_controls() -> void:
+func _draw_snake_gb_controls(offset := Vector2.ZERO) -> void:
 	var direction_centers := {
-		Vector2i.UP:Vector2(159, 581), Vector2i.LEFT:Vector2(107, 635),
-		Vector2i.RIGHT:Vector2(211, 635), Vector2i.DOWN:Vector2(159, 689)
+		Vector2i.UP:Vector2(159, 581) + offset, Vector2i.LEFT:Vector2(107, 635) + offset,
+		Vector2i.RIGHT:Vector2(211, 635) + offset, Vector2i.DOWN:Vector2(159, 689) + offset
 	}
 	if elapsed < snake_button_until and direction_centers.has(snake_button_direction):
-		var center: Vector2 = direction_centers[snake_button_direction]
-		draw_circle(center, 19.0, Color("e7d5a8", 0.16))
-		draw_arc(center, 21.0, 0, TAU, 28, Color("fff3cc", 0.58), 2.0)
+		var press_progress := clampf((snake_button_until - elapsed) / 0.11, 0.0, 1.0)
+		var center: Vector2 = direction_centers[snake_button_direction] + Vector2(snake_button_direction) * (1.0 + press_progress)
+		draw_circle(center, 18.0, Color("e7d5a8", 0.18 + press_progress * 0.08))
+		draw_arc(center, 21.0, 0, TAU, 28, Color("fff3cc", 0.42 + press_progress * 0.28), 2.0)
+		draw_circle(center + Vector2(snake_button_direction) * 10.0, 2.4, Color("fff3cc", 0.72))
 	if elapsed < snake_reject_until and direction_centers.has(snake_reject_direction):
-		var rejected_center: Vector2 = direction_centers[snake_reject_direction]
+		var reject_progress := clampf((snake_reject_until - elapsed) / 0.14, 0.0, 1.0)
+		var kick := sin((1.0 - reject_progress) * PI) * 4.0
+		var rejected_center: Vector2 = direction_centers[snake_reject_direction] - Vector2(snake_reject_direction) * kick
 		draw_arc(rejected_center, 22.0, 0, TAU, 28, Color("d35f51", 0.72), 2.0)
+		draw_line(rejected_center - Vector2(6, 6), rejected_center + Vector2(6, 6), Color("d35f51", 0.64), 2.0)
 	var action_glow := 0.08 + (sin(elapsed * 2.4) + 1.0) * 0.025
-	draw_circle(Vector2(410, 610), 32.0, Color("c76855", action_glow))
-	draw_circle(Vector2(330, 647), 29.0, Color("c76855", action_glow * 0.72))
+	draw_circle(Vector2(410, 610) + offset, 32.0, Color("c76855", action_glow))
+	draw_circle(Vector2(330, 647) + offset, 29.0, Color("c76855", action_glow * 0.72))
 
 func _draw_snake_gb_fx(offset: Vector2) -> void:
 	for pixel in snake_pixels:
@@ -3374,15 +3513,56 @@ func _draw_snake_gb_fx(offset: Vector2) -> void:
 		draw_rect(Rect2(p - Vector2.ONE * size_value * 0.5, Vector2.ONE * size_value), Color(color, 1.0 - progress))
 	if snake_fx_kind == "eat":
 		var age := elapsed - snake_fx_started
-		if age >= 0.0 and age < 0.28:
+		if age >= 0.0 and age < 0.54:
 			var p := _snake_gb_cell_center(snake_fx_cell) + offset
-			draw_arc(p, lerpf(5.0, 24.0, age / 0.28), 0, TAU, 24, Color("27321e", 1.0 - age / 0.28), 2.0)
+			var progress := clampf(age / 0.54, 0.0, 1.0)
+			if age < 0.18:
+				var contract := 1.0 - age / 0.18
+				_draw_snake_gb_lure(p, 0.36 + contract * 0.82, contract * 0.86)
+				for corner in [Vector2(-1, -1), Vector2(1, -1), Vector2(1, 1), Vector2(-1, 1)]:
+					var anchor: Vector2 = p + Vector2(corner) * lerpf(11.0, 6.2, 1.0 - contract)
+					draw_line(anchor, anchor - Vector2(corner.x, 0) * 4.0, Color("27321e", contract * 0.84), 1.4)
+					draw_line(anchor, anchor - Vector2(0, corner.y) * 4.0, Color("27321e", contract * 0.84), 1.4)
+			var scan_progress := clampf((age - 0.08) / 0.36, 0.0, 1.0)
+			if scan_progress > 0.0 and scan_progress < 1.0:
+				draw_arc(p, lerpf(5.0, 24.0, scan_progress), 0, TAU, 28, Color("27321e", (1.0 - scan_progress) * 0.92), 2.0)
+				draw_line(p + Vector2(-22.0, lerpf(-9.0, 11.0, scan_progress)), p + Vector2(22.0, lerpf(-9.0, 11.0, scan_progress)), Color("536342", (1.0 - progress) * 0.48), 1.0)
+	elif snake_fx_kind == "milestone":
+		var age := elapsed - snake_fx_started
+		if age >= 0.0 and age < 0.82:
+			var progress := clampf(age / 0.82, 0.0, 1.0)
+			var screen_rect := Rect2(111, 157, 318, 346)
+			var sweep_y := lerpf(screen_rect.position.y + 18.0, screen_rect.end.y - 16.0, clampf(progress * 1.32, 0.0, 1.0))
+			var sweep_alpha := sin(progress * PI) * 0.72
+			draw_line(Vector2(screen_rect.position.x + 7.0, sweep_y) + offset, Vector2(screen_rect.end.x - 7.0, sweep_y) + offset, Color("27321e", sweep_alpha), 2.0)
+			draw_line(Vector2(screen_rect.position.x + 18.0, sweep_y - 8.0) + offset, Vector2(screen_rect.end.x - 18.0, sweep_y - 8.0) + offset, Color("536342", sweep_alpha * 0.62), 1.0)
+			var score_value := int(snake_gb_object_fx.get("score", state.get("score", 4)))
+			_draw_center_font(NUMBER_FONT, "FIELD LOG %03d" % score_value, Vector2(270, 211) + offset + Vector2(0, -5.0 * (1.0 - progress)), 12, Color("27321e", sweep_alpha))
 	elif snake_fx_kind == "crash":
 		var age := elapsed - snake_fx_started
 		if age >= 0.0 and age < 0.36:
 			var p := _snake_gb_impact_point(snake_fx_cell) + offset
+			var progress := clampf(age / 0.36, 0.0, 1.0)
+			var direction := snake_fx_direction if snake_fx_direction != Vector2i.ZERO else Vector2i.RIGHT
+			_draw_snake_gb_head(p - Vector2(direction) * progress * 4.0, direction, (1.0 - progress) * 0.72, 1.10, Vector2(1.0 - progress * 0.46, 1.0 + progress * 0.38))
+			for smear in range(3):
+				var side := Vector2(-direction.y, direction.x)
+				var from := p - Vector2(direction) * (5.0 + smear * 5.0) + side * (float(smear) - 1.0) * 3.0
+				draw_line(from, from - Vector2(direction) * (13.0 + smear * 4.0), Color("27321e", (1.0 - progress) * (0.62 - smear * 0.12)), 2.0)
 			for ring in range(3):
 				draw_arc(p, 6.0 + age * (52.0 + ring * 18.0), 0, TAU, 24, Color("27321e", (1.0 - age / 0.36) * (0.86 - ring * 0.18)), 2.0)
+	elif snake_fx_kind == "win":
+		var age := elapsed - snake_fx_started
+		if age >= 0.0 and age < 1.56:
+			var progress := clampf(age / 1.56, 0.0, 1.0)
+			var screen_rect := Rect2(111, 157, 318, 346)
+			for sweep in range(3):
+				var local_progress := clampf(progress * 1.58 - float(sweep) * 0.14, 0.0, 1.0)
+				var sweep_y := lerpf(screen_rect.end.y - 9.0, screen_rect.position.y + 9.0, local_progress)
+				var sweep_alpha := sin(local_progress * PI) * (0.70 - float(sweep) * 0.13)
+				draw_line(Vector2(screen_rect.position.x + 6.0 + sweep * 8.0, sweep_y) + offset, Vector2(screen_rect.end.x - 6.0 - sweep * 8.0, sweep_y) + offset, Color("27321e", sweep_alpha), 2.0 if sweep == 0 else 1.0)
+			if progress < 0.74:
+				_draw_center_font(NUMBER_FONT, "FIELD RECORD 120", Vector2(270, 225) + offset, 14, Color("27321e", sin(clampf(progress / 0.74, 0.0, 1.0) * PI)))
 	for label in snake_float_labels:
 		var age := elapsed - float(label.get("started", elapsed))
 		var progress := clampf(age / 0.72, 0.0, 1.0)
