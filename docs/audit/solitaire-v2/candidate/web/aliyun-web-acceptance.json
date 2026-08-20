@@ -1,0 +1,112 @@
+{
+  "release": "20260820T115619Z-5f5d3807cf84",
+  "url": "https://aliyun-ecs.tail17a64.ts.net:8788/?release=20260820T115619Z-5f5d3807cf84",
+  "source_commit": "837c3361efbfb1d2d2a137264ef1558f50f29b3b",
+  "expected_pack": "index.5f5d3807cf84.pck",
+  "expected_engine": "index.2b558bdb3c3a.wasm",
+  "ready_seconds": 216.055,
+  "secure_context": true,
+  "webassembly": true,
+  "canvas_count": 1,
+  "canvas_box": {
+    "x": 0,
+    "y": 0,
+    "width": 800,
+    "height": 1100
+  },
+  "logical_scale": 1.1458333333333333,
+  "responses": {
+    "index.html": {
+      "url": "https://aliyun-ecs.tail17a64.ts.net:8788/?release=20260820T115619Z-5f5d3807cf84",
+      "status": 200,
+      "content_length": null,
+      "cache_control": "no-cache"
+    },
+    "index.2b558bdb3c3a.js": {
+      "url": "https://aliyun-ecs.tail17a64.ts.net:8788/index.2b558bdb3c3a.js",
+      "status": 200,
+      "content_length": "78270",
+      "cache_control": "public, max-age=31536000, immutable"
+    },
+    "index.5f5d3807cf84.pck": {
+      "url": "https://aliyun-ecs.tail17a64.ts.net:8788/index.5f5d3807cf84.pck",
+      "status": 200,
+      "content_length": "12731453",
+      "cache_control": "public, max-age=31536000, immutable"
+    },
+    "index.2b558bdb3c3a.wasm": {
+      "url": "https://aliyun-ecs.tail17a64.ts.net:8788/index.2b558bdb3c3a.wasm",
+      "status": 200,
+      "content_length": "9392911",
+      "cache_control": "public, max-age=31536000, immutable"
+    }
+  },
+  "stable_state": {
+    "catalog_size": 14,
+    "game_id": "solitaire",
+    "ready": true,
+    "screen": "game",
+    "state": {
+      "foundations": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "game_id": "solitaire",
+      "moves": 0,
+      "score": 0,
+      "selected_col": -1,
+      "status": "playing",
+      "stock": 24,
+      "tableau": [
+        5,
+        4,
+        3,
+        2,
+        1,
+        0,
+        0
+      ],
+      "waste": 0
+    }
+  },
+  "action_state": {
+    "catalog_size": 14,
+    "game_id": "solitaire",
+    "ready": true,
+    "screen": "game",
+    "state": {
+      "foundations": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "game_id": "solitaire",
+      "moves": 1,
+      "score": 0,
+      "selected_col": -1,
+      "status": "playing",
+      "stock": 23,
+      "tableau": [
+        5,
+        4,
+        3,
+        2,
+        1,
+        0,
+        0
+      ],
+      "waste": 1
+    }
+  },
+  "console_errors": [],
+  "console_warnings": [
+    "[.WebGL-0x1d7c0ecdaa00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "[.WebGL-0x1d7c0ecdaa00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "[.WebGL-0x1d7c0ecdaa00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "[.WebGL-0x1d7c0ecdaa00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  ],
+  "request_failures": []
+}

@@ -1,0 +1,108 @@
+{
+  "result": "PASS",
+  "scope": "solitaire only",
+  "source": {
+    "feature_commit": "392e92bbafd7d0838d70b0e8ca4913fccc74eeb5",
+    "main_commit": "837c3361efbfb1d2d2a137264ef1558f50f29b3b",
+    "tripeaks_gag_shipped": false
+  },
+  "gag": {
+    "mode": "HOME-WSL MCP pure API",
+    "server": "game-assets-generator 1.29.0",
+    "card_back": {
+      "path": "assets/art/cards/solitaire_card_back_gag_v1.webp",
+      "sha256": "4854283217b75d6e719268b511dc76985122828b3cd899630be7a78b56ca729c",
+      "dimensions": [290, 400],
+      "first_visible_beat": "stable gameplay before input",
+      "visible_instances_at_start": 11,
+      "result": "PASS"
+    },
+    "settle_audio": {
+      "path": "assets/audio/cards/solitaire_card_settle_gag_v1.ogg",
+      "sha256": "8e2033a3fad16f508f5faae4bb51c7a8477a8cc923c0177a71bdf67429ed55b9",
+      "duration_seconds": 0.778208,
+      "runtime_events": ["card_draw", "card_recycle", "card_move", "foundation_place", "solitaire_win"],
+      "result": "PASS"
+    },
+    "source_masters_in_repository": 0,
+    "unused_generations_in_repository": 0
+  },
+  "automated": {
+    "solitaire_presentation": {"assertions": 67, "result": "PASS"},
+    "rules": {"assertions": 6, "result": "PASS"},
+    "font_coverage": {"assertions": 56, "result": "PASS"},
+    "font_subset": {"required_glyphs": 3874, "bytes": 1815112, "result": "PASS"},
+    "catalog_art": {"assertions": 10, "result": "PASS"},
+    "cover_assets": {"games": 14, "result": "PASS"},
+    "home_buttons": {"games": 14, "result": "PASS"},
+    "all_games": {"games": 14, "result": "PASS"}
+  },
+  "visual": {
+    "viewport": [540, 960],
+    "matched_event_frames": 21,
+    "events": ["stable", "selection", "reject-empty", "deal", "foundation", "win"],
+    "continuous_peak": {
+      "path": "candidate/continuous/solitaire-win.webm",
+      "frames": 36,
+      "fps": 30,
+      "duration_seconds": 1.2,
+      "sha256": "699f0188e9ed41cee6303047ba3fcd8de5c5ea6f973e467adfaa0ddbe1f54f7d"
+    },
+    "textured_plate_contrast_review": "PASS",
+    "generated_text_present": false
+  },
+  "performance": {
+    "renderer": "llvmpipe (LLVM 21.1.8, 256 bits)",
+    "sample_count": 180,
+    "average_frame_ms": 11.58825,
+    "p95_frame_ms": 14.052,
+    "max_frame_ms": 16.751,
+    "note": "Xvfb comparative trace, not a physical-device FPS claim",
+    "result": "PASS"
+  },
+  "clean_export": {
+    "source": "git archive of feature commit 392e92b",
+    "pck_sha256": "e32685a17b8578ae9da67fcbf485f27a81c21693d91716edfb2803bf7bc40ff9",
+    "engine_sha256": "2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137",
+    "pck_contains": [
+      "res://assets/art/cards/solitaire_card_back_gag_v1.webp",
+      "res://assets/audio/cards/solitaire_card_settle_gag_v1.ogg"
+    ],
+    "result": "PASS"
+  },
+  "aliyun": {
+    "release": "20260820T115619Z-5f5d3807cf84",
+    "url": "https://aliyun-ecs.tail17a64.ts.net:8788/?release=20260820T115619Z-5f5d3807cf84",
+    "html_sha256": "5151f14a09e5ffde720260c9d73ad11db04f2398447c2b364e5e0ae8c1723d70",
+    "pck": {
+      "name": "index.5f5d3807cf84.pck",
+      "sha256": "5f5d3807cf84264b9c696554a86913b0dc38d8c95b026d4b7a84b4c5003a72a2",
+      "bytes": 12856396,
+      "gzip_bytes": 12731453,
+      "http_status": 200,
+      "cache_control": "public, max-age=31536000, immutable"
+    },
+    "engine": {
+      "name": "index.2b558bdb3c3a.wasm",
+      "sha256": "2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137",
+      "bytes": 37686550,
+      "gzip_bytes": 9392911,
+      "http_status": 200,
+      "cache_control": "public, max-age=31536000, immutable"
+    },
+    "previous_pack_retained": "index.be40306deae5.pck",
+    "secure_context": true,
+    "webassembly": true,
+    "canvas_count": 1,
+    "ready_seconds_cold_ec2_to_aliyun": 216.055,
+    "actual_action": {
+      "name": "draw one stock card",
+      "before": {"stock": 24, "waste": 0, "moves": 0},
+      "after": {"stock": 23, "waste": 1, "moves": 1},
+      "result": "PASS"
+    },
+    "console_errors": 0,
+    "request_failures": 0,
+    "result": "PASS"
+  }
+}

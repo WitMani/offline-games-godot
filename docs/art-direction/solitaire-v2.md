@@ -48,4 +48,8 @@ search candidate is included in the repository.
   `tools/solitaire_presentation_smoke.gd`
 - Provenance ledger:
   `docs/art-direction/solitaire-v2.gag-asset-ledger.json`
+- Aliyun exact-artifact acceptance:
+  `docs/audit/solitaire-v2/candidate/web/aliyun-web-acceptance.json`
 
+Accepted release: `20260820T115619Z-5f5d3807cf84`, sourced from Git commit
+`837c3361efbfb1d2d2a137264ef1558f50f29b3b`.
