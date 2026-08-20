@@ -1,0 +1,79 @@
+{
+  "result": "PASS",
+  "source": "clean git archive of feature commit 7a3ed88cc9b38674bd2e32c54e77bec85b4a32e7",
+  "url": "http://127.0.0.1:18791/index.html?release=7a3ed88",
+  "ready_seconds": 1.272,
+  "secure_context": true,
+  "webassembly": true,
+  "canvas_count": 1,
+  "probe_error": null,
+  "clean_export": {
+    "html_sha256": "dda6ca7395a267fbdd36925ae2f760db9ad7d08f18cacfe4b751c5071712dab5",
+    "pck": {
+      "name": "index.93b9dac4d052.pck",
+      "sha256": "93b9dac4d05284f7f7c96d2684ba6698b8147dcdf685e9c15fd0c4ac02e7ecb2",
+      "bytes": 13614248
+    },
+    "engine": {
+      "name": "index.2b558bdb3c3a.wasm",
+      "sha256": "2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137",
+      "bytes": 37686550
+    },
+    "pck_contains": [
+      "res://assets/art/catalog/tile_games/gag/tileclub_badge_atlas_gag_v1.png",
+      "res://assets/art/catalog/tile_games/gag/tileclub_shell_badge_gag_v1.png",
+      "res://assets/audio/catalog/tile_games/gag/fabric_triple_stitch_gag_v1.ogg"
+    ],
+    "tileclub_source_master_scan": "PASS",
+    "tileclub_rejected_candidate_scan": "PASS"
+  },
+  "initial": {
+    "game_id": "tileclub",
+    "state": {
+      "target_index": 1,
+      "target_value": 1,
+      "target_tile": 1,
+      "tray": [],
+      "score": 0,
+      "moves": 0,
+      "status": "playing"
+    },
+    "tile_count": 49
+  },
+  "actual_action": {
+    "name": "collect first non-empty deterministic board tile at index 1",
+    "before": {
+      "target_index": 1,
+      "target_value": 1,
+      "target_tile": 1,
+      "tray": [],
+      "score": 0,
+      "moves": 0,
+      "status": "playing"
+    },
+    "after": {
+      "target_index": 1,
+      "target_value": 1,
+      "target_tile": 0,
+      "tray": [
+        1
+      ],
+      "score": 0,
+      "moves": 1,
+      "status": "playing"
+    }
+  },
+  "console_errors": [],
+  "request_failures": [],
+  "bad_responses": [],
+  "screenshots": {
+    "stable": {
+      "path": "tileclub-local-stable.png",
+      "sha256": "598598cb8b39a3d8f550ab8aca49968b279d0d7e74fd2f179b2f75cff08fa596"
+    },
+    "after_collect": {
+      "path": "tileclub-local-after-collect.png",
+      "sha256": "23e3c398aaf60c990c095cf76e4bb39b6ece0dde545141135dbcbd703f76ad67"
+    }
+  }
+}

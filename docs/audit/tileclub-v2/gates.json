@@ -1,0 +1,73 @@
+{
+  "result": "LOCAL_PASS",
+  "scope": "tileclub only",
+  "source": {
+    "starting_commit": "7247cddfd8a24b856bcec27fc7f5a4e550d445a0",
+    "feature_commit": "7a3ed88cc9b38674bd2e32c54e77bec85b4a32e7",
+    "clean_web_acceptance_commit": null,
+    "deployed_source_commit": null,
+    "gameplay_rules_changed": false,
+    "other_game_rules_changed": false
+  },
+  "gag": {
+    "mode": "HOME-WSL MCP pure API",
+    "server_version_reported": "0.2.0",
+    "visual_runtime_assets": 2,
+    "audio_runtime_assets": 1,
+    "stable_playable_instances": 48,
+    "source_masters_in_repository": 0,
+    "rejected_candidates_in_repository": 0,
+    "result": "PASS"
+  },
+  "automated": {
+    "tileclub_art": {"assertions": 223, "result": "PASS"},
+    "mahjong_regression": {"assertions": 116, "result": "PASS"},
+    "sudoku_regression": {"assertions": 103, "result": "PASS"},
+    "meowdoku_regression": {"assertions": 88, "result": "PASS"},
+    "solitaire_regression": {"assertions": 67, "result": "PASS"},
+    "tripeaks_regression": {"assertions": 62, "result": "PASS"},
+    "merge2048_regression": {"assertions": 7, "result": "PASS"},
+    "merge2248_integration": {"assertions": 10, "result": "PASS"},
+    "merge2248_model": {"assertions": 10, "result": "PASS"},
+    "watermelon_regression": {"assertions": 9, "result": "PASS"},
+    "rules": {"assertions": 6, "result": "PASS"},
+    "catalog_art": {"assertions": 10, "result": "PASS"},
+    "font_coverage": {"assertions": 65, "result": "PASS"},
+    "font_subset": {"required_glyphs": 3875, "bytes": 1815180, "result": "PASS"},
+    "cover_assets": {"games": 14, "result": "PASS"},
+    "home_buttons": {"games": 14, "result": "PASS"},
+    "all_games": {"games": 14, "result": "PASS"}
+  },
+  "visual": {
+    "viewport": [540, 960],
+    "candidate_frames": 29,
+    "baseline_frames": 2,
+    "continuous_clear": {"frames": 42, "fps": 30, "duration_seconds": 1.4, "sha256": "522d6fa97df055d9b716479d9edca955950c704bb833da16651b6b1e49cc90e9"},
+    "continuous_full": {"frames": 42, "fps": 30, "duration_seconds": 1.4, "sha256": "d151e9fcb10dd06237bd8f4742e4217d0d992d604e68923dc068ea3662bf41ef"},
+    "generated_text_present": false,
+    "stable_material_review": "PASS",
+    "result_contrast_review": "PASS"
+  },
+  "performance": {
+    "renderer": "llvmpipe (LLVM 21.1.8, 256 bits)",
+    "stable": {"sample_count": 120, "average_frame_ms": 7.18564166666667, "p95_frame_ms": 9.774, "max_frame_ms": 10.695},
+    "busy": {"sample_count": 180, "average_frame_ms": 7.54623333333333, "p95_frame_ms": 9.391, "max_frame_ms": 11.117},
+    "active_effect_cap": 6,
+    "result": "PASS"
+  },
+  "clean_export": {
+    "source": "git archive of feature commit 7a3ed88cc9b38674bd2e32c54e77bec85b4a32e7",
+    "pck": "index.93b9dac4d052.pck",
+    "pck_sha256": "93b9dac4d05284f7f7c96d2684ba6698b8147dcdf685e9c15fd0c4ac02e7ecb2",
+    "engine": "index.2b558bdb3c3a.wasm",
+    "engine_sha256": "2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137",
+    "tileclub_runtime_assets_in_pck": 3,
+    "tileclub_source_master_scan": "PASS",
+    "browser_actual_action": "PASS",
+    "console_errors": 0,
+    "request_failures": 0,
+    "bad_responses": 0,
+    "result": "PASS"
+  },
+  "aliyun": {"result": "PENDING"}
+}

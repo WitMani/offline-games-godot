@@ -1,0 +1,85 @@
+{
+  "result": "PASS",
+  "game_id": "tileclub",
+  "feature_commit": "7a3ed88cc9b38674bd2e32c54e77bec85b4a32e7",
+  "runtime": "Godot 4.6-stable / 540x960 portrait",
+  "mechanics_frozen": true,
+  "stable_runtime_art": {
+    "playable_objects": 48,
+    "gag_objects": 48,
+    "atlas_instances": 42,
+    "shell_repair_instances": 6,
+    "generated_text_present": false,
+    "result": "PASS"
+  },
+  "runtime_assets": [
+    {
+      "path": "res://assets/art/catalog/tile_games/gag/tileclub_badge_atlas_gag_v1.png",
+      "sha256": "7c34fff62346dce7ff0b9df3a49e8fad90bd06793c7223d81824b151b64d3002",
+      "dimensions": [500, 500],
+      "roles": ["stable board", "collect travel", "tray", "match ghosts", "result plaque"]
+    },
+    {
+      "path": "res://assets/art/catalog/tile_games/gag/tileclub_shell_badge_gag_v1.png",
+      "sha256": "08072a34d1170ecc0e6ccca9849436e98e881195d85b78495e923cbc5241da83",
+      "dimensions": [378, 377],
+      "roles": ["stable shell patch", "collect travel", "tray", "match ghosts", "result plaque"]
+    },
+    {
+      "path": "res://assets/audio/catalog/tile_games/gag/fabric_triple_stitch_gag_v1.ogg",
+      "sha256": "66b4020ee32846cdfa86268b6de5136e47ded36823b1f9cb915d59296c29a8e3",
+      "duration_seconds": 0.411771,
+      "measured_lufs": -16.85,
+      "measured_true_peak_db": -1.65,
+      "roles": ["ordinary triple", "terminal clear"]
+    }
+  ],
+  "semantic_ladder": [
+    {"event": "collect", "grade": 1, "state": "source removed; one exact patch appended to tray"},
+    {"event": "tray reaches five", "grade": 2, "state": "five occupied slots; two spaces remain"},
+    {"event": "tray reaches six", "grade": 3, "state": "six occupied slots; one space remains"},
+    {"event": "three equal patches", "grade": 3, "state": "three removed; +100; one move"},
+    {"event": "tray reaches seven", "grade": 4, "state": "seven retained; terminal over"},
+    {"event": "final clear", "grade": 4, "state": "board empty; terminal won"}
+  ],
+  "visual": {
+    "viewport": [540, 960],
+    "baseline_frames": 2,
+    "candidate_frames": 29,
+    "events": ["stable", "collect", "risk grade 2", "risk grade 3", "triple", "full tray", "clear", "result"],
+    "continuous": [
+      {
+        "path": "continuous/tileclub-clear.webm",
+        "frames": 42,
+        "fps": 30,
+        "duration_seconds": 1.4,
+        "sha256": "522d6fa97df055d9b716479d9edca955950c704bb833da16651b6b1e49cc90e9"
+      },
+      {
+        "path": "continuous/tileclub-full.webm",
+        "frames": 42,
+        "fps": 30,
+        "duration_seconds": 1.4,
+        "sha256": "d151e9fcb10dd06237bd8f4742e4217d0d992d604e68923dc068ea3662bf41ef"
+      }
+    ],
+    "stable_material_review": "PASS",
+    "silhouette_review": "PASS",
+    "font_role_review": "PASS",
+    "result_contrast_review": "PASS"
+  },
+  "performance": {
+    "renderer": "llvmpipe (LLVM 21.1.8, 256 bits)",
+    "stable": {"sample_count": 120, "average_frame_ms": 7.18564166666667, "p95_frame_ms": 9.774, "max_frame_ms": 10.695},
+    "busy": {"sample_count": 180, "average_frame_ms": 7.54623333333333, "p95_frame_ms": 9.391, "max_frame_ms": 11.117},
+    "effect_cap": 6,
+    "note": "Comparative software-renderer trace; not a physical-device FPS claim",
+    "result": "PASS"
+  },
+  "shipping_boundary": {
+    "source_masters_in_repository": 0,
+    "rejected_candidates_in_repository": 0,
+    "runtime_derivatives_only": true,
+    "result": "PASS"
+  }
+}
