@@ -44,7 +44,18 @@ func _save_frame(stem: String) -> void:
 
 func _exercise(id: String) -> void:
 	match id:
-		"merge2248", "merge2048":
+		"merge2248":
+			var rect: Rect2 = game._merge2248_board_rect()
+			var cell := rect.size / Vector2(5, 8)
+			game.merge2248_model.board[7][0] = 2
+			game.merge2248_model.board[7][1] = 2
+			game._sync_merge2248_state()
+			game._merge2248_begin_at(rect.position + Vector2(cell.x * 0.5, cell.y * 7.5))
+			game.merge2248_drag_active = true
+			game._merge2248_extend_at(rect.position + Vector2(cell.x * 1.5, cell.y * 7.5))
+			game._merge2248_release()
+			game.merge2248_drag_active = false
+		"merge2048":
 			game.state["board"] = [[2, 2, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
 			game._merge_move(Vector2i.LEFT)
 		"watermelon": game._handle_tap(Vector2(260, 380))

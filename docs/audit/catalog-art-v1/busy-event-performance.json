@@ -1,0 +1,13 @@
+{
+  "average_frame_ms": 17.4279666666667,
+  "busy_effect_cap": 12,
+  "max_frame_ms": 22.405,
+  "note": "Xvfb/llvmpipe audit host; comparative regression trace, not a device FPS claim",
+  "p95_frame_ms": 20.445,
+  "renderer": "llvmpipe (LLVM 21.1.8, 256 bits)",
+  "sample_count": 180,
+  "viewport": [
+    540,
+    960
+  ]
+}

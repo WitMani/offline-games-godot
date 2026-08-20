@@ -27,7 +27,18 @@ func _run() -> void:
 			failures.append("reset:%s" % id)
 		# Exercise one deterministic input for each family.
 		match id:
-			"merge2248", "merge2048": game._merge_move(Vector2i.LEFT)
+			"merge2248":
+				var rect: Rect2 = game._merge2248_board_rect()
+				var cell := rect.size / Vector2(5, 8)
+				game.merge2248_model.board[7][0] = 2
+				game.merge2248_model.board[7][1] = 2
+				game._sync_merge2248_state()
+				game._merge2248_begin_at(rect.position + Vector2(cell.x * 0.5, cell.y * 7.5))
+				game.merge2248_drag_active = true
+				game._merge2248_extend_at(rect.position + Vector2(cell.x * 1.5, cell.y * 7.5))
+				game._merge2248_release()
+				game.merge2248_drag_active = false
+			"merge2048": game._merge_move(Vector2i.LEFT)
 			"watermelon": game._water_drop(3)
 			"meowdoku", "sudoku":
 				game.state["selected"] = [0, 0]

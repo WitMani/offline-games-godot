@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-08-20T00:00:00Z",
+  "runtime_director": "res://presentation/catalog_art_director.gd",
+  "generation_policy": "Fresh environmental plates only; no text, UI, playable boards, cards, tiles, scores, or copied third-party game artwork.",
+  "gag_search": {
+    "status": "unavailable",
+    "queries": [
+      "cartoon number puzzle glowing merge effect",
+      "cartoon fruit merge orchard game asset",
+      "cute logic puzzle stationery cat",
+      "cartoon solitaire cards mahjong tile craft",
+      "cartoon maze blueprint compass"
+    ],
+    "error": "Gemini API key is missing; configure providers.gemini.api_key",
+    "fallback": "Codex imagegen skill"
+  },
+  "assets": [
+    {
+      "path": "res://assets/art/catalog/merge2048_atelier_v1.webp",
+      "source_delivery_id": "exec-92b66770-1b65-4d12-be59-c4b1585b37d5.png",
+      "prompt": "Portrait 2D cartoon mobile-game environment plate for a carved-number atelier: warm walnut desk, brass measuring and carving tools at the edges, parchment details, quiet empty center, tactile premium shapes, no board, no tiles, no numbers, no text, no UI, no logo.",
+      "runtime_game_ids": ["merge2048"],
+      "sha256": "26c8a442d90a356d377765670d72e6c432bc7632383ae27e53fb80693840d33f"
+    },
+    {
+      "path": "res://assets/art/catalog/watermelon_orchard_v1.webp",
+      "source_delivery_id": "exec-c1548016-9da3-4d6a-a882-7d48b42adce5.png",
+      "prompt": "Portrait 2D cartoon orchard packing-table environment: sunny wood crate, leaves, fruit and picnic cloth framing the edges, large calm empty center for live gameplay, saturated tactile forms, no bins, no falling fruit, no text, no UI, no logo.",
+      "runtime_game_ids": ["watermelon"],
+      "sha256": "0bbe247ac1aa4903b3ae880c45bf8d77cb77742fb74a913a8896b6f1df175b41"
+    },
+    {
+      "path": "res://assets/art/catalog/meowdoku_stationery_v1.webp",
+      "source_delivery_id": "exec-ee736cb1-e29a-47c9-9cc9-47b1eae5581a.png",
+      "prompt": "Portrait cute 2D cartoon cat-stationery desk: blush paper, ribbons, clips, eraser, paw trinkets and floral corners framing a clean pale center, cozy handcrafted material, no sudoku grid, no digits, no text, no UI, no logo.",
+      "runtime_game_ids": ["meowdoku"],
+      "sha256": "be9933a0919d084eef0e049e7158f10fb97f69b55a7db2d98a05da961cdb8f16"
+    },
+    {
+      "path": "res://assets/art/catalog/solitaire_conservatory_v1.webp",
+      "source_delivery_id": "exec-c8d9c849-f632-4a5e-bd7c-d7c88b0f2438.png",
+      "prompt": "Portrait premium 2D cartoon solitaire conservatory table: deep emerald felt, dark carved wood and restrained botanical brass details around the perimeter, quiet center, no cards, no suits, no text, no UI, no logo.",
+      "runtime_game_ids": ["solitaire"],
+      "sha256": "b0456bcdd41d93b0d08477684bdc2c009666f9ed0c1a673e9bba847388cda9f7"
+    },
+    {
+      "path": "res://assets/art/catalog/mahjong_teahouse_v1.webp",
+      "source_delivery_id": "exec-0974d31c-e243-46ee-b89f-03ba854b819e.png",
+      "prompt": "Portrait 2D cartoon jade teahouse game environment: bamboo frame, green woven table, tassel, warm wood and subtle jade ornaments at edges, clear center, no mahjong tiles, no glyphs, no text, no UI, no logo.",
+      "runtime_game_ids": ["mahjong"],
+      "sha256": "59e18a3fd2ce9e5c909ecc51e010ce331cbb27d63416012b25c93ba2ba4f288c"
+    },
+    {
+      "path": "res://assets/art/catalog/tileclub_craft_v1.webp",
+      "source_delivery_id": "exec-db8d372b-a933-4061-8b09-e6efed5d2257.png",
+      "prompt": "Portrait bright 2D cartoon craft-club table: berry felt, fabric swatches, thread spools, buttons and stitched leaves framing a calm center, tactile toy aesthetic, no puzzle tiles, no tray, no text, no UI, no logo.",
+      "runtime_game_ids": ["tileclub"],
+      "sha256": "da2e71185956fb83c9d17d71079f22eec53832d04dd60f92cfad08dbe9d90e5e"
+    },
+    {
+      "path": "res://assets/art/catalog/amaze_blueprint_v1.webp",
+      "source_delivery_id": "exec-dbad10aa-0def-4109-b5f6-8ccf0fcfea75.png",
+      "prompt": "Portrait 2D cartoon cartographer blueprint desk: rich navy paper, brass compass and rulers, parchment corners and subtle coordinate marks at the perimeter, empty center for a live maze, no maze, no path, no text, no UI, no logo.",
+      "runtime_game_ids": ["amaze_go"],
+      "sha256": "4e2b9dedcad771d2b2d1c160341998a00f31c5f4426de442013186701ceded78"
+    }
+  ]
+}

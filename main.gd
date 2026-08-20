@@ -57,6 +57,7 @@ const SNAKE_GB_RULES = preload("res://models/snake_gb_model.gd")
 const SNAKES_ARENA_RULES = preload("res://models/snakes_arena_model.gd")
 const MERGE2248_RULES = preload("res://models/merge2248_model.gd")
 const MERGE2248_PRESENTATION = preload("res://presentation/merge2248_presenter.gd")
+const CATALOG_ART_DIRECTION = preload("res://presentation/catalog_art_director.gd")
 const SFX_CASE_OPEN: AudioStream = preload("res://assets/audio/ui/case_open.wav")
 const SFX_SNAKE_KEY: AudioStream = preload("res://assets/audio/snake/key.wav")
 const SFX_SNAKE_REJECT: AudioStream = preload("res://assets/audio/snake/reject.wav")
@@ -88,6 +89,7 @@ const LATIN_FONT: Font = preload("res://assets/fonts/DejaVuSans.ttf")
 const SYMBOL_FONT: Font = preload("res://assets/fonts/Unifont.otf")
 const DISPLAY_FONT: Font = preload("res://assets/fonts/NotoSansCJKsc-Subset.otf")
 const NUMBER_FONT: Font = preload("res://assets/fonts/DejaVuSans.ttf")
+const TILE_NUMBER_FONT: Font = preload("res://assets/fonts/RobotoMedium-Numbers.ttf")
 var fallback_font: Font
 var buttons: Array[Button] = []
 var screen := "home"
@@ -129,6 +131,9 @@ var snake_gb_model = SNAKE_GB_RULES.new()
 var snakes_arena_model = SNAKES_ARENA_RULES.new()
 var merge2248_model = MERGE2248_RULES.new()
 var merge2248_presenter = MERGE2248_PRESENTATION.new()
+var catalog_art_director = CATALOG_ART_DIRECTION.new()
+var catalog_fx: Array[Dictionary] = []
+var catalog_fx_serial := 0
 var merge2248_drag_active := false
 var merge2248_pointer := Vector2.ZERO
 var merge2248_fx: Array[Dictionary] = []
@@ -241,6 +246,7 @@ func _process(delta: float) -> void:
 		_snakes_arena_update(delta)
 	_snake_prune_fx()
 	_snakes_arena_prune_fx()
+	_prune_catalog_fx()
 	_sync_observability()
 	queue_redraw()
 
@@ -302,6 +308,63 @@ func _start_motion(kind: String, from: Vector2, to: Vector2, color: Color, label
 	motion_color = color
 	motion_label = label
 	queue_redraw()
+
+func _start_catalog_event(kind: String, position: Vector2, color: Color, grade := 1, label := "", duration := 0.72) -> void:
+	if game_id in ["merge2248", "snake_classic", "snake_io"]:
+		return
+	catalog_fx_serial += 1
+	catalog_fx.append({
+		"game_id": game_id,
+		"kind": kind,
+		"position": position,
+		"color": color,
+		"grade": clampi(grade, 1, 4),
+		"label": label,
+		"started": elapsed,
+		"duration": duration,
+		"seed": catalog_fx_serial,
+	})
+	while catalog_fx.size() > 12:
+		catalog_fx.pop_front()
+	if "error" in kind or "reject" in kind or "mismatch" in kind:
+		_play_sfx(SFX_SNAKE_REJECT, -16.0, 0.94)
+		_haptic(12)
+	else:
+		var event_grade := clampi(grade, 1, 4)
+		_play_sfx(SFX_SNAKE_EAT if event_grade >= 2 else SFX_SNAKE_KEY, -17.0 + float(event_grade) * 1.5, 0.92 + float(event_grade) * 0.09)
+		if event_grade == 1:
+			_haptic(8)
+		else:
+			_haptic_pattern([10 + event_grade * 4, 16, 18 + event_grade * 9])
+	queue_redraw()
+
+func _prune_catalog_fx() -> void:
+	var active: Array[Dictionary] = []
+	for effect in catalog_fx:
+		if elapsed - float(effect.get("started", elapsed)) < float(effect.get("duration", 0.72)):
+			active.append(effect)
+	catalog_fx = active
+
+func _catalog_shake_offset() -> Vector2:
+	for index in range(catalog_fx.size() - 1, -1, -1):
+		var effect: Dictionary = catalog_fx[index]
+		if str(effect.get("game_id", "")) == game_id:
+			return catalog_art_director.shake_offset(effect, elapsed)
+	return Vector2.ZERO
+
+func _catalog_result_overlay_ready() -> bool:
+	# Let the authoritative board consequence and its local event read before a
+	# terminal modal covers the playfield. Rules already ended the game; this is
+	# presentation-only timing and never delays state mutation.
+	for index in range(catalog_fx.size() - 1, -1, -1):
+		var effect: Dictionary = catalog_fx[index]
+		if str(effect.get("game_id", "")) != game_id:
+			continue
+		var visible_window := minf(0.82, float(effect.get("duration", 0.72)))
+		if elapsed - float(effect.get("started", elapsed)) < visible_window:
+			return false
+		break
+	return true
 
 func _begin_transition(direction := 1.0) -> void:
 	screen_transition_started = elapsed
@@ -412,6 +475,7 @@ func _build_home() -> void:
 func _open_game(id: String) -> void:
 	game_id = id
 	screen = "game"
+	catalog_fx.clear()
 	rng.seed = abs(id.hash()) + 17
 	_start_game_state()
 	last_score = int(state.get("score", 0))
@@ -467,6 +531,7 @@ func _build_game_buttons() -> void:
 func _reset_current() -> void:
 	if game_id.is_empty():
 		return
+	catalog_fx.clear()
 	rng.seed = abs(game_id.hash()) + 17
 	_start_game_state()
 	_log_event("game_reset", {"game_id":game_id})
@@ -893,11 +958,8 @@ func _draw_game() -> void:
 		return
 	var item := _catalog_item(game_id)
 	var accent: Color = item.get("accent", CYAN)
-	var world_shake := _merge2248_shake_offset() if game_id == "merge2248" else Vector2.ZERO
-	draw_set_transform(world_shake, 0.0, Vector2.ONE)
 	_draw_game_world(accent)
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	var header_fill := Color("173f42", 0.985) if game_id == "merge2248" else Color("10192d", 0.985)
+	var header_fill := _game_header_fill()
 	var header_line := Color("f1bd68") if game_id == "merge2248" else accent
 	draw_rect(Rect2(0, 0, size.x, 112), header_fill)
 	draw_rect(Rect2(0, 108, size.x, 4), header_line)
@@ -907,6 +969,8 @@ func _draw_game() -> void:
 	_draw_text(str(item.get("subtitle", "")), Vector2(144, 88), 12, BRIGHT_MUTED)
 	_draw_status_badge("离线", Vector2(382, 34), GREEN, true, 58)
 	_draw_score_panel()
+	var play_shake := _catalog_shake_offset()
+	draw_set_transform(play_shake, 0.0, Vector2.ONE)
 	match game_id:
 		"merge2248": _draw_merge2248()
 		"merge2048": _draw_merge()
@@ -918,25 +982,72 @@ func _draw_game() -> void:
 		"mahjong": _draw_mahjong()
 		"tileclub": _draw_tileclub()
 		"amaze_go", "arrow_go", "amaze": _draw_amaze()
-	if state.get("status", "playing") == "over":
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	if state.get("status", "playing") == "over" and _catalog_result_overlay_ready():
 		_draw_result_overlay(false)
-	elif state.get("status", "playing") == "won":
+	elif state.get("status", "playing") == "won" and _catalog_result_overlay_ready():
 		_draw_result_overlay(true)
 	if elapsed < feedback_until:
 		var remaining := feedback_until - elapsed
 		var alpha: float = clampf(remaining / 0.24, 0.0, 1.0)
 		var toast_x := 276.0 + (1.0 - alpha) * 18.0
-		_draw_panel(Rect2(toast_x, 129, 246, 42), Color("111c31", 0.98 * alpha), Color(feedback_color, 0.76 * alpha), 10, 2)
+		_draw_panel(Rect2(toast_x, 129, 246, 42), Color(_game_panel_fill(), 0.98 * alpha), Color(feedback_color, 0.76 * alpha), 10, 2)
 		draw_rect(Rect2(toast_x, 129, 5, 42), Color(feedback_color, alpha))
 		_draw_center(feedback_text, Vector2(toast_x + 123, 150), 13, Color(INK, alpha))
 	_draw_motion_overlay()
 	_draw_impact_fx()
+	_draw_catalog_fx()
+
+func _game_header_fill() -> Color:
+	match game_id:
+		"merge2248": return Color("173f42", 0.985)
+		"merge2048": return Color("322015", 0.985)
+		"watermelon": return Color("4b2830", 0.985)
+		"meowdoku": return Color("4a263d", 0.985)
+		"sudoku": return Color("302b32", 0.985)
+		"solitaire": return Color("0d3529", 0.985)
+		"tripeaks": return Color("271940", 0.985)
+		"mahjong": return Color("174139", 0.985)
+		"tileclub": return Color("4a2036", 0.985)
+		"amaze_go": return Color("102d4d", 0.985)
+		"arrow_go": return Color("2b2048", 0.985)
+		"amaze": return Color("173f34", 0.985)
+	return Color("10192d", 0.985)
+
+func _game_panel_fill() -> Color:
+	match game_id:
+		"merge2248": return Color("17484a", 0.96)
+		"merge2048": return Color("49301e", 0.96)
+		"watermelon": return Color("63323c", 0.96)
+		"meowdoku": return Color("6b3854", 0.96)
+		"sudoku": return Color("494047", 0.96)
+		"solitaire": return Color("154939", 0.96)
+		"tripeaks": return Color("3a2857", 0.96)
+		"mahjong": return Color("23584a", 0.96)
+		"tileclub": return Color("663047", 0.96)
+		"amaze_go": return Color("16456b", 0.96)
+		"arrow_go": return Color("443467", 0.96)
+		"amaze": return Color("245b49", 0.96)
+	return Color("101a2e", 0.94)
+
+func _game_secondary_text() -> Color:
+	match game_id:
+		"merge2048", "watermelon", "solitaire", "mahjong", "tileclub", "amaze_go", "amaze":
+			return Color("f4ead4", 0.84)
+		"meowdoku", "tripeaks", "arrow_go":
+			return Color("f2e3f5", 0.84)
+	return Color("d7e5d8", 0.88) if game_id == "merge2248" else BRIGHT_MUTED
+
+func _draw_catalog_fx() -> void:
+	for effect in catalog_fx:
+		if str(effect.get("game_id", "")) == game_id:
+			catalog_art_director.draw_event_fx(self, effect, elapsed, DISPLAY_FONT, SYMBOL_FONT)
 
 func _draw_score_panel() -> void:
 	var candy_mode := game_id == "merge2248"
-	var panel_fill := Color("17484a", 0.96) if candy_mode else Color("101a2e", 0.94)
+	var panel_fill := _game_panel_fill()
 	var panel_border := Color("f3d59d", 0.30) if candy_mode else Color(INK, 0.09)
-	var secondary_text := Color("d7e5d8", 0.88) if candy_mode else BRIGHT_MUTED
+	var secondary_text := _game_secondary_text()
 	_draw_panel(Rect2(18, 124, 504, 52), panel_fill, panel_border, 10, 1)
 	var compact := state.has("mistakes")
 	_draw_text("得分", Vector2(31, 142), 10, secondary_text)
@@ -995,64 +1106,14 @@ func _draw_result_overlay(won: bool) -> void:
 	_draw_center("得分 %d · 步数 %d" % [int(state.get("score", 0)), int(state.get("moves", 0))], Vector2(270, 478), 16, INK)
 	_draw_center("点击右上角“重开”继续挑战", Vector2(270, 524), 13, BRIGHT_MUTED)
 
-func _draw_game_world(accent: Color) -> void:
-	match game_id:
-		"merge2248":
-			draw_texture_rect(MERGE2248_BG_TEXTURE, Rect2(Vector2.ZERO, VIEW_SIZE), false, Color.WHITE)
-			# Quiet the generated workshop beneath live UI while retaining the
-			# authored edge props and warm material context.
-			draw_rect(Rect2(0, 112, 540, 848), Color("0f4d50", 0.10))
-		"merge2048":
-			draw_rect(Rect2(0, 112, 540, 848), Color("241b16"))
-			for y in range(112, 960, 16):
-				draw_line(Vector2(0, y), Vector2(540, y), Color("f4b860", 0.018), 1.0)
-		"watermelon":
-			draw_circle(Vector2(40, 840), 150, Color("ff6b8a", 0.035))
-			draw_arc(Vector2(500, 300), 130, 1.8, 4.8, 48, Color("62d3aa", 0.045), 12.0)
-		"sudoku":
-			_draw_panel(Rect2(24, 198, 492, 590), Color("17132a", 0.44), Color(VIOLET, 0.08), 2, 1)
-		"meowdoku":
-			draw_circle(Vector2(470, 784), 74, Color("ef8dc2", 0.055))
-			draw_triangle(Vector2(420, 748), Vector2(438, 702), Vector2(456, 750), Color("ef8dc2", 0.05))
-			draw_triangle(Vector2(476, 750), Vector2(494, 702), Vector2(512, 748), Color("ef8dc2", 0.05))
-		"snake_classic":
-			for y in range(196, 760, 24):
-				draw_line(Vector2(22, y), Vector2(518, y), Color("91bf62", 0.025), 1.0)
-		"snake_io":
-			for i in range(5):
-				draw_arc(Vector2(270, 500), 130 + i * 48 + sin(elapsed + i) * 2, 0, TAU, 64, Color("579fff", 0.035), 2.0)
-		"solitaire":
-			draw_rect(Rect2(0, 112, 540, 848), Color("092d27"))
-			for y in range(120, 960, 7):
-				draw_line(Vector2(0, y), Vector2(540, y), Color("d3bb7a", 0.015), 1.0)
-		"tripeaks":
-			draw_rect(Rect2(0, 112, 540, 848), Color("15102b"))
-			for i in range(3):
-				var peak_x := 108.0 + i * 162.0
-				draw_colored_polygon(PackedVector2Array([Vector2(peak_x - 104, 600), Vector2(peak_x, 236), Vector2(peak_x + 104, 600)]), Color("8c6bb4", 0.045))
-			draw_circle(Vector2(470, 240), 92, Color("e89dff", 0.045))
-		"mahjong":
-			draw_rect(Rect2(0, 112, 540, 848), Color("163b37"))
-			draw_circle(Vector2(470, 850), 128, Color("78c9b6", 0.035))
-		"tileclub":
-			draw_rect(Rect2(0, 112, 540, 848), Color("261f3a"))
-			for i in range(7):
-				var tile_ghost := _tile_color(i + 1)
-				tile_ghost.a = 0.04
-				draw_circle(Vector2(42 + i * 82, 850 - (i % 2) * 32), 22, tile_ghost)
-		"amaze_go":
-			draw_rect(Rect2(0, 112, 540, 848), Color("071d32"))
-			for i in range(5):
-				draw_arc(Vector2(270, 480), 110 + i * 64, 0, TAU, 64, Color("4b9cff", 0.035), 1.0)
-		"arrow_go":
-			draw_rect(Rect2(0, 112, 540, 848), Color("17142d"))
-			for i in range(8):
-				var p := Vector2(28 + i * 72, 780 + sin(elapsed * 0.6 + i) * 18)
-				draw_line(p, p + Vector2(26, -26), Color(VIOLET, 0.05), 2.0)
-		"amaze":
-			draw_rect(Rect2(0, 112, 540, 848), Color("102a26"))
-			for i in range(7):
-				draw_circle(Vector2(24 + i * 84, 860 + sin(elapsed + i) * 8), 30, Color(_paint_color(i), 0.035))
+func _draw_game_world(_accent: Color) -> void:
+	if game_id == "merge2248":
+		draw_texture_rect(MERGE2248_BG_TEXTURE, Rect2(Vector2.ZERO, VIEW_SIZE), false, Color.WHITE)
+		# Quiet the generated workshop beneath live UI while retaining the
+		# authored edge props and warm material context.
+		draw_rect(Rect2(0, 112, 540, 848), Color("0f4d50", 0.10))
+		return
+	catalog_art_director.draw_environment(self, game_id, VIEW_SIZE, elapsed)
 
 func draw_triangle(a: Vector2, b: Vector2, c: Vector2, color: Color) -> void:
 	draw_colored_polygon(PackedVector2Array([a, b, c]), color)
@@ -1595,7 +1656,14 @@ func _merge_move(direction: Vector2i) -> void:
 	state["score"] = int(state["score"]) + gained
 	_spawn_merge_tile()
 	_flash_feedback("合成 +%d" % gained, GOLD if gained > 0 else CYAN)
-	_impact(_merge_impact_position(board_before, board, direction, gained), GOLD if gained > 0 else CYAN, 0.7 if gained == 0 else 1.0)
+	var impact_position := _merge_impact_position(board_before, board, direction, gained)
+	var merge_color := GOLD if gained > 0 else CYAN
+	var merge_grade := 1
+	if gained >= 8: merge_grade = 2
+	if gained >= 32: merge_grade = 3
+	if gained >= 128: merge_grade = 4
+	_impact(impact_position, merge_color, 0.7 if gained == 0 else 1.0)
+	_start_catalog_event("merge", impact_position, merge_color, merge_grade, "木作合成 · +%d" % gained, 0.66 + merge_grade * 0.07)
 	_log_event("merge_move", {"direction":str(direction), "gained":gained, "score":state["score"]})
 	if _merge_has_target():
 		state["status"] = "won"
@@ -1648,9 +1716,10 @@ func _draw_merge() -> void:
 	var origin := Vector2(42, 236)
 	var tile := 109.0
 	var accent: Color = _catalog_item(game_id).accent
-	var board_fill := Color("10302f") if game_id == "merge2248" else Color("5a4734")
+	var board_fill := Color("10302f") if game_id == "merge2248" else Color("402819")
 	var tile_radius := 19 if game_id == "merge2248" else 8
-	_draw_panel(Rect2(origin - Vector2(10, 10), Vector2(460, 460)), board_fill, Color(accent, 0.62), 22 if game_id == "merge2248" else 12, 3)
+	_draw_panel(Rect2(origin - Vector2(13, 8) + Vector2(0, 8), Vector2(466, 462)), Color("140a05", 0.48), Color.TRANSPARENT, 24 if game_id == "merge2248" else 18, 0)
+	_draw_panel(Rect2(origin - Vector2(13, 8), Vector2(466, 462)), board_fill, Color(accent, 0.70), 24 if game_id == "merge2248" else 18, 4)
 	if game_id == "merge2248":
 		for row in range(5):
 			draw_line(origin + Vector2(0, row * tile - 4), origin + Vector2(430, row * tile - 4), Color(accent, 0.07), 2.0)
@@ -1659,16 +1728,27 @@ func _draw_merge() -> void:
 			var value := int(board[y][x])
 			var rect := Rect2(origin + Vector2(x * tile, y * tile), Vector2(tile - 7, tile - 7))
 			var color := _merge_color(value)
-			_draw_panel(Rect2(rect.position + Vector2(0, 5), rect.size), Color(0, 0, 0, 0.32), Color.TRANSPARENT, tile_radius, 0)
-			_draw_panel(rect, color, Color(INK, 0.15), tile_radius, 1)
+			_draw_panel(Rect2(rect.position + Vector2(0, 6), rect.size), Color(0, 0, 0, 0.34), Color.TRANSPARENT, tile_radius + 1, 0)
+			_draw_panel(rect, color, Color("f7d9a6", 0.18 if value > 0 else 0.08), tile_radius, 2 if value > 0 else 1)
 			if value > 0:
 				if game_id == "merge2248":
 					draw_circle(rect.get_center(), 38.0 if value < 100 else 31.0, Color(INK, 0.08))
 					draw_arc(rect.get_center(), 43.0, -PI * 0.75, PI * 0.75, 24, Color(accent, 0.28), 3.0)
+				else:
+					_draw_panel(rect.grow(-5), color.lightened(0.06), Color("6d3f23", 0.28), tile_radius - 2, 1)
+					draw_line(rect.position + Vector2(16, 15), rect.end - Vector2(16, rect.size.y - 17), Color("fff2d7", 0.24), 3.0, true)
+					if value >= 128:
+						draw_arc(rect.get_center(), 37.0, 0, TAU, 28, Color("fff1bd", 0.40), 2.2, true)
+						for pip in range(mini(4, int(log(float(value)) / log(2.0)) - 6)):
+							draw_circle(rect.position + Vector2(15 + pip * 8, rect.size.y - 14), 2.1, Color("fff1bd", 0.74))
 				var number_color := _readable_number_color(_merge_number_background(value))
-				_draw_segment_number(value, rect.get_center(), 28.0 if value < 100 else 20.0, number_color)
+				if game_id == "merge2048":
+					var number_size := 31 if value < 100 else (25 if value < 1000 else 20)
+					_draw_center_font(TILE_NUMBER_FONT, str(value), rect.get_center() + Vector2(0, 2), number_size, number_color)
+				else:
+					_draw_segment_number(value, rect.get_center(), 28.0 if value < 100 else 20.0, number_color)
 	_draw_section_heading("能量矩阵" if game_id == "merge2248" else "经典方阵", "滑动合并同值方块", accent)
-	_draw_text("每次合并都会为高能方块充能", Vector2(42, 734), 12, Color(BRIGHT_MUTED, 0.74))
+	_draw_text("每次合并都会为高能方块充能" if game_id == "merge2248" else "雕版会随数值升级，冲向同侧完成合并", Vector2(42, 734), 12, Color(_game_secondary_text(), 0.82))
 
 func _merge_color(value: int) -> Color:
 	if game_id == "merge2048":
@@ -1785,18 +1865,32 @@ func _water_drop(column: int) -> void:
 	state["moves"] = int(state["moves"]) + 1
 	_flash_feedback("落下 · %s" % _fruit_name(value), _fruit_color(value))
 	var merged := true
+	var merge_count := 0
+	var highest_result := value
+	var merge_score_gained := 0
 	while merged:
 		merged = false
 		for i in range(columns[column].size() - 1):
 			if columns[column][i] == columns[column][i + 1]:
 				columns[column][i] = min(5, int(columns[column][i]) + 1)
+				highest_result = maxi(highest_result, int(columns[column][i]))
+				merge_count += 1
 				columns[column].remove_at(i + 1)
-				state["score"] = int(state["score"]) + int(columns[column][i]) * 10
+				var merge_points := int(columns[column][i]) * 10
+				merge_score_gained += merge_points
+				state["score"] = int(state["score"]) + merge_points
 				_impact(Vector2(70 + column * 66, 610 - i * 58), _fruit_color(int(columns[column][i])), 0.9)
 				merged = true
 				break
+	var event_position := Vector2(70 + column * 62, 668 - maxi(0, columns[column].size() - 1) * 50)
+	if merge_count > 0:
+		var merge_grade := clampi(1 + merge_count + (1 if highest_result >= 5 else 0), 2, 4)
+		_start_catalog_event("fruit_merge", event_position, _fruit_color(highest_result), merge_grade, "%s%s · +%d" % [_fruit_name(highest_result), "连携" if merge_count > 1 else "合成", merge_score_gained], 0.86)
+	else:
+		_start_catalog_event("fruit_drop", event_position, _fruit_color(value), 1, "%s落箱" % _fruit_name(value), 0.56)
 	_log_event("ball_drop", {"column":column, "value":value})
 	if columns[column].size() >= 7:
+		_start_catalog_event("fruit_error_full", Vector2(70 + column * 62, 340), RED, 2, "果箱满了", 0.68)
 		state["status"] = "over"
 		_capture("watermelon_full")
 		return
@@ -1813,7 +1907,12 @@ func _draw_watermelon() -> void:
 	_draw_panel(Rect2(398, 228, 108, 76), Color("42243a", 0.96), Color(RED, 0.62), 14, 2)
 	_draw_text("下一个", Vector2(412, 247), 10, BRIGHT_MUTED)
 	_draw_fruit(Vector2(472, 276), int(state["next"]), 21.0)
-	_draw_panel(Rect2(30, 236, 462, 466), Color("d8eef0", 0.10), Color("a9dfe8", 0.58), 26, 3)
+	_draw_panel(Rect2(26, 232, 470, 474), Color("4c2718", 0.42), Color("f0c376", 0.64), 26, 3)
+	for slat in range(6):
+		var slat_y := 252.0 + slat * 76.0
+		draw_line(Vector2(39, slat_y), Vector2(483, slat_y + 3), Color("f4c978", 0.13), 8.0, true)
+	draw_line(Vector2(48, 242), Vector2(48, 692), Color("2d170e", 0.34), 7.0)
+	draw_line(Vector2(474, 242), Vector2(474, 692), Color("2d170e", 0.34), 7.0)
 	draw_line(Vector2(48, 316), Vector2(474, 316), Color("fff2f5", 0.54), 3.0)
 	draw_line(Vector2(52, 356), Vector2(470, 356), Color("ff6b8a", 0.56), 2.0)
 	_draw_text("危险线", Vector2(416, 350), 11, RED)
@@ -1914,13 +2013,20 @@ func _sudoku_place(number: int) -> void:
 		state["mistakes"] = int(state["mistakes"]) + 1
 		_flash_feedback("这里不是 %d" % number, RED)
 		_impact(Vector2(47 + (x + 0.5) * 49.5, 236 + (y + 0.5) * 49.5), RED, 0.45)
+		_start_catalog_event("logic_error", Vector2(47 + (x + 0.5) * 49.5, 236 + (y + 0.5) * 49.5), RED, 2, "再想一步", 0.62)
 		_log_event("sudoku_mistake", {"x":x, "y":y, "value":number})
 		return
 	state["board"][y][x] = number
 	state["moves"] = int(state["moves"]) + 1
 	_flash_feedback("落子 %d" % number, Color("f39ac7") if game_id == "meowdoku" else VIOLET)
 	_impact(Vector2(47 + (x + 0.5) * 49.5, 236 + (y + 0.5) * 49.5), Color("f39ac7") if game_id == "meowdoku" else VIOLET, 0.38)
+	var sudoku_event_position := Vector2(47 + (x + 0.5) * 49.5, 236 + (y + 0.5) * 49.5)
+	var completed_block := _sudoku_block_complete((y / 3) * 3 + x / 3)
+	var sudoku_grade := 2 if completed_block else 1
+	var sudoku_label := ("猫爪盖章" if game_id == "meowdoku" else "九宫完成") if completed_block else ("落笔正确" if game_id == "sudoku" else "猫爪确认")
+	_start_catalog_event("logic_correct", sudoku_event_position, Color("f39ac7") if game_id == "meowdoku" else VIOLET, sudoku_grade, sudoku_label, 0.68)
 	if _sudoku_complete():
+		_start_catalog_event("logic_complete", Vector2(270, 458), GOLD, 4, "整册完成", 1.05)
 		state["score"] = max(100, 1000 - int(state["mistakes"]) * 25)
 		state["status"] = "won"
 		_capture("sudoku_win")
@@ -1945,6 +2051,14 @@ func _draw_sudoku() -> void:
 	_draw_section_heading("猫爪手账" if game_id == "meowdoku" else "逻辑手册", "选格后输入数字", accent)
 	_draw_panel(Rect2(origin - Vector2(6, 6), Vector2(cell * 9 + 12, cell * 9 + 12)), Color(0, 0, 0, 0.28), Color.TRANSPARENT, 16 if game_id == "meowdoku" else 4, 0)
 	_draw_panel(Rect2(origin - Vector2(4, 4), Vector2(cell * 9 + 8, cell * 9 + 8)), paper, Color(accent, 0.76), 16 if game_id == "meowdoku" else 3, 2)
+	if game_id == "meowdoku":
+		for ring in range(8):
+			var ring_y := origin.y + 24.0 + ring * 54.0
+			draw_circle(Vector2(origin.x - 9, ring_y), 5.0, Color("f9d7e8"), false, 2.0)
+	else:
+		for mark in range(5):
+			var mark_x := origin.x + 46.0 + mark * 86.0
+			draw_line(Vector2(mark_x, origin.y - 8), Vector2(mark_x + 9, origin.y - 2), Color("b78f55", 0.38), 2.0)
 	for y in range(9):
 		for x in range(9):
 			var rect := Rect2(origin + Vector2(x * cell, y * cell), Vector2(cell, cell))
@@ -3678,10 +3792,12 @@ func _solitaire_draw() -> void:
 		_flash_feedback("翻开一张牌", AMBER)
 		_impact(Vector2(188, 254), AMBER, 0.45)
 		_start_motion("card", Vector2(77, 282), Vector2(169, 282), AMBER, str(1 + int(state["waste"]) % 13), 0.42)
+		_start_catalog_event("card_draw", Vector2(168, 304), AMBER, 1, "新牌入场", 0.58)
 		_log_event("solitaire_draw", {"stock":state["stock"], "waste":state["waste"]})
 	else:
 		state["stock"] = int(state["waste"])
 		state["waste"] = 0
+		_start_catalog_event("card_recycle", Vector2(76, 304), CYAN, 1, "牌库重整", 0.58)
 
 func _solitaire_auto() -> void:
 	if game_id != "solitaire" or state.get("status") != "playing":
@@ -3696,6 +3812,8 @@ func _solitaire_auto() -> void:
 			state["moves"] = int(state["moves"]) + 1
 			_flash_feedback("自动归位 · +25", GOLD)
 			_impact(Vector2(390 + (i % 4) * 32, 254), GOLD, 0.55)
+			var foundation_total := _solitaire_foundation_total()
+			_start_catalog_event("foundation_place", Vector2(323 + (i % 4) * 54, 286), GOLD, 3 if foundation_total % 4 == 0 else 2, "归位 · +25", 0.78)
 			break
 	if _solitaire_foundation_total() >= 8:
 		state["status"] = "won"
@@ -3722,6 +3840,7 @@ func _solitaire_tap(pos: Vector2) -> void:
 			state["score"] = int(state["score"]) + 10
 			state["moves"] = int(state["moves"]) + 1
 			_impact(Vector2(63 + col * 68, 430), CYAN, 0.5)
+			_start_catalog_event("card_move", Vector2(63 + col * 68, 430), CYAN, 1, "牌列衔接", 0.58)
 			if _solitaire_foundation_total() >= 8:
 				state["status"] = "won"
 				_capture("solitaire_win")
@@ -3775,6 +3894,7 @@ func _init_tripeaks() -> void:
 	state["current"] = 7
 	state["stock"] = 12
 	state["score"] = 0
+	state["streak"] = 0
 
 func _tripeaks_next() -> void:
 	if game_id != "tripeaks" or state.get("status") != "playing":
@@ -3783,8 +3903,10 @@ func _tripeaks_next() -> void:
 		state["stock"] = int(state["stock"]) - 1
 		state["current"] = 1 + ((int(state["current"]) + 4) % 13)
 		state["moves"] = int(state["moves"]) + 1
+		state["streak"] = 0
 		_flash_feedback("翻开 %s" % _card_rank(int(state["current"])), VIOLET)
 		_start_motion("card", Vector2(74, 758), Vector2(74, 758), VIOLET, str(state["current"]), 0.40)
+		_start_catalog_event("card_draw", Vector2(72, 754), VIOLET, 1, "暮色翻牌", 0.56)
 		_log_event("tripeaks_stock", {"current":state["current"], "stock":state["stock"]})
 	else:
 		state["status"] = "over"
@@ -3803,27 +3925,37 @@ func _tripeaks_tap(pos: Vector2) -> void:
 			if locked:
 				_flash_feedback("先清除压住它的牌", RED)
 				_impact(center, RED, 0.42)
+				_start_catalog_event("card_reject_locked", center, RED, 1, "仍被压住", 0.58)
 				return
 			var value := int(cards[i])
 			var current := int(state["current"])
 			if abs(value - current) == 1 or value == 1 and current == 13 or value == 13 and current == 1:
 				removed.append(i)
+				state["streak"] = int(state.get("streak", 0)) + 1
 				state["current"] = value
 				state["score"] = int(state["score"]) + 30
 				state["moves"] = int(state["moves"]) + 1
 				_flash_feedback("连牌成功 · +30", MINT)
 				_impact(center, MINT, 0.75)
+				var streak := int(state["streak"])
+				var streak_grade := clampi(1 + streak / 2, 1, 4)
+				_start_catalog_event("card_streak", center, MINT if streak_grade < 3 else GOLD, streak_grade, "连牌 ×%d" % streak, 0.62 + streak_grade * 0.08)
 				if removed.size() == cards.size():
 					state["status"] = "won"
 					_capture("tripeaks_win")
 				_log_event("tripeaks_clear", {"card":value, "cleared":removed.size()})
 			else:
+				state["streak"] = 0
 				_flash_feedback("点数不相邻", RED)
+				_start_catalog_event("card_reject_rank", center, RED, 1, "点数不相邻", 0.58)
 				_log_event("tripeaks_invalid", {"card":value, "current":current})
 			return
 
 func _draw_tripeaks() -> void:
 	_draw_section_heading("三座暮色牌峰", "相邻点数可收入牌堆", VIOLET)
+	var streak := int(state.get("streak", 0))
+	if streak > 1:
+		_draw_status_badge("连牌 ×%d" % streak, Vector2(382, 190), GOLD, true, 116)
 	var cards: Array = state["cards"]
 	var removed: Array = state["removed"]
 	for i in range(cards.size()):
@@ -3879,6 +4011,7 @@ func _mahjong_tap(pos: Vector2) -> void:
 	if selected < 0:
 		state["selected"] = index
 		_flash_feedback("已选中第 %d 张牌" % (index + 1), CYAN)
+		_start_catalog_event("jade_select", origin + Vector2((col + 0.43) * cell.x, (row + 0.43) * cell.y), CYAN, 1, "玉牌抬起", 0.48)
 		return
 	if selected == index:
 		state["selected"] = -1
@@ -3891,6 +4024,8 @@ func _mahjong_tap(pos: Vector2) -> void:
 		state["score"] = int(state["score"]) + 50
 		_flash_feedback("配对成功 · +50", MINT)
 		state["moves"] = int(state["moves"]) + 1
+		var mahjong_grade := 4 if removed.size() == tiles.size() else 2
+		_start_catalog_event("jade_pair", origin + Vector2((col + 0.43) * cell.x, (row + 0.43) * cell.y), MINT if mahjong_grade < 4 else GOLD, mahjong_grade, "同纹共鸣 · +50", 0.82 if mahjong_grade < 4 else 1.08)
 		_log_event("mahjong_pair", {"tile":tiles[index], "remaining":tiles.size() - removed.size()})
 		if removed.size() == tiles.size():
 			state["status"] = "won"
@@ -3899,6 +4034,7 @@ func _mahjong_tap(pos: Vector2) -> void:
 		state["selected"] = index
 		state["mistakes"] = int(state.get("mistakes", 0)) + 1
 		_flash_feedback("牌面不一致", RED)
+		_start_catalog_event("jade_mismatch", origin + Vector2((col + 0.43) * cell.x, (row + 0.43) * cell.y), RED, 2, "纹样不同", 0.62)
 		_log_event("mahjong_mismatch", {"first":tiles[selected], "second":tiles[index]})
 
 func _draw_mahjong() -> void:
@@ -3915,6 +4051,8 @@ func _draw_mahjong() -> void:
 			draw_circle(rect.get_center(), 4.0, Color("8be5c7", 0.16))
 			continue
 		var selected := int(state["selected"]) == index
+		if selected:
+			rect.position.y -= 7.0
 		_draw_panel(Rect2(rect.position + Vector2(0, 8), rect.size), Color("071c19", 0.48), Color.TRANSPARENT, 8, 0)
 		_draw_panel(Rect2(rect.position + Vector2(0, 4), rect.size), Color("99cdbb"), Color("5d8c7d", 0.72), 8, 1)
 		var face := Rect2(rect.position, rect.size - Vector2(0, 5))
@@ -3934,7 +4072,8 @@ func _draw_mahjong_face(rect: Rect2, value: int) -> void:
 		6:
 			_draw_center("发", center + Vector2(0, 6), 29, Color("3c8c64"))
 		7:
-			draw_rect(Rect2(center - Vector2(14, 18), Vector2(28, 36)), Color("3c8c64"), false, 3.0)
+			_draw_center("白", center + Vector2(0, 6), 27, Color("4385c6"))
+			draw_rect(Rect2(center - Vector2(16, 20), Vector2(32, 40)), Color("4385c6", 0.58), false, 2.0)
 		8, 9, 10:
 			var count := value - 7
 			for i in range(count):
@@ -3984,6 +4123,7 @@ func _tileclub_tap(pos: Vector2) -> void:
 	var tile_center := Vector2(64 + col * 64, 264 + row * 64)
 	_impact(tile_center, _tile_color(value), 0.45)
 	_start_motion("tile", tile_center, Vector2(66 + (tray.size() - 1) * 67, 759), _tile_color(value), _tile_symbol(value), 0.44)
+	_start_catalog_event("stitch_collect", tile_center, _tile_color(value), 1, "%s片入槽" % _tile_symbol(value), 0.54)
 	var removed_count := 0
 	for n in range(1, 8):
 		var count := 0
@@ -3999,6 +4139,8 @@ func _tileclub_tap(pos: Vector2) -> void:
 				state["score"] = int(state["score"]) + 100
 				_flash_feedback("三枚消除 · +100", GOLD)
 				_impact(Vector2(270, 730), GOLD, 1.0)
+				var cleared_after_match := _tileclub_cleared()
+				_start_catalog_event("stitch_match", Vector2(270, 755), GOLD, 4 if cleared_after_match else 3, "三枚缝合 · +100", 0.96 if not cleared_after_match else 1.12)
 			_log_event("tileclub_match", {"tile":n, "score":state["score"]})
 		if removed_count > 0:
 			break
@@ -4037,6 +4179,8 @@ func _draw_tileclub() -> void:
 		else:
 			_draw_panel(Rect2(rect.position + Vector2(0, 5), rect.size), Color(0, 0, 0, 0.30), Color.TRANSPARENT, 12, 0)
 			_draw_panel(rect, _tile_color(value), Color(INK, 0.30), 12, 2)
+			for stitch_corner in [Vector2(8, 8), Vector2(48, 8), Vector2(48, 48), Vector2(8, 48)]:
+				draw_circle(rect.position + stitch_corner, 1.5, Color("fff0d7", 0.76))
 			draw_circle(rect.position + Vector2(17, 15), 10, Color(INK, 0.13))
 			_draw_center(_tile_symbol(value), rect.get_center() + Vector2(0, 3), 22, COAL)
 			if (row + col) % 4 == 0:
@@ -4073,6 +4217,7 @@ func _init_amaze() -> void:
 	state["painted"] = painted
 	state["score"] = 0
 	state["moves"] = 0
+	state["streak"] = 0
 	state["hint"] = [1, 0]
 	var arrows := _new_grid(grid_size, grid_size, [1, 0])
 	for y in range(grid_size):
@@ -4107,13 +4252,16 @@ func _amaze_step(direction: Vector2i) -> void:
 		if direction != Vector2i(int(arrow[0]), int(arrow[1])):
 			_flash_feedback("箭流只允许%s" % _direction_name(arrow), RED)
 			_impact(_path_cell_center(int(player[0]), int(player[1]), size_grid), RED, 0.48)
+			_start_catalog_event("path_reject_arrow", _path_cell_center(int(player[0]), int(player[1]), size_grid), RED, 2, "逆着箭流", 0.62)
 			return
 	if game_id == "amaze_go" and _maze_blocks(int(player[0]), int(player[1]), direction):
 		_flash_feedback("这里有墙", RED)
 		_impact(_path_cell_center(int(player[0]), int(player[1]), size_grid), RED, 0.48)
+		_start_catalog_event("path_reject_wall", _path_cell_center(int(player[0]), int(player[1]), size_grid), RED, 2, "蓝图有墙", 0.62)
 		return
 	var next := Vector2i(int(player[0]) + direction.x, int(player[1]) + direction.y)
 	if next.x < 0 or next.y < 0 or next.x >= size_grid or next.y >= size_grid:
+		_start_catalog_event("path_reject_edge", _path_cell_center(int(player[0]), int(player[1]), size_grid), RED, 1, "已到边界", 0.54)
 		return
 	var from_position := _path_cell_center(int(player[0]), int(player[1]), size_grid)
 	player[0] = next.x
@@ -4121,15 +4269,21 @@ func _amaze_step(direction: Vector2i) -> void:
 	state["painted"][next.y][next.x] = true
 	state["moves"] = int(state["moves"]) + 1
 	state["score"] = int(state["score"]) + 5
+	state["streak"] = int(state.get("streak", 0)) + 1
 	var to_position := _path_cell_center(next.x, next.y, size_grid)
 	_impact(to_position, _catalog_item(game_id).accent, 0.30)
 	_start_motion("path", from_position, to_position, _catalog_item(game_id).accent, "", 0.24)
+	var path_streak := int(state["streak"])
+	var path_grade := 2 if path_streak % 5 == 0 else 1
+	var path_label := "轨迹 ×%d" % path_streak if path_grade > 1 else ("颜料铺开" if game_id == "amaze" else ("箭流推进" if game_id == "arrow_go" else "蓝图点亮"))
+	_start_catalog_event("path_step", to_position, _catalog_item(game_id).accent, path_grade, path_label, 0.52 if path_grade == 1 else 0.70)
 	_log_event("path_step", {"x":next.x, "y":next.y})
 	var target: Array = state["target"]
 	var reached_goal := next.x == int(target[0]) and next.y == int(target[1])
 	if game_id == "amaze":
 		reached_goal = _painted_count() == size_grid * size_grid
 	if reached_goal:
+		_start_catalog_event("path_complete", to_position, GOLD, 4, "全域完成", 1.12)
 		state["status"] = "won"
 		state["score"] = int(state["score"]) + 100
 		_capture("path_win_%s" % game_id)
@@ -4181,10 +4335,17 @@ func _draw_amaze() -> void:
 	var player_pos := origin + Vector2((int(player[0]) + 0.5) * cell, (int(player[1]) + 0.5) * cell)
 	if game_id != "amaze":
 		draw_circle(target_pos, cell * 0.35 + sin(elapsed * 3.0) * 2.0, Color(AMBER, 0.16))
-		draw_circle(target_pos, cell * 0.24, AMBER)
-	draw_circle(player_pos, cell * 0.36, Color(accent, 0.18))
-	draw_circle(player_pos, cell * 0.24, accent)
-	draw_circle(player_pos - Vector2(cell * 0.07, cell * 0.08), cell * 0.06, Color(INK, 0.62))
+		draw_arc(target_pos, cell * 0.25, 0, TAU, 24, AMBER, maxf(2.0, cell * 0.07), true)
+	draw_circle(player_pos, cell * 0.37, Color(accent, 0.18))
+	if game_id == "amaze_go":
+		draw_circle(player_pos, cell * 0.25, Color("f1d28a"))
+		draw_arc(player_pos, cell * 0.18, 0, TAU, 24, Color("75532c"), maxf(2.0, cell * 0.045), true)
+		draw_line(player_pos, player_pos + Vector2(cell * 0.12, -cell * 0.13), Color("b44343"), maxf(2.0, cell * 0.055), true)
+	elif game_id == "arrow_go":
+		draw_colored_polygon(PackedVector2Array([player_pos + Vector2(cell * 0.27, 0), player_pos + Vector2(-cell * 0.18, -cell * 0.20), player_pos + Vector2(-cell * 0.10, 0), player_pos + Vector2(-cell * 0.18, cell * 0.20)]), accent)
+	else:
+		draw_circle(player_pos, cell * 0.25, accent)
+		draw_circle(player_pos - Vector2(cell * 0.08, cell * 0.08), cell * 0.07, Color("fff4da", 0.88))
 	if game_id != "amaze":
 		_draw_center("终", target_pos, max(12, int(cell * 0.22)), COAL)
 	var painted_count := _painted_count()
