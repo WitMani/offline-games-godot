@@ -120,12 +120,13 @@
     "local": "web/local-web-acceptance.json",
     "aliyun": "web/aliyun-web-acceptance.json",
     "actual_action": "tap adjacent cell [1,0] through the visible canvas",
-    "result": "pending clean export"
+    "local_result": "PASS",
+    "aliyun_result": "pending deployment"
   },
   "shipping_boundary": {
     "runtime_derivatives": 6,
     "source_masters_in_repository": 0,
     "rejected_candidates_in_repository": 0,
-    "pck_scan": "pending clean export"
+    "pck_scan": "PASS"
   }
 }

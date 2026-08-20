@@ -1,0 +1,77 @@
+{
+  "result": "PASS",
+  "source": "clean git archive of feature commit 6ef316120314879508032a60cc03c90f18fe9e00",
+  "url": "http://127.0.0.1:18792/?release=clean-6ef3161",
+  "ready_seconds": 1.662,
+  "secure_context": true,
+  "webassembly": true,
+  "canvas_count": 1,
+  "probe_error": null,
+  "initial": {
+    "game_id": "arrow_go",
+    "size": 9,
+    "player": [
+      0,
+      0
+    ],
+    "target": [
+      8,
+      8
+    ],
+    "arrow_rows": 9,
+    "arrow_columns": 9,
+    "before": {
+      "player": [
+        0,
+        0
+      ],
+      "destination_painted": false,
+      "score": 0,
+      "moves": 0,
+      "streak": 0,
+      "status": "playing"
+    }
+  },
+  "actual_action": {
+    "name": "tap visible adjacent cell [1,0]",
+    "logical_canvas_point": [
+      125.667,
+      259.889
+    ],
+    "before": {
+      "player": [
+        0,
+        0
+      ],
+      "destination_painted": false,
+      "score": 0,
+      "moves": 0,
+      "streak": 0,
+      "status": "playing"
+    },
+    "after": {
+      "player": [
+        1,
+        0
+      ],
+      "destination_painted": true,
+      "score": 5,
+      "moves": 1,
+      "streak": 1,
+      "status": "playing"
+    }
+  },
+  "console_errors": [],
+  "request_failures": [],
+  "bad_responses": [],
+  "screenshots": {
+    "stable": {
+      "path": "arrow-go-local-stable.png",
+      "sha256": "aa27b69145dc1a85a5468d663162d79d09b2aed0bcc434cc2a16f6302701d545"
+    },
+    "after_step": {
+      "path": "arrow-go-local-after-step.png",
+      "sha256": "56c06d16e103f16f39241a59da02e290683351ba7e55b9201cfd685354165f23"
+    }
+  }
+}
