@@ -90,9 +90,26 @@ transition and never owns game rules.
 - Raise pitch slightly for each accepted chain node.
 - Use one rounded merge sound at impact.
 - Keep short haptics for accepted nodes and a stronger bounded pulse for merge.
-- Routine merge: ribbon, pop, small crumbs.
-- High tier/milestone: larger silhouette ring and richer sound.
+- Treat chain length and result tier as two inputs to one semantic feedback
+  grade. The stronger input wins; animation never changes the model result.
+- Property animation must carry the event with particles disabled: board
+  squash/rebound, result stretch and rotation recoil, token landing squash, and
+  score scale/color kick.
 - Win: reserve the strongest celebration.
+
+### Merge-feedback grades
+
+| Grade | Trigger | Readable label | Haptic | Camera / board | Property and VFX peak |
+|---:|---|---|---|---|---|
+| 1 | 2 nodes and result below 16 | 轻甜 | one 20 ms tap | 0.7 px micro-shake | modest pop, one ring, 10 crumbs |
+| 2 | 3+ nodes or result 16+ | 连携 | 18–24–34 ms pattern | 2.8 px shake | firmer board squash, two rings, 14 crumbs |
+| 3 | 5+ nodes or result 128+ | 超连携 | 24–18–48 ms pattern | 6 px directional shake | result rotation recoil, local flash, three rings, 18 crumbs, layered impact sound |
+| 4 | 8+ nodes or result 512+ | 传奇配方 | 30–16–46–18–72 ms pattern | 10.5 px directional shake with longer decay | largest bounded score/result kick, gold flash, four rings, 22 crumbs, deepest layered sound |
+
+The haptic arrays alternate vibration and pause on supporting Web/mobile
+platforms. Desktop browsers without vibration must still expose every grade
+through label, ribbon pulse count, shake, scale, rotation, rings, particles, and
+sound. Never let grade 1 approach the visual or tactile peak of grade 4.
 
 ## Runtime and accessibility
 

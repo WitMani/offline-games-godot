@@ -31,6 +31,10 @@ visual fixture. The evidence directory is
 | Web input | `08-web-after-drag.webp` | Browser drag changes score to 16, moves to 1, and creates a 16 token |
 | Continuous event | `hero-event.webm` | 30 fps gather-to-settle sequence, SHA-256 `a3fe7211e93c73e11e4f0a380e22b1e35363515581bee018812886b15fb3ce38` |
 | State delta | `before-release.json`, `after-release.json` | Score 0→8, moves 0→1, preview cleared, board refilled |
+| Four-grade previews | `juice-grades/grade-{1..4}-preview.webp` | Real pointer paths at 2, 3, 5, and 8 nodes expose thicker ribbon, more pulses, grade pips, and explicit result forecast |
+| Four-grade impacts | `juice-grades/grade-{1..4}-impact.webp` | One through four rings, 10 through 22 crumbs, increasing result deformation, and distinct grade badges align with the same authoritative release event |
+| Legendary motion | `juice-grades/grade-4-legendary.webm` | 30 fps grade-4 impact-to-settle sequence, SHA-256 `afb381f538f3b4edb119a576f730679e62fdd9754d978ecec0c6d499020f7382` |
+| Deployed Web action | `juice-grades/web-acceptance.json`, `juice-grades/web-grade-1-after-release.png` | Public HTTPS browser action ended at score 8 / move 1, observed vibration pattern, and retained screenshot SHA-256 `53b363fa3cfdddf22693cae4a20fc204f1679ad22dabfa5c486a3828da5559ae` |
 
 ## Dimension review
 
@@ -45,29 +49,32 @@ Scale: 0 broken, 1 prototype, 2 production, 3 distinctive.
 | States / progression | 2 | Base, selected, resolving, result, and high tiers use shape and posture as well as color |
 | Intent | 2 | The touched candy lifts, squashes, rims, and leans within the rendered input frame |
 | Anticipation | 2 | Thick cream ribbon, traveling pulse, and result label prepare release |
-| Impact | 2 | Consumed copies gather into an overshooting result with a bounded splash |
+| Impact | 3 | Consumed copies gather into a grade-scaled stretch/rotation recoil, directional playfield shake, layered shockwaves, score kick, and bounded splash exactly at authoritative release |
 | Settle | 2 | Refilled cells fall with a short stagger without owning or blocking rules |
-| Intensity hierarchy | 2 | Chain length changes gather density, pitch, and haptic strength; milestone tiers add facets/crown; global win remains strongest |
+| Intensity hierarchy | 3 | Real 2/3/5/8-node captures prove four visibly separated grades across haptic pattern, shake amplitude/decay, property animation, ring count, particle count, labels, and sound layering; global win remains reserved |
 
 ## Mechanics and runtime gates
 
 | Gate | Result |
 |---|---|
 | `merge2248_model_smoke.gd` | PASS, 10 probes |
-| `merge2248_integration_smoke.gd` | PASS, 5 probes; known exit-only resource warning unchanged |
+| `merge2248_integration_smoke.gd` | PASS, 10 probes including all four feedback grades; known exit-only resource warning unchanged |
 | `smoke.gd` | PASS, all 14 games |
 | Visual audit | PASS, stable through result plus 30-frame continuous capture |
+| Four-grade juice audit | PASS, real pointer/model releases for 2, 3, 5, and 8 nodes plus a 30-frame legendary sequence |
 | Web export | PASS, threads disabled, required HTML/JS/WASM/PCK present |
-| Browser boot | PASS on clean localhost export in Chrome/SwiftShader |
-| Browser interaction | PASS at 540×817; one drag produced score 16 / move 1 |
-| Aliyun atomic deploy | PASS, release `20260820T064125Z-96471303ae16` |
-| Public bundle integrity | PASS, HTML references `index.96471303ae16.pck` and `index.2b558bdb3c3a.wasm`; both returned 200/206 |
+| Browser boot | PASS on the public HTTPS URL in Chromium/SwiftShader on the release host; secure context and WebAssembly true, no page error or failed request |
+| Browser interaction | PASS at 540×960; a real equal-pair drag produced score 0→8 / move 0→1 and observed vibration calls `4`, `13`, `[20]` |
+| Aliyun atomic deploy | PASS, release `20260820T073724Z-9558d0cd783c` |
+| Public bundle integrity | PASS, HTML references `index.9558d0cd783c.pck` and `index.2b558bdb3c3a.wasm`; full HTTPS responses were 7,876,848 and 37,686,550 bytes and matched their SHA-256 fingerprints |
 
-The candidate busy-event trace under EC2 Xvfb software GL is stored in
-`performance.json`: average 22.25 ms, p50 21.32 ms, p95 26.98 ms over 120
-frames. The same trace on the starting commit, stored in
-`performance-baseline.json`, measured average 39.87 ms and p50 37.01 ms. This
-is a regression guard, not end-user GPU telemetry.
+The grade-4, eight-node busy-event trace under EC2 Xvfb software GL is stored in
+`performance.json`: average 23.35 ms, p50 22.30 ms, p95 27.70 ms over 120
+frames. The earlier three-node candidate measured p50 21.32 ms. The
+starting-commit three-node baseline, stored in `performance-baseline.json`,
+measured average 39.87 ms and p50 37.01 ms. The current eight-node worst-grade
+event therefore remains below that less demanding baseline. This is a
+regression guard, not end-user GPU telemetry.
 
 ## Provenance and known debt
 
@@ -81,6 +88,9 @@ is a regression guard, not end-user GPU telemetry.
   fallback and all interactive art is code-native.
 - Audio currently reuses the collection's short pluck/merge sounds. A bespoke
   candy Foley family is the clearest bounded next art slice.
+- Desktop browsers generally expose no vibration device. Supporting mobile/Web
+  browsers receive the documented alternating vibration/pause patterns; every
+  grade remains readable without haptics through motion, labels, sound, and VFX.
 - A dedicated reduced-effects toggle is not yet exposed. The low-effects frame
   remains readable because tokens, shape progression, ribbon, and state change
   do not depend on bloom or particles.

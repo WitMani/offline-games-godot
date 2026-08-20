@@ -133,7 +133,14 @@ var merge2248_drag_active := false
 var merge2248_pointer := Vector2.ZERO
 var merge2248_fx: Array[Dictionary] = []
 var merge2248_chain_pulse := -10.0
+var merge2248_chain_grade := 0
 var merge2248_settle_started := -10.0
+var merge2248_settle_grade := 1
+var merge2248_juice_started := -10.0
+var merge2248_juice_grade := 0
+var merge2248_juice_destination := Vector2.ZERO
+var merge2248_score_started := -10.0
+var merge2248_score_grade := 1
 var snake_ghosts: Array[Dictionary] = []
 var snake_pixels: Array[Dictionary] = []
 var snake_fx_kind := ""
@@ -267,6 +274,17 @@ func _haptic(duration_ms: int) -> void:
 		JavaScriptBridge.eval("if (navigator.vibrate) navigator.vibrate(%d);" % duration_ms)
 	else:
 		Input.vibrate_handheld(duration_ms)
+
+func _haptic_pattern(pattern: Array[int]) -> void:
+	if pattern.is_empty():
+		return
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("if (navigator.vibrate) navigator.vibrate(%s);" % JSON.stringify(pattern))
+	else:
+		var total_ms := 0
+		for interval in pattern:
+			total_ms += interval
+		Input.vibrate_handheld(mini(total_ms, 180))
 
 func _impact(position: Vector2, color: Color, strength := 1.0) -> void:
 	impact_position = position
@@ -875,7 +893,10 @@ func _draw_game() -> void:
 		return
 	var item := _catalog_item(game_id)
 	var accent: Color = item.get("accent", CYAN)
+	var world_shake := _merge2248_shake_offset() if game_id == "merge2248" else Vector2.ZERO
+	draw_set_transform(world_shake, 0.0, Vector2.ONE)
 	_draw_game_world(accent)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	var header_fill := Color("173f42", 0.985) if game_id == "merge2248" else Color("10192d", 0.985)
 	var header_line := Color("f1bd68") if game_id == "merge2248" else accent
 	draw_rect(Rect2(0, 0, size.x, 112), header_fill)
@@ -920,7 +941,16 @@ func _draw_score_panel() -> void:
 	var compact := state.has("mistakes")
 	_draw_text("得分", Vector2(31, 142), 10, secondary_text)
 	var score_scale := 1.0 + (0.16 * clampf((score_pulse_until - elapsed) / 0.28, 0.0, 1.0))
-	_draw_center_font(NUMBER_FONT, str(int(state.get("score", 0))), Vector2(72, 159), int(21 * score_scale), INK)
+	var score_color := INK
+	if candy_mode:
+		var score_age := elapsed - merge2248_score_started
+		var score_duration := 0.30 + float(merge2248_score_grade) * 0.07
+		if score_age >= 0.0 and score_age < score_duration:
+			var score_t := clampf(score_age / score_duration, 0.0, 1.0)
+			var score_kick := sin(score_t * PI) * (0.04 + float(merge2248_score_grade) * 0.025)
+			score_scale += score_kick
+			score_color = _merge2248_grade_color(merge2248_score_grade).lerp(INK, score_t)
+	_draw_center_font(NUMBER_FONT, str(int(state.get("score", 0))), Vector2(72, 159), int(21 * score_scale), score_color)
 	draw_line(Vector2(112, 134), Vector2(112, 166), Color(INK, 0.10), 1.0)
 	_draw_text("步数", Vector2(127, 142), 10, secondary_text)
 	_draw_center_font(NUMBER_FONT, str(int(state.get("moves", 0))), Vector2(164, 159), 21, INK)
@@ -1179,7 +1209,14 @@ func _init_merge2248() -> void:
 	merge2248_drag_active = false
 	merge2248_fx.clear()
 	merge2248_chain_pulse = -10.0
+	merge2248_chain_grade = 0
 	merge2248_settle_started = -10.0
+	merge2248_settle_grade = 1
+	merge2248_juice_started = -10.0
+	merge2248_juice_grade = 0
+	merge2248_juice_destination = Vector2.ZERO
+	merge2248_score_started = -10.0
+	merge2248_score_grade = 1
 	_sync_merge2248_state()
 
 func _sync_merge2248_state() -> void:
@@ -1206,7 +1243,9 @@ func _merge2248_begin_at(screen_pos: Vector2) -> bool:
 	if began:
 		merge2248_pointer = screen_pos
 		merge2248_chain_pulse = elapsed
+		merge2248_chain_grade = 0
 		_play_sfx(SFX_SNAKE_KEY, -18.0, 1.12)
+		_haptic(4)
 		_sync_merge2248_state()
 		queue_redraw()
 	return began
@@ -1215,9 +1254,11 @@ func _merge2248_extend_at(screen_pos: Vector2) -> void:
 	merge2248_pointer = screen_pos
 	if merge2248_model.extend(_merge2248_cell_at(screen_pos)):
 		merge2248_chain_pulse = elapsed
+		var previous_grade := merge2248_chain_grade
+		merge2248_chain_grade = _merge2248_feedback_grade(merge2248_model.selected.size(), merge2248_model.preview_result())
 		var chain_pitch := 1.0 + minf(float(merge2248_model.selected.size()), 9.0) * 0.055
 		_play_sfx(SFX_SNAKE_KEY, -17.0, chain_pitch)
-		_haptic(7)
+		_haptic(6 + merge2248_chain_grade * 3 + (4 if merge2248_chain_grade > previous_grade else 0))
 		_sync_merge2248_state()
 		queue_redraw()
 
@@ -1231,24 +1272,131 @@ func _merge2248_release() -> void:
 	_sync_merge2248_state()
 	if bool(outcome.get("changed", false)):
 		var gained := int(outcome.gained)
+		var result_value := int(outcome.result)
+		var chain_length := int(outcome.path.size())
+		var feedback_grade := _merge2248_feedback_grade(chain_length, result_value)
 		var path_points: Array[Vector2] = []
 		for path_cell in outcome.path:
 			path_points.append(_merge2248_cell_center(path_cell))
+		var destination := path_points[-1]
 		merge2248_fx.append({
 			"started": elapsed,
 			"points": path_points,
 			"values": path_values,
-			"result": int(outcome.result),
-			"color": _merge2248_color(int(outcome.result)),
+			"result": result_value,
+			"color": _merge2248_color(result_value),
+			"grade": feedback_grade,
+			"chain_length": chain_length,
+			"gained": gained,
+			"duration": 0.76 + float(feedback_grade) * 0.11,
 		})
-		merge2248_settle_started = elapsed + 0.16
-		_play_sfx(SFX_SNAKE_EAT, -8.0, 0.92 + minf(float(outcome.path.size()), 8.0) * 0.035)
-		_haptic(18 + mini(outcome.path.size() * 3, 22))
-		_flash_feedback("连接 +%d · 合成 %d" % [gained, int(outcome.result)], GOLD)
-		_log_event("merge2248_connect", {"length":outcome.path.size(), "gained":gained, "result":outcome.result})
+		_merge2248_start_juice(feedback_grade, destination)
+		_play_sfx(SFX_SNAKE_EAT, -8.0 + float(feedback_grade - 1) * 1.2, 0.90 + minf(float(chain_length), 9.0) * 0.035)
+		if feedback_grade >= 3:
+			_play_sfx(SFX_SNAKE_EAT, -15.0, 0.58 + float(feedback_grade) * 0.045)
+		_haptic_pattern(_merge2248_release_haptic(feedback_grade))
+		var grade_label := _merge2248_grade_label(feedback_grade)
+		_flash_feedback("%s ×%d · +%d → %d" % [grade_label, chain_length, gained, result_value], _merge2248_grade_color(feedback_grade))
+		feedback_until = elapsed + 0.78 + float(feedback_grade) * 0.12
+		_log_event("merge2248_connect", {"length":chain_length, "gained":gained, "result":result_value, "feedback_grade":feedback_grade})
 		if state.status != "playing":
 			_capture("win_merge2248" if state.status == "won" else "game_over_merge2248")
 	queue_redraw()
+
+func _merge2248_feedback_grade(chain_length: int, result_value: int) -> int:
+	var grade := 1
+	if chain_length >= 3 or result_value >= 16:
+		grade = 2
+	if chain_length >= 5 or result_value >= 128:
+		grade = 3
+	if chain_length >= 8 or result_value >= 512:
+		grade = 4
+	return grade
+
+func _merge2248_grade_label(grade: int) -> String:
+	match clampi(grade, 1, 4):
+		1: return "轻甜"
+		2: return "连携"
+		3: return "超连携"
+		_: return "传奇配方"
+
+func _merge2248_grade_color(grade: int) -> Color:
+	match clampi(grade, 1, 4):
+		1: return Color("fff0c7")
+		2: return Color("f4c568")
+		3: return Color("ff9b78")
+		_: return Color("ffe46f")
+
+func _merge2248_release_haptic(grade: int) -> Array[int]:
+	match clampi(grade, 1, 4):
+		1:
+			var light: Array[int] = [20]
+			return light
+		2:
+			var combo: Array[int] = [18, 24, 34]
+			return combo
+		3:
+			var super_combo: Array[int] = [24, 18, 48]
+			return super_combo
+		_:
+			var legendary: Array[int] = [30, 16, 46, 18, 72]
+			return legendary
+
+func _merge2248_start_juice(grade: int, destination: Vector2) -> void:
+	merge2248_juice_started = elapsed
+	merge2248_juice_grade = clampi(grade, 1, 4)
+	merge2248_juice_destination = destination
+	merge2248_settle_grade = merge2248_juice_grade
+	merge2248_settle_started = elapsed + 0.10 + float(merge2248_juice_grade) * 0.018
+	merge2248_score_started = elapsed
+	merge2248_score_grade = merge2248_juice_grade
+	score_pulse_until = elapsed + 0.28 + float(merge2248_juice_grade) * 0.07
+	merge2248_chain_grade = 0
+	_impact(destination, _merge2248_grade_color(merge2248_juice_grade), 0.54 + float(merge2248_juice_grade) * 0.27)
+
+func _merge2248_shake_offset() -> Vector2:
+	if merge2248_juice_grade <= 0:
+		return Vector2.ZERO
+	var age := elapsed - merge2248_juice_started - 0.055
+	var duration := 0.08 + float(merge2248_juice_grade) * 0.085
+	if age < 0.0 or age >= duration:
+		return Vector2.ZERO
+	var amplitude: float = [0.7, 2.8, 6.0, 10.5][merge2248_juice_grade - 1]
+	var t := clampf(age / duration, 0.0, 1.0)
+	var envelope := pow(1.0 - t, 1.75)
+	var direction := (_merge2248_board_rect().get_center() - merge2248_juice_destination).normalized()
+	if direction.length_squared() < 0.01:
+		direction = Vector2.RIGHT
+	var tangent := Vector2(-direction.y, direction.x)
+	var phase := merge2248_juice_destination.x * 0.017 + merge2248_juice_destination.y * 0.011
+	var longitudinal := sin(age * (78.0 + float(merge2248_juice_grade) * 7.0) + phase)
+	var lateral := sin(age * 113.0 + phase * 1.7 + 0.8)
+	return (direction * longitudinal + tangent * lateral * 0.58) * amplitude * envelope
+
+func _merge2248_board_juice_transform(rect: Rect2) -> Transform2D:
+	var center := rect.get_center()
+	var scale_value := Vector2.ONE
+	var rotation := 0.0
+	var age := elapsed - merge2248_juice_started
+	var grade_strength := float(merge2248_juice_grade)
+	var duration := 0.20 + grade_strength * 0.095
+	if merge2248_juice_grade > 0 and age >= 0.0 and age < duration:
+		if age < 0.075:
+			var compression := sin(clampf(age / 0.075, 0.0, 1.0) * PI)
+			scale_value = Vector2(1.0 + compression * 0.010 * grade_strength, 1.0 - compression * 0.016 * grade_strength)
+		else:
+			var rebound_t := clampf((age - 0.075) / (duration - 0.075), 0.0, 1.0)
+			var rebound := sin(rebound_t * PI * 4.5) * pow(1.0 - rebound_t, 1.8)
+			scale_value = Vector2(1.0 - rebound * 0.0065 * grade_strength, 1.0 + rebound * 0.010 * grade_strength)
+			var turn_sign := -1.0 if merge2248_juice_destination.x < center.x else 1.0
+			rotation = rebound * 0.0014 * maxf(0.0, grade_strength - 1.0) * turn_sign
+	var offset := _merge2248_shake_offset()
+	var cosine := cos(rotation)
+	var sine := sin(rotation)
+	var x_axis := Vector2(cosine, sine) * scale_value.x
+	var y_axis := Vector2(-sine, cosine) * scale_value.y
+	var transformed_center := x_axis * center.x + y_axis * center.y
+	return Transform2D(x_axis, y_axis, center + offset - transformed_center)
 
 func _merge2248_cell_center(cell_position: Vector2i) -> Vector2:
 	var rect := _merge2248_board_rect()
@@ -1283,14 +1431,20 @@ func _draw_merge2248() -> void:
 	var cell := Vector2(rect.size.x / 5.0, rect.size.y / float(rows))
 	var selected_cells: Array = merge2248_model.selected
 	_draw_section_heading("糖果配方", "同值起步 · 八向拉糖", Color("f1bd68"))
+	var juice_transform := _merge2248_board_juice_transform(rect)
+	var juice_scale := juice_transform.get_scale()
+	var juice_rotation := juice_transform.get_rotation()
+	draw_set_transform_matrix(juice_transform)
 	merge2248_presenter.draw_board(self, rect, cell)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 	var path_points: Array[Vector2] = []
 	for selected_cell_position in selected_cells:
-		path_points.append(_merge2248_cell_center(selected_cell_position))
+		path_points.append(juice_transform * _merge2248_cell_center(selected_cell_position))
 	var preview := merge2248_model.preview_result()
+	var preview_grade := _merge2248_feedback_grade(selected_cells.size(), preview) if preview > 0 else maxi(1, merge2248_chain_grade)
 	var ribbon_color := _merge2248_color(preview) if preview > 0 else Color("efb85f")
-	merge2248_presenter.draw_ribbon(self, path_points, merge2248_pointer, merge2248_drag_active, elapsed, ribbon_color)
+	merge2248_presenter.draw_ribbon(self, path_points, juice_transform * merge2248_pointer, merge2248_drag_active, elapsed, ribbon_color, preview_grade)
 
 	for y in range(rows):
 		for x in range(5):
@@ -1306,12 +1460,14 @@ func _draw_merge2248() -> void:
 			# the gather impact. This animation does not block the next input.
 			var settle_delay := float(y) * 0.018 + float(x) * 0.012
 			var settle_age := elapsed - merge2248_settle_started - settle_delay
-			if settle_age >= 0.0 and settle_age < 0.52:
-				var settle_t := clampf(settle_age / 0.52, 0.0, 1.0)
+			var settle_duration := 0.40 + float(merge2248_settle_grade) * 0.04
+			if settle_age >= 0.0 and settle_age < settle_duration:
+				var settle_t := clampf(settle_age / settle_duration, 0.0, 1.0)
 				var fall := 1.0 - pow(1.0 - settle_t, 3.0)
-				token_offset.y = lerpf(-22.0, 0.0, fall)
+				token_offset.y = lerpf(-16.0 - float(merge2248_settle_grade) * 5.0, 0.0, fall)
 				var contact := sin(clampf((settle_t - 0.62) / 0.38, 0.0, 1.0) * PI)
-				token_scale *= Vector2(1.0 + contact * 0.08, 1.0 - contact * 0.08)
+				var contact_strength := 0.045 + float(merge2248_settle_grade) * 0.014
+				token_scale *= Vector2(1.0 + contact * contact_strength, 1.0 - contact * contact_strength)
 
 			if selected_now:
 				var pulse := sin(elapsed * 6.8 - float(maxi(selection_index, 0)) * 0.48)
@@ -1323,32 +1479,38 @@ func _draw_merge2248() -> void:
 
 			merge2248_presenter.draw_token(
 				self,
-				center + token_offset,
+				juice_transform * (center + token_offset),
 				value,
 				_merge2248_color(value),
 				selected_now,
 				NUMBER_FONT,
 				elapsed,
-				token_scale,
-				token_rotation
+				token_scale * juice_scale,
+				token_rotation + juice_rotation
 			)
 
 	var helper := "连接相邻同值糖果，再追踪同值或双倍数字"
 	if preview > 0:
-		merge2248_presenter.draw_recipe_label(self, Rect2(181, 879, 178, 40), preview, DISPLAY_FONT)
+		var label_width: float = [178.0, 210.0, 234.0, 258.0][preview_grade - 1]
+		merge2248_presenter.draw_recipe_label(self, Rect2(270.0 - label_width * 0.5, 879, label_width, 40), preview, DISPLAY_FONT, preview_grade, selected_cells.size(), elapsed)
 	else:
 		_draw_panel(Rect2(101, 884, 338, 30), Color("17484a", 0.90), Color("f3d59d", 0.26), 15, 1)
 		_draw_center(helper, Vector2(270, 903), 11, Color("fff1ce", 0.94))
-	_draw_merge2248_fx()
+	_draw_merge2248_fx(juice_transform)
 
-func _draw_merge2248_fx() -> void:
+func _draw_merge2248_fx(juice_transform: Transform2D = Transform2D.IDENTITY) -> void:
 	var active: Array[Dictionary] = []
 	for effect in merge2248_fx:
 		var age := elapsed - float(effect.started)
-		if age > 0.90:
+		if age > float(effect.get("duration", 0.90)):
 			continue
 		active.append(effect)
-		merge2248_presenter.draw_merge_fx(self, effect, elapsed, NUMBER_FONT)
+		var visual_effect := effect.duplicate()
+		var transformed_points: Array[Vector2] = []
+		for point in effect.get("points", []):
+			transformed_points.append(juice_transform * Vector2(point))
+		visual_effect.points = transformed_points
+		merge2248_presenter.draw_merge_fx(self, visual_effect, elapsed, NUMBER_FONT)
 	merge2248_fx = active
 
 # -----------------------------------------------------------------------------

@@ -20,14 +20,20 @@ func _run() -> void:
 	game.has_transitioned = false
 	var rect: Rect2 = game._merge2248_board_rect()
 	var cell := Vector2(rect.size.x / 5.0, rect.size.y / 8.0)
-	game.merge2248_model.board[7][0] = 2
-	game.merge2248_model.board[7][1] = 2
-	game.merge2248_model.board[6][2] = 4
+	# Exercise the maximum presentation grade rather than the common three-node
+	# merge. The snake path is eight equal cells across the bottom two rows.
+	for y in range(game.merge2248_model.height):
+		for x in range(game.merge2248_model.width):
+			game.merge2248_model.board[y][x] = 2
 	game._sync_merge2248_state()
+	var chain: Array[Vector2i] = [
+		Vector2i(0, 7), Vector2i(1, 7), Vector2i(2, 7), Vector2i(3, 7),
+		Vector2i(4, 7), Vector2i(4, 6), Vector2i(3, 6), Vector2i(2, 6),
+	]
 	game._merge2248_begin_at(rect.position + Vector2(cell.x * 0.5, cell.y * 7.5))
 	game.merge2248_drag_active = true
-	game._merge2248_extend_at(rect.position + Vector2(cell.x * 1.5, cell.y * 7.5))
-	game._merge2248_extend_at(rect.position + Vector2(cell.x * 2.5, cell.y * 6.5))
+	for index in range(1, chain.size()):
+		game._merge2248_extend_at(game._merge2248_cell_center(chain[index]))
 	game._merge2248_release()
 	game.merge2248_drag_active = false
 
@@ -49,7 +55,9 @@ func _run() -> void:
 		"p50_ms": samples_ms[int(SAMPLE_COUNT * 0.50)],
 		"p95_ms": samples_ms[int(SAMPLE_COUNT * 0.95)],
 		"max_ms": samples_ms[-1],
-		"note": "EC2 Xvfb software-GL trace; regression guard, not end-user GPU telemetry",
+		"event_grade": 4,
+		"chain_length": chain.size(),
+		"note": "EC2 Xvfb software-GL legendary-event trace; regression guard, not end-user GPU telemetry",
 	}
 	var output_path := ProjectSettings.globalize_path(OUTPUT)
 	DirAccess.make_dir_recursive_absolute(output_path.get_base_dir())
