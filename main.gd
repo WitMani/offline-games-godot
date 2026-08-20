@@ -58,12 +58,16 @@ const SNAKES_ARENA_RULES = preload("res://models/snakes_arena_model.gd")
 const MERGE2248_RULES = preload("res://models/merge2248_model.gd")
 const MERGE2248_PRESENTATION = preload("res://presentation/merge2248_presenter.gd")
 const CATALOG_ART_DIRECTION = preload("res://presentation/catalog_art_director.gd")
+const WATERMELON_PRESENTATION = preload("res://presentation/watermelon_presenter.gd")
 const SFX_CASE_OPEN: AudioStream = preload("res://assets/audio/ui/case_open.wav")
 const SFX_SNAKE_KEY: AudioStream = preload("res://assets/audio/snake/key.wav")
 const SFX_SNAKE_REJECT: AudioStream = preload("res://assets/audio/snake/reject.wav")
 const SFX_SNAKE_EAT: AudioStream = preload("res://assets/audio/snake/eat.wav")
 const SFX_SNAKE_CRASH: AudioStream = preload("res://assets/audio/snake/crash.wav")
 const SFX_SNAKE_WIN: AudioStream = preload("res://assets/audio/snake/win.wav")
+const SFX_FRUIT_DROP: AudioStream = preload("res://assets/audio/2048balls/fruit_drop.ogg")
+const SFX_FRUIT_MERGE: AudioStream = preload("res://assets/audio/2048balls/fruit_merge.ogg")
+const SFX_FRUIT_CASCADE: AudioStream = preload("res://assets/audio/2048balls/fruit_cascade.ogg")
 
 var catalog: Array = [
 	{"id":"merge2248", "title":"2248", "subtitle":"数字连线", "group":"数字", "accent":Color("ffbf2f"), "desc":"八方向连接数字，把相邻数合成到 2048"},
@@ -132,6 +136,7 @@ var snakes_arena_model = SNAKES_ARENA_RULES.new()
 var merge2248_model = MERGE2248_RULES.new()
 var merge2248_presenter = MERGE2248_PRESENTATION.new()
 var catalog_art_director = CATALOG_ART_DIRECTION.new()
+var watermelon_presenter = WATERMELON_PRESENTATION.new()
 var catalog_fx: Array[Dictionary] = []
 var catalog_fx_serial := 0
 var merge2248_drag_active := false
@@ -324,11 +329,28 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 		"duration": duration,
 		"seed": catalog_fx_serial,
 	})
-	while catalog_fx.size() > 12:
+	# The fruit burst is a large transparent texture. Six concurrent envelopes
+	# preserve rapid taps and cascades while bounding overdraw on WebGL/Canvas.
+	var catalog_fx_cap := 6 if game_id == "watermelon" else 12
+	while catalog_fx.size() > catalog_fx_cap:
 		catalog_fx.pop_front()
 	if "error" in kind or "reject" in kind or "mismatch" in kind:
 		_play_sfx(SFX_SNAKE_REJECT, -16.0, 0.94)
 		_haptic(12)
+	elif game_id == "watermelon":
+		var fruit_grade := clampi(grade, 1, 4)
+		if kind == "fruit_drop":
+			_play_sfx(SFX_FRUIT_DROP, -15.0, 0.98 + float(fruit_grade) * 0.035)
+			_haptic(7)
+		else:
+			_play_sfx(SFX_FRUIT_MERGE, -13.0 + float(fruit_grade) * 1.2, 0.88 + float(fruit_grade) * 0.055)
+			if fruit_grade >= 3:
+				_play_sfx(SFX_FRUIT_CASCADE, -19.0 + float(fruit_grade) * 1.8, 0.94 + float(fruit_grade) * 0.035)
+			match fruit_grade:
+				1: _haptic(8)
+				2: _haptic_pattern([12, 18, 20])
+				3: _haptic_pattern([16, 15, 28])
+				_: _haptic_pattern([18, 14, 25, 14, 38])
 	else:
 		var event_grade := clampi(grade, 1, 4)
 		_play_sfx(SFX_SNAKE_EAT if event_grade >= 2 else SFX_SNAKE_KEY, -17.0 + float(event_grade) * 1.5, 0.92 + float(event_grade) * 0.09)
@@ -1858,6 +1880,10 @@ func _water_drop(column: int) -> void:
 		return
 	var columns: Array = state["columns"]
 	if columns[column].size() >= 7:
+		var blocked_position := Vector2(70 + column * 62, 338)
+		_flash_feedback("这列已经装满", RED)
+		_start_catalog_event("fruit_error_full", blocked_position, RED, 2, "换一条轨道", 0.68)
+		_log_event("ball_drop_rejected", {"column":column, "reason":"column_full"})
 		return
 	var value := int(state["next"])
 	columns[column].append(value)
@@ -1882,13 +1908,23 @@ func _water_drop(column: int) -> void:
 				_impact(Vector2(70 + column * 66, 610 - i * 58), _fruit_color(int(columns[column][i])), 0.9)
 				merged = true
 				break
-	var event_position := Vector2(70 + column * 62, 668 - maxi(0, columns[column].size() - 1) * 50)
+	var event_row := maxi(0, columns[column].size() - 1)
+	if merge_count > 0:
+		var merged_row: int = columns[column].find(highest_result)
+		if merged_row >= 0:
+			event_row = merged_row
+	var event_position := Vector2(70 + column * 62, 668 - event_row * 50)
 	if merge_count > 0:
 		var merge_grade := clampi(1 + merge_count + (1 if highest_result >= 5 else 0), 2, 4)
-		_start_catalog_event("fruit_merge", event_position, _fruit_color(highest_result), merge_grade, "%s%s · +%d" % [_fruit_name(highest_result), "连携" if merge_count > 1 else "合成", merge_score_gained], 0.86)
+		var harvest_complete := int(state["score"]) >= 1000
+		if harvest_complete:
+			merge_grade = 4
+		var merge_kind := "fruit_harvest_complete" if harvest_complete else "fruit_merge"
+		var merge_label := "丰收完成 · +%d" % merge_score_gained if harvest_complete else "%s%s · +%d" % [_fruit_name(highest_result), "连携" if merge_count > 1 else "合成", merge_score_gained]
+		_start_catalog_event(merge_kind, event_position, _fruit_color(highest_result), merge_grade, merge_label, 0.92 if merge_grade >= 3 else 0.78)
 	else:
 		_start_catalog_event("fruit_drop", event_position, _fruit_color(value), 1, "%s落箱" % _fruit_name(value), 0.56)
-	_log_event("ball_drop", {"column":column, "value":value})
+	_log_event("ball_drop", {"column":column, "value":value, "merge_count":merge_count, "highest_result":highest_result, "score_gained":merge_score_gained})
 	if columns[column].size() >= 7:
 		_start_catalog_event("fruit_error_full", Vector2(70 + column * 62, 340), RED, 2, "果箱满了", 0.68)
 		state["status"] = "over"
@@ -1904,24 +1940,17 @@ func _water_drop_hint() -> void:
 
 func _draw_watermelon() -> void:
 	_draw_section_heading("果园落口", "点击下方轨道投放", RED)
-	_draw_panel(Rect2(398, 228, 108, 76), Color("42243a", 0.96), Color(RED, 0.62), 14, 2)
+	_draw_panel(Rect2(396, 226, 112, 80), Color("42243a", 0.96), Color("ffd17e", 0.72), 16, 2)
 	_draw_text("下一个", Vector2(412, 247), 10, BRIGHT_MUTED)
-	_draw_fruit(Vector2(472, 276), int(state["next"]), 21.0)
-	_draw_panel(Rect2(26, 232, 470, 474), Color("4c2718", 0.42), Color("f0c376", 0.64), 26, 3)
-	for slat in range(6):
-		var slat_y := 252.0 + slat * 76.0
-		draw_line(Vector2(39, slat_y), Vector2(483, slat_y + 3), Color("f4c978", 0.13), 8.0, true)
-	draw_line(Vector2(48, 242), Vector2(48, 692), Color("2d170e", 0.34), 7.0)
-	draw_line(Vector2(474, 242), Vector2(474, 692), Color("2d170e", 0.34), 7.0)
+	_draw_fruit(Vector2(472, 275), int(state["next"]), 21.0, false)
+	watermelon_presenter.draw_crate(self, Rect2(26, 232, 470, 474), elapsed)
 	draw_line(Vector2(48, 316), Vector2(474, 316), Color("fff2f5", 0.54), 3.0)
-	draw_line(Vector2(52, 356), Vector2(470, 356), Color("ff6b8a", 0.56), 2.0)
-	_draw_text("危险线", Vector2(416, 350), 11, RED)
+	_draw_text("危险线", Vector2(416, 350), 11, Color("ffd2d8"))
 	for col in range(7):
 		var x := 43.0 + col * 62.0
-		draw_line(Vector2(x + 27, 324), Vector2(x + 27, 676), Color("d6f0f5", 0.055), 1.0)
 		var drop_center := Vector2(x + 27, 334)
-		draw_circle(drop_center, 12.0, Color(INK, 0.035))
-		draw_arc(drop_center, 11.0, 0, TAU, 20, Color(INK, 0.18), 1.0)
+		draw_circle(drop_center + Vector2(0, 2), 12.0, Color("1f0e0a", 0.24))
+		draw_arc(drop_center, 11.0, 0, TAU, 20, Color("ffd890", 0.52), 1.5)
 		draw_line(drop_center - Vector2(0, 5), drop_center + Vector2(0, 5), Color(INK, 0.42), 2.0)
 		draw_line(drop_center + Vector2(-4, 2), drop_center + Vector2(0, 6), Color(INK, 0.42), 2.0)
 		draw_line(drop_center + Vector2(4, 2), drop_center + Vector2(0, 6), Color(INK, 0.42), 2.0)
@@ -1931,25 +1960,8 @@ func _draw_watermelon() -> void:
 			_draw_fruit(Vector2(x + 27, y), int(stack[row]), 23.0)
 	_draw_text("合成西瓜即可完成本局", Vector2(38, 742), 13, BRIGHT_MUTED)
 
-func _draw_fruit(center: Vector2, value: int, radius: float) -> void:
-	var color := _fruit_color(value)
-	draw_circle(center + Vector2(0, 4), radius, Color(0, 0, 0, 0.24))
-	draw_circle(center, radius, color)
-	draw_circle(center - Vector2(radius * 0.28, radius * 0.30), radius * 0.28, Color(INK, 0.16))
-	match value:
-		1:
-			draw_arc(center, radius * 0.72, 0.0, TAU, 24, Color("fff3a5"), 3.0)
-		2:
-			draw_circle(center, radius * 0.16, Color("ffca75"))
-		3:
-			draw_line(center + Vector2(0, -radius), center + Vector2(2, -radius - 8), Color("6f8f52"), 3.0)
-		4:
-			for i in range(4):
-				draw_circle(center + Vector2(cos(i * PI * 0.5), sin(i * PI * 0.5)) * radius * 0.32, radius * 0.25, color.lightened(0.08))
-		5:
-			draw_arc(center, radius * 0.72, 0, TAU, 24, Color("d7f27b"), 4.0)
-			for i in range(3):
-				draw_line(center + Vector2(-radius * 0.48 + i * radius * 0.45, -radius * 0.55), center + Vector2(-radius * 0.22 + i * radius * 0.45, radius * 0.55), Color("2e8a62"), 2.0)
+func _draw_fruit(center: Vector2, value: int, radius: float, animate := true) -> void:
+	watermelon_presenter.draw_fruit(self, center, value, radius, elapsed, catalog_fx, animate)
 
 func _fruit_color(value: int) -> Color:
 	match value:

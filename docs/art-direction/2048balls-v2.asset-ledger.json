@@ -1,0 +1,128 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-08-20T10:00:00Z",
+  "game_id": "watermelon",
+  "runtime_presenter": "res://presentation/watermelon_presenter.gd",
+  "gag_endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+  "semantic_search": {
+    "status": "completed",
+    "queries": [
+      "卡通休闲合并游戏，完整水果球主体，圆润高光，叶梗，透明或纯色背景，适合作为2048 Balls可玩精灵",
+      "卡通果汁飞溅、液滴、合并爆发、闪光环，透明背景，休闲手游VFX素材",
+      "卡通果园木箱、木板、包装筐材质，正视角或俯视角，可用于水果掉落游戏的容器边框",
+      "卡通水果落下、弹跳、合并、果汁爆裂、连锁奖励短音效"
+    ],
+    "decision": "No existing image candidate was reused; top scores were about 0.38-0.43 and the returned subjects or styles did not match the locked fruit family. Fresh coherent-family generation was authorized after search."
+  },
+  "source_masters": [
+    {
+      "id": "gag-fruit-family-20260820-175040",
+      "archive_path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/2048balls/v2/generated_images__20260820_175040_Gemini.png",
+      "provider": "gemini",
+      "model": "gemini-3.1-flash-image",
+      "sha256": "3c3372f12d63db291d43baaa88191f3c9f2d3b6d5560225ab7b4fdd72213c473",
+      "route_note": "GAG first attempted fal-ai/flux-pro/v1.1 with 1536x1024; fal rejected the size payload and GAG fell back to Gemini. The provider file uses a .png name but was delivered as JPEG content.",
+      "prompt": "Premium 2D cartoon mobile-game fruit-ball sprite family for a polished 2048 merge game; isolated lemon, orange, apple, grape and watermelon; warm outline, painted rim, glossy highlight, subtle face; no UI, text or gameplay."
+    },
+    {
+      "id": "gag-juice-burst-20260820-175440",
+      "archive_path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/2048balls/v2/generated_images__20260820_175440_FAL.ai.png",
+      "provider": "fal",
+      "model": "fal-ai/flux-pro/v1.1",
+      "sha256": "4cb0142392e34eb9bc842e2191dd8eb4672507bd7f7880a9619954f0a975d1b2",
+      "prompt": "Single isolated premium 2D cartoon fruit-juice merge burst; hollow readable center, chunky droplets, warm outline, white background, no character, text, UI or logo."
+    }
+  ],
+  "produced_assets": [
+    {
+      "path": "assets/art/2048balls/fruit_01_lemon.png",
+      "bytes": 71012,
+      "sha256": "8fd10b289d2c34229e3605a8641383076c1384b60f440daaf6f196f2511fb35e",
+      "reference": "runtime preload and draw_texture_rect",
+      "pipeline": "GAG generate_image -> crop_image(manual) -> Remove.bg -> crop_image(auto_trim,padding=8)",
+      "source_master": "gag-fruit-family-20260820-175040",
+      "shipped": true,
+      "replicates": null
+    },
+    {
+      "path": "assets/art/2048balls/fruit_02_orange.png",
+      "bytes": 70744,
+      "sha256": "3e54d363b46f95158ff1dfc95a9ba07a374a14a73474a2cef9b4c8ac2ee6ac91",
+      "reference": "runtime preload and draw_texture_rect",
+      "pipeline": "GAG generate_image -> crop_image(manual) -> Remove.bg -> crop_image(auto_trim,padding=8)",
+      "source_master": "gag-fruit-family-20260820-175040",
+      "shipped": true,
+      "replicates": null
+    },
+    {
+      "path": "assets/art/2048balls/fruit_03_apple.png",
+      "bytes": 71790,
+      "sha256": "44bbc9a76b83a0fb3af51eb4b71fd2523090253d75745d5ca46d50393f986a43",
+      "reference": "runtime preload and draw_texture_rect",
+      "pipeline": "GAG generate_image -> crop_image(manual) -> Remove.bg -> crop_image(auto_trim,padding=8)",
+      "source_master": "gag-fruit-family-20260820-175040",
+      "shipped": true,
+      "replicates": null
+    },
+    {
+      "path": "assets/art/2048balls/fruit_04_grape.png",
+      "bytes": 90844,
+      "sha256": "5ff564a77a767a2cbde6a2fb30c5d0fa7c61a8e78e6b93849a60de62d1292fb7",
+      "reference": "runtime preload and draw_texture_rect",
+      "pipeline": "GAG generate_image -> crop_image(manual) -> Remove.bg -> crop_image(auto_trim,padding=8)",
+      "source_master": "gag-fruit-family-20260820-175040",
+      "shipped": true,
+      "replicates": null
+    },
+    {
+      "path": "assets/art/2048balls/fruit_05_watermelon.png",
+      "bytes": 99696,
+      "sha256": "b67eadd2ede02f0fc39a869adba6fc16f0600f1256d1d1d773e4c3115875a4da",
+      "reference": "runtime preload and draw_texture_rect",
+      "pipeline": "GAG generate_image -> crop_image(manual) -> Remove.bg -> crop_image(auto_trim,padding=8)",
+      "source_master": "gag-fruit-family-20260820-175040",
+      "shipped": true,
+      "replicates": null
+    },
+    {
+      "path": "assets/art/2048balls/juice_merge_burst.png",
+      "bytes": 246798,
+      "sha256": "114645dffd4875a4d2961b2a9555cdf117698ddabd3878f8f33fb44505c227a6",
+      "reference": "grade 3-4 result fruit only",
+      "pipeline": "GAG fal generate_image(square_hd) -> Remove.bg -> crop_image(auto_trim,padding=8)",
+      "source_master": "gag-juice-burst-20260820-175440",
+      "shipped": true,
+      "replicates": null
+    },
+    {
+      "path": "assets/audio/2048balls/fruit_drop.ogg",
+      "bytes": 9232,
+      "sha256": "8dd61e542c07a6a4678bf0619ad9cbc05ab259fd4f57a84f072f4f4667ad57f2",
+      "reference": "fruit_drop semantic event",
+      "pipeline": "GAG generate_audio(provider=elevenlabs, asset_id=fruit_drop_soft, version=v1, variation=1)",
+      "source_master": "GAG managed WAV master",
+      "shipped": true,
+      "replicates": null
+    },
+    {
+      "path": "assets/audio/2048balls/fruit_merge.ogg",
+      "bytes": 9565,
+      "sha256": "dd8fd6c82ff9680d409762c973fe47606510e0fd1d1ec9a2d9da7cb8b6d3f795",
+      "reference": "fruit_merge semantic event",
+      "pipeline": "GAG generate_audio(provider=elevenlabs, asset_id=fruit_merge_pop, version=v1, variation=3)",
+      "source_master": "GAG managed WAV master",
+      "shipped": true,
+      "replicates": null
+    },
+    {
+      "path": "assets/audio/2048balls/fruit_cascade.ogg",
+      "bytes": 9709,
+      "sha256": "c2ae663dcbbe7f2fdda132f39f34495a9bd2b781ec261d0a8b66c32151bda105",
+      "reference": "grade 3-4 cascade layer",
+      "pipeline": "GAG generate_audio(provider=elevenlabs, asset_id=fruit_cascade_reward, version=v1, variation=2)",
+      "source_master": "GAG managed WAV master",
+      "shipped": true,
+      "replicates": null
+    }
+  ]
+}

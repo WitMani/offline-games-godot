@@ -1,0 +1,14 @@
+{
+  "average_frame_ms": 17.9614666666667,
+  "busy_effect_cap": 6,
+  "game_id": "watermelon",
+  "max_frame_ms": 30.636,
+  "note": "Xvfb/llvmpipe comparative trace with GAG fruit textures and six capped grade-four events; not a device FPS claim",
+  "p95_frame_ms": 22.235,
+  "renderer": "llvmpipe (LLVM 21.1.8, 256 bits)",
+  "sample_count": 180,
+  "viewport": [
+    540,
+    960
+  ]
+}
