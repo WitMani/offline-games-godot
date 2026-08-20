@@ -1,0 +1,86 @@
+{
+  "result": "PASS",
+  "source": "deployed source commit e0558a61f8d6ec10fb4d9c6342ab144d0e5a4d51",
+  "url": "https://aliyun-ecs.tail17a64.ts.net:8788/?release=20260820T162259Z-06b02a654e47",
+  "ready_seconds": 273.126,
+  "secure_context": true,
+  "webassembly": true,
+  "canvas_count": 1,
+  "probe_error": null,
+  "initial": {
+    "game_id": "snake_classic",
+    "width": 15,
+    "height": 23,
+    "target_length": 120,
+    "food": [
+      11,
+      11
+    ],
+    "before": {
+      "head": [
+        7,
+        11
+      ],
+      "direction": [
+        1,
+        0
+      ],
+      "score": 4,
+      "moves": 0,
+      "pending_growth": 0,
+      "status": "playing",
+      "segment_count": 4
+    }
+  },
+  "actual_action": {
+    "name": "tap visible hardware Up D-pad",
+    "logical_canvas_point": [
+      159,
+      581
+    ],
+    "observability_note": "the published state bridge is sampled, so legal rightward ticks may occur before the accepted Up tick appears",
+    "before": {
+      "head": [
+        7,
+        11
+      ],
+      "direction": [
+        1,
+        0
+      ],
+      "score": 4,
+      "moves": 0,
+      "pending_growth": 0,
+      "status": "playing",
+      "segment_count": 4
+    },
+    "after": {
+      "head": [
+        9,
+        10
+      ],
+      "direction": [
+        0,
+        -1
+      ],
+      "score": 4,
+      "moves": 3,
+      "pending_growth": 0,
+      "status": "playing",
+      "segment_count": 4
+    }
+  },
+  "console_errors": [],
+  "request_failures": [],
+  "bad_responses": [],
+  "screenshots": {
+    "stable": {
+      "path": "gb-snake-aliyun-stable.png",
+      "sha256": "ceea7d37668e1aa6e1938fb87e86c1dc7df68ec1e6b91e4599ea54cfcba6d544"
+    },
+    "after_up": {
+      "path": "gb-snake-aliyun-after-up.png",
+      "sha256": "fb9304682e330bcb7a432befd4cae00ba43091725cf043eeb567619ccf713920"
+    }
+  }
+}

@@ -1,0 +1,190 @@
+{
+  "result": "PASS",
+  "game_id": "snake_classic",
+  "viewport": [540, 960],
+  "mechanics": {
+    "model_path": "res://models/snake_gb_model.gd",
+    "model_sha256": "124906afc511be63ba2abd61aff05dfa6e5bb51f076bfe1ade48b9168b7dbe06",
+    "rules_changed": false,
+    "frozen_contract": {
+      "board": [15, 23],
+      "opening_length": 4,
+      "opening_direction": [1, 0],
+      "opening_food": [11, 11],
+      "target_length": 120
+    }
+  },
+  "baseline": {
+    "stable": {
+      "path": "../baseline/stable.png",
+      "sha256": "b50d8db56bc6fe4a87974a2a241af417fbb13d25596c6a3d23ff6dec031406cc"
+    },
+    "turn": {
+      "path": "../baseline/turn.png",
+      "sha256": "d5c5b99abb5803cf7e33235223242b8e9632d047c76f6bb2d95d25817939faf0"
+    },
+    "forage": {
+      "path": "../baseline/eat.png",
+      "sha256": "5018f1715161130783d3a6c5addbb558827cc4c3c7075e28e08447e717a66e28"
+    },
+    "crash": {
+      "path": "../baseline/crash.png",
+      "sha256": "4abea3cc136a5b40682eb63bbdae87085380e8850bfa7eb29874a9c13b13f2e7"
+    },
+    "complete": {
+      "path": "../baseline/win.png",
+      "sha256": "5a35d2d38b4529dafe7f94cdc48dc57bf21b5426d2bca619809ce717a1ced4f1"
+    }
+  },
+  "stable_signature": {
+    "frame": "00-stable.webp",
+    "sha256": "c7ebb6bb454bbea76a7f542d99d0a701988bb3e8827ba55cd6827f4cd186cb21",
+    "generated_text_present": false,
+    "gag_objects_visible_on_ordinary_opening": [
+      {
+        "role": "snake head",
+        "path": "res://assets/art/snakes/gag/gb_snake_head_gag_v2.png",
+        "sha256": "b31eb852f4844151fc5be6ce85408c079290526292be8feffc9ef7836c57f3d5"
+      },
+      {
+        "role": "specimen lure",
+        "path": "res://assets/art/snakes/gag/gb_snake_lure_gag_v2.png",
+        "sha256": "0c2ab2985a5007f23b785d32ec20d8001489bd0c9d5b09f0e9f9d017432a1607"
+      },
+      {
+        "role": "field serpent seal",
+        "path": "res://assets/art/snakes/gag/gb_snake_field_seal_gag_v2.png",
+        "sha256": "8b078efc3ccf496cde71f05bfc55a9b6cf1cc6cafe630a6f53def5fe2a5ec47e"
+      }
+    ],
+    "code_native_layers": [
+      "authoritative board and body",
+      "LCD grid and phosphor memory",
+      "live statistics and prompts",
+      "persistent telemetry notches"
+    ]
+  },
+  "semantic_sequences": [
+    {
+      "event": "accepted turn",
+      "grade": 1,
+      "frames": ["01-turn-press.webp", "02-turn-reorient.webp", "03-turn-step.webp", "04-turn-settle.webp"],
+      "peak_sha256": "927f6a67248f546cc2b2603a8d4fb980c871d25eee252bbfde97606c613949e2",
+      "state_before": "turn-intent-state.json",
+      "state_after": "turn-settle-state.json",
+      "authoritative_delta": "queued [0,-1] becomes direction [0,-1]; moves 0 to 1; length and score unchanged"
+    },
+    {
+      "event": "rejected reverse turn",
+      "grade": 1,
+      "frames": ["05-reject-kick.webp", "06-reject-ghost.webp", "07-reject-recovery.webp"],
+      "peak_sha256": "4f984a9aee61ca5ddc02f3fb56bd227f5318cbe2f656a634591eb13a31f73a30",
+      "state": "reject-state.json",
+      "authoritative_delta": "none; direction, moves, score, segments and queue remain unchanged"
+    },
+    {
+      "event": "routine forage",
+      "grade": 2,
+      "frames": ["08-forage-intent.webp", "09-forage-lock.webp", "10-forage-contract.webp", "11-forage-scan.webp", "12-forage-growth.webp", "13-forage-settle.webp"],
+      "peak_sha256": "a995f4416b1bd5e923dedccf2ad37ce5bbbc9b75a059c1e680264a49fe7f1fec",
+      "state_contact": "forage-contact-state.json",
+      "state_settle": "forage-settle-state.json",
+      "authoritative_delta": "contact queues one pending growth; the next legal tick materializes length 4 to 5 and score 4 to 5"
+    },
+    {
+      "event": "decade field log",
+      "grade": 3,
+      "frames": ["14-milestone-intent.webp", "15-milestone-register.webp", "16-milestone-sweep.webp", "17-milestone-seal.webp", "18-milestone-notch.webp", "19-milestone-settle.webp"],
+      "peak_sha256": "28726b828a4d14cd24c88b3035c28fb5b2b9a8601d6d505c7162955d554b67ea",
+      "state": "milestone-state.json",
+      "authoritative_delta": "score reaches exactly 10 and records one persistent telemetry notch"
+    },
+    {
+      "event": "wall crash",
+      "grade": 4,
+      "frames": ["20-crash-intent.webp", "21-crash-compress.webp", "22-crash-smear.webp", "23-crash-recoil.webp", "24-crash-result.webp", "25-crash-settle.webp"],
+      "peak_sha256": "9d2af364a2910a5fef49a41f150459059442531a8741c895bb7948e61842f555",
+      "state": "crash-state.json",
+      "authoritative_delta": "status becomes over with terminal reason wall; no extra legal move is credited"
+    },
+    {
+      "event": "length-120 completion",
+      "grade": 4,
+      "frames": ["26-complete-intent.webp", "27-complete-sweep.webp", "28-complete-peak.webp", "29-complete-seal.webp", "30-complete-result.webp", "31-complete-stable.webp", "32-complete-recovery.webp"],
+      "peak_sha256": "6f1af949f42ff93c6b02867a81f7c535e29f49e18c9ab13d39d836c1bef60243",
+      "result_sha256": "edde6972a42fb2074e0d0cc4f6d33a7358e5e04eb9f79ac0e8514d3a6407b551",
+      "state": "complete-state.json",
+      "authoritative_delta": "the final pending segment materializes; score and segment count become 120; status becomes won"
+    }
+  ],
+  "continuous_evidence": [
+    {
+      "event": "turn",
+      "path": "turn-response.webm",
+      "frames": 18,
+      "fps": 30,
+      "duration_seconds": 0.6,
+      "sha256": "574e963079003e644379760b33ac907ed5caf9c0cda09dd0a0da1012e9d74715"
+    },
+    {
+      "event": "forage",
+      "path": "forage-response.webm",
+      "frames": 20,
+      "fps": 30,
+      "duration_seconds": 0.666,
+      "sha256": "ea1125b97d8bbe46898f1c731a577eafb7f902a83cad8d759e5c8aaf760598e8"
+    },
+    {
+      "event": "milestone",
+      "path": "milestone-response.webm",
+      "frames": 26,
+      "fps": 30,
+      "duration_seconds": 0.866,
+      "sha256": "94bbd88447b4a0310735b6873f318021f63aea93250161f1b6bd4d1c361211f9"
+    },
+    {
+      "event": "complete",
+      "path": "complete-response.webm",
+      "frames": 48,
+      "fps": 30,
+      "duration_seconds": 1.6,
+      "sha256": "e28df2b2fbf1eb881000ad3e3386d9da8a680173f6e574d1aca5210a08a13ab1"
+    }
+  ],
+  "comparison_plates": [
+    {
+      "path": "../stable-comparison.webp",
+      "sha256": "a11aa710b75a06f622b97d7ffc154e0c9ac7f00982070c581594bb905459c680"
+    },
+    {
+      "path": "../feedback-contact.webp",
+      "sha256": "c9b97a9f1e9772a9cc7260d54dae75e11d5964c12acbe56bada9749b6bd62b56"
+    },
+    {
+      "path": "../intensity-contact.webp",
+      "sha256": "ef736f2bd1c7eb09f8c612159102361983e3002008367a85bf46cef571eb45b7"
+    }
+  ],
+  "audio": {
+    "subjective_listening_claimed": false,
+    "objective_checks": ["duration", "sample rate", "channels", "loudness", "peak", "Godot import", "runtime routing"],
+    "runtime_assets": [
+      {
+        "path": "res://assets/audio/snake/gag/gb_snake_specimen_collect_gag_v2.ogg",
+        "sha256": "35d0d69c32474ab5ba1ca65d2b6a458c0b3a5604adbf8ecda480aaf6c967b861",
+        "bindings": ["grade-2 forage", "grade-3 decade field log"]
+      },
+      {
+        "path": "res://assets/audio/snake/gag/gb_snake_field_log_complete_gag_v2.ogg",
+        "sha256": "49e2f9b89d473b69adc31d06d6234268521332fb3a5718780ca473824b609aff",
+        "bindings": ["grade-4 length-120 completion"]
+      }
+    ]
+  },
+  "web": {
+    "local": "web/local-web-acceptance.json",
+    "aliyun": "web/aliyun-web-acceptance.json",
+    "clean_export": "clean-export.json",
+    "performance": "performance.json"
+  }
+}

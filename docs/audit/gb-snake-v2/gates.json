@@ -1,0 +1,149 @@
+{
+  "result": "PASS",
+  "scope": "snake_classic only",
+  "source": {
+    "starting_commit": "2e9d241f87054fa5dd3a52e2ca737376806a3d37",
+    "feature_commit": "c9cd5569b7a3d318cdf89f5dc8a16a5f27744936",
+    "clean_web_acceptance_commit": "e0558a61f8d6ec10fb4d9c6342ab144d0e5a4d51",
+    "deployed_source_commit": "e0558a61f8d6ec10fb4d9c6342ab144d0e5a4d51",
+    "gameplay_rules_changed": false,
+    "snake_io_rules_changed": false,
+    "model_sha256": "124906afc511be63ba2abd61aff05dfa6e5bb51f076bfe1ade48b9168b7dbe06"
+  },
+  "gag": {
+    "mode": "HOME-WSL MCP pure API",
+    "endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+    "server_version_reported": "1.29.0",
+    "local_gpu_required": false,
+    "semantic_searches": 3,
+    "semantic_candidates_returned": 45,
+    "visual_runtime_assets": 3,
+    "audio_runtime_assets": 2,
+    "stable_playable_visual_instances": 3,
+    "source_masters_in_repository": 0,
+    "rejected_candidates_in_repository": 0,
+    "generated_text_in_images": false,
+    "subjective_audio_listening_claimed": false,
+    "result": "PASS"
+  },
+  "automated": {
+    "snake_gb_model": {"assertions": 9, "result": "PASS"},
+    "snake_modes_integration": {"assertions": 5, "result": "PASS"},
+    "snake_input": {"assertions": 8, "result": "PASS"},
+    "gb_snake_art": {"assertions": 141, "result": "PASS"},
+    "rules": {"assertions": 6, "result": "PASS"},
+    "catalog_art": {"assertions": 10, "result": "PASS"},
+    "font_coverage": {"assertions": 65, "result": "PASS"},
+    "font_subset": {"required_glyphs": 3879, "bytes": 1816916, "result": "PASS"},
+    "cover_assets": {"games": 14, "result": "PASS"},
+    "home_buttons": {"games": 14, "result": "PASS"},
+    "all_games": {"games": 14, "result": "PASS"}
+  },
+  "visual": {
+    "viewport": [540, 960],
+    "candidate_frames": 33,
+    "baseline_frames": 5,
+    "continuous_turn": {
+      "frames": 18,
+      "fps": 30,
+      "duration_seconds": 0.6,
+      "sha256": "574e963079003e644379760b33ac907ed5caf9c0cda09dd0a0da1012e9d74715"
+    },
+    "continuous_forage": {
+      "frames": 20,
+      "fps": 30,
+      "duration_seconds": 0.666,
+      "sha256": "ea1125b97d8bbe46898f1c731a577eafb7f902a83cad8d759e5c8aaf760598e8"
+    },
+    "continuous_milestone": {
+      "frames": 26,
+      "fps": 30,
+      "duration_seconds": 0.866,
+      "sha256": "94bbd88447b4a0310735b6873f318021f63aea93250161f1b6bd4d1c361211f9"
+    },
+    "continuous_complete": {
+      "frames": 48,
+      "fps": 30,
+      "duration_seconds": 1.6,
+      "sha256": "e28df2b2fbf1eb881000ad3e3386d9da8a680173f6e574d1aca5210a08a13ab1"
+    },
+    "generated_text_present": false,
+    "stable_signature_review": "PASS",
+    "accepted_turn_review": "PASS",
+    "rejected_reverse_review": "PASS",
+    "forage_review": "PASS",
+    "decade_milestone_review": "PASS",
+    "crash_review": "PASS",
+    "length_120_completion_review": "PASS"
+  },
+  "performance": {
+    "renderer": "llvmpipe (LLVM 21.1.8, 256 bits)",
+    "stable": {
+      "sample_count": 120,
+      "average_frame_ms": 5.14475833333333,
+      "p95_frame_ms": 6.286,
+      "max_frame_ms": 8.622,
+      "peak_static_memory_bytes": 60887530
+    },
+    "busy": {
+      "sample_count": 180,
+      "average_frame_ms": 5.45047222222222,
+      "p95_frame_ms": 7.306,
+      "max_frame_ms": 11.527,
+      "peak_static_memory_bytes": 61057908
+    },
+    "result": "PASS"
+  },
+  "clean_export": {
+    "source": "git archive of feature commit c9cd5569b7a3d318cdf89f5dc8a16a5f27744936",
+    "pck": "index.19482cf641d1.pck",
+    "pck_sha256": "19482cf641d1183491a7f76cef1c13720c8d0e54cc3dac9a259474b49954ba57",
+    "pck_bytes": 14227796,
+    "engine": "index.2b558bdb3c3a.wasm",
+    "engine_sha256": "2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137",
+    "engine_bytes": 37686550,
+    "runtime_assets_in_pck": 5,
+    "runtime_import_records_in_pck": 5,
+    "source_master_scan": "PASS",
+    "browser_ready_seconds": 1.684,
+    "browser_actual_action": "PASS",
+    "console_errors": 0,
+    "request_failures": 0,
+    "bad_responses": 0,
+    "result": "PASS"
+  },
+  "aliyun": {
+    "release": "20260820T162259Z-06b02a654e47",
+    "url": "https://aliyun-ecs.tail17a64.ts.net:8788/?release=20260820T162259Z-06b02a654e47",
+    "pck": "index.06b02a654e47.pck",
+    "pck_sha256": "06b02a654e4746cdf5f259498d3aa18645a4a6cb2d7d0656877195019c5d45ff",
+    "pck_bytes": 14227796,
+    "pck_gzip_sha256": "2a8c683042ad67ab0eba25e30bd9ea0389ef8f965055226640ec6bad8d1395e7",
+    "pck_gzip_bytes": 14044276,
+    "engine": "index.2b558bdb3c3a.wasm",
+    "engine_sha256": "2b558bdb3c3af1f822ce6c43e09e1fa844d82fa440fe40d2d25d6c36ddf95137",
+    "engine_bytes": 37686550,
+    "previous_pack_retained": "index.94cdf396b261.pck",
+    "runtime_assets_in_pck": 5,
+    "immutable_cache": true,
+    "gzip_served": true,
+    "ready_seconds_cold_ec2_to_aliyun": 273.126,
+    "actual_action": {
+      "name": "tap visible hardware Up D-pad",
+      "head_before": [7, 11],
+      "head_after": [9, 10],
+      "direction_before": [1, 0],
+      "direction_after": [0, -1],
+      "moves_before": 0,
+      "moves_after": 3,
+      "status_after": "playing"
+    },
+    "acceptance_report_sha256": "aa162b49f44e0e5b174aa2c0ceeff409c38fdb39d6ab2a70b5eeb1806cf270cb",
+    "stable_screenshot_sha256": "ceea7d37668e1aa6e1938fb87e86c1dc7df68ec1e6b91e4599ea54cfcba6d544",
+    "after_up_screenshot_sha256": "fb9304682e330bcb7a432befd4cae00ba43091725cf043eeb567619ccf713920",
+    "console_errors": 0,
+    "request_failures": 0,
+    "bad_responses": 0,
+    "result": "PASS"
+  }
+}
