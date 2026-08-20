@@ -218,14 +218,28 @@ func _draw_card_event(canvas: CanvasItem, game_id: String, kind: String, p: Vect
 					var leaf_center := stem_start.lerp(stem_end, leaf_t)
 					_draw_leaf(canvas, leaf_center, 5.0 + peak * 1.5, Color("8bc99b", fade), -0.8 * side)
 		return
-	var other_suits := ["♥", "♠", "◆", "♣"]
-	var count := 4 + grade * 2
-	for index in range(count):
-		var angle := float(index) / count * TAU - PI * 0.5
-		var q := p + Vector2(cos(angle), sin(angle)) * (18.0 + t * (24.0 + grade * 5.0)) + Vector2(0, t * t * 10.0)
-		var glyph: String = other_suits[index % other_suits.size()]
-		canvas.draw_string(symbol_font, q, glyph, HORIZONTAL_ALIGNMENT_CENTER, 16.0, 10 + grade, Color(color.lightened(0.18), fade))
-	canvas.draw_arc(p, 20.0 + t * 32.0, 0, TAU, 32, Color("fff6dc", 0.56 * fade), 2.8, true)
+	var climb := 18.0 + t * (26.0 + float(grade) * 7.0)
+	var ridge := PackedVector2Array([
+		p + Vector2(-42.0, 16.0),
+		p + Vector2(-18.0, -climb * 0.55),
+		p,
+		p + Vector2(18.0, -climb * 0.55),
+		p + Vector2(42.0, 16.0),
+	])
+	canvas.draw_polyline(ridge, Color(color.lightened(0.18), 0.52 * fade), 2.4 + float(grade) * 0.35, true)
+	var suit_count := 1 + grade
+	for index in range(suit_count):
+		var spread := (float(index) - float(suit_count - 1) * 0.5) * 18.0
+		var q := p + Vector2(spread, -16.0 - t * (24.0 + float(index % 2) * 9.0) - peak * 5.0)
+		canvas.draw_string(symbol_font, q, suits[index % suits.size()], HORIZONTAL_ALIGNMENT_CENTER, 16.0, 10 + grade, Color(color.lightened(0.22), fade))
+	if grade >= 3:
+		var crown_y := -40.0 - t * 10.0
+		canvas.draw_colored_polygon(PackedVector2Array([
+			p + Vector2(-16, crown_y + 10), p + Vector2(-13, crown_y),
+			p + Vector2(-4, crown_y + 7), p + Vector2(0, crown_y - 4),
+			p + Vector2(5, crown_y + 7), p + Vector2(14, crown_y),
+			p + Vector2(17, crown_y + 10),
+		]), Color("f7cf70", (0.60 + peak * 0.22) * fade))
 
 
 func _draw_jade_event(canvas: CanvasItem, p: Vector2, color: Color, grade: int, t: float, fade: float) -> void:

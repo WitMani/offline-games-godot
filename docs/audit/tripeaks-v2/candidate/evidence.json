@@ -1,0 +1,161 @@
+{
+  "captures": [
+    "00-stable.png",
+    "locked-reject/01-intent.png",
+    "locked-reject/02-anticipation.png",
+    "locked-reject/03-impact.png",
+    "locked-reject/04-settle.png",
+    "rank-reject/01-intent.png",
+    "rank-reject/02-anticipation.png",
+    "rank-reject/03-impact.png",
+    "rank-reject/04-settle.png",
+    "deal/01-intent.png",
+    "deal/02-anticipation.png",
+    "deal/03-impact.png",
+    "deal/04-settle.png",
+    "streak-grade1/01-intent.png",
+    "streak-grade1/02-anticipation.png",
+    "streak-grade1/03-impact.png",
+    "streak-grade1/04-settle.png",
+    "streak-grade4/01-intent.png",
+    "streak-grade4/02-anticipation.png",
+    "streak-grade4/03-impact.png",
+    "streak-grade4/04-settle.png",
+    "milestone/01-intent.png",
+    "milestone/02-anticipation.png",
+    "milestone/03-impact.png",
+    "milestone/04-settle.png",
+    "win/01-intent.png",
+    "win/02-anticipation.png",
+    "win/03-impact.png",
+    "win/04-settle.png"
+  ],
+  "continuous_peak_frames": {
+    "count": 36,
+    "directory": "/home/ubuntu/.local/share/godot/app_userdata/No WiFi Games/tripeaks-v2-frames",
+    "encoding_fps": 30,
+    "sampled_progress": [
+      0.0,
+      0.98
+    ]
+  },
+  "continuous_peak_recording": "continuous/tripeaks-grade4-streak.webm",
+  "effects_mode": "full",
+  "language": "zh-CN",
+  "runtime_resources": {
+    "card_back": "res://assets/art/cards/tripeaks_card_back_gag_v1.webp",
+    "sfx": "res://assets/audio/cards/tripeaks_streak_peak_gag_v1.ogg"
+  },
+  "state_snapshots": {
+    "grade4_streak": {
+      "cards": [
+        2,
+        5,
+        8,
+        3,
+        6,
+        9,
+        12,
+        4,
+        7,
+        10,
+        13,
+        1,
+        5,
+        8,
+        11
+      ],
+      "current": 9,
+      "game_id": "tripeaks",
+      "moves": 1,
+      "removed": [
+        5
+      ],
+      "score": 30,
+      "status": "playing",
+      "stock": 12,
+      "streak": 6
+    },
+    "milestone": {
+      "cards": [
+        2,
+        5,
+        8,
+        3,
+        6,
+        9,
+        12,
+        4,
+        7,
+        10,
+        13,
+        1,
+        5,
+        8,
+        11
+      ],
+      "current": 9,
+      "game_id": "tripeaks",
+      "moves": 1,
+      "removed": [
+        0,
+        1,
+        2,
+        3,
+        5
+      ],
+      "score": 30,
+      "status": "playing",
+      "stock": 12,
+      "streak": 1
+    },
+    "win": {
+      "cards": [
+        2,
+        5,
+        8,
+        3,
+        6,
+        9,
+        12,
+        4,
+        7,
+        10,
+        13,
+        1,
+        5,
+        8,
+        11
+      ],
+      "current": 9,
+      "game_id": "tripeaks",
+      "moves": 1,
+      "removed": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        5
+      ],
+      "score": 30,
+      "status": "won",
+      "stock": 12,
+      "streak": 1
+    }
+  },
+  "viewport": [
+    540,
+    960
+  ],
+  "web_stable_capture": "web/tripeaks-web.png"
+}

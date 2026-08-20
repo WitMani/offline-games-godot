@@ -1,0 +1,173 @@
+{
+  "schema_version": "offline-games-gag-asset-ledger/v1",
+  "created_at": "2026-08-20T10:55:00Z",
+  "scope": ["tripeaks"],
+  "approved_direction": "docs/art-direction/tripeaks-v2.md",
+  "gag": {
+    "endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+    "transport": "MCP Streamable HTTP, protocol 2025-06-18",
+    "server": {"name": "game-assets-generator", "version": "1.29.0"},
+    "execution_mode": "pure API",
+    "system_probe": {
+      "gpu": "not detected",
+      "main_pytorch": "not installed",
+      "enabled_providers_used": ["fal", "elevenlabs"]
+    }
+  },
+  "semantic_searches": [
+    {
+      "id": "tripeaks-card-back",
+      "query": "cartoon twilight mountain playing card back purple gold summit stars isolated component no text",
+      "kinds": ["image"],
+      "limit": 12,
+      "reviewed_candidates": [
+        {
+          "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/ui_and_icons/card-frame-sr.png",
+          "score": 0.3955756765512054,
+          "decision": "reject",
+          "reason": "purple sci-fi gem frame; no mountain-stage identity and not a back surface"
+        },
+        {
+          "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/props_and_env/artifact-charge-crest.png",
+          "score": 0.38340420572567174,
+          "decision": "reject",
+          "reason": "generic three-slot crest has no card-back construction, moon, route or mountain read"
+        },
+        {
+          "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/props_and_env/20251212_151241_card_game_art_basic_gemini.png",
+          "score": 0.3761823636883066,
+          "decision": "reject",
+          "reason": "warrior illustration and English rules text violate the live-text and frozen-mechanics constraints"
+        }
+      ],
+      "result": "generate",
+      "reason": "no candidate met the locked twilight-mountain direction and component-role constraints"
+    },
+    {
+      "id": "tripeaks-streak-audio",
+      "query": "ascending card streak success summit victory chime game sound effect",
+      "kinds": ["audio"],
+      "limit": 12,
+      "reviewed_candidates": [
+        {
+          "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/audio/music_20260330_002207_peaceful_ambient_exploration_m_loop.mp3",
+          "score": 0.6593655178003067,
+          "decision": "reject",
+          "reason": "ambient music bed is not a compact action response"
+        },
+        {
+          "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/audio/warning.wav",
+          "decision": "reject",
+          "reason": "negative warning semantics oppose a successful streak"
+        },
+        {
+          "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/audio/accept.wav",
+          "score": 0.6360287813309184,
+          "decision": "reject",
+          "reason": "generic confirmation lacks card transient and ascending summit cadence"
+        }
+      ],
+      "result": "generate",
+      "reason": "no candidate aligned card action, rising streak meaning, duration and twilight material tone"
+    }
+  ],
+  "generation_attempts": [
+    {
+      "role": "card back",
+      "requested_provider": "fal",
+      "requested_model": "fal-ai/flux-pro/v1.1",
+      "requested_size": "768x1152",
+      "result": "provider adapter rejected free-form size and GAG automatically fell back to Gemini API",
+      "unshipped_fallback_master": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/card_games/gag_v1/tripeaks/generated_images__20260820_183822_Gemini.png",
+      "decision": "reject fallback and retry with fal-native portrait_4_3; never relabel the fallback as fal.ai"
+    }
+  ],
+  "assets": [
+    {
+      "id": "tripeaks-card-back-gag-v1",
+      "game": "tripeaks",
+      "kind": "image",
+      "role": "stable and frequent locked-card and stock material family",
+      "route": "GAG generate_image pure API",
+      "provider": "FAL.ai",
+      "model": "fal-ai/flux-pro/v1.1",
+      "seed": null,
+      "prompt": "Full-bleed vertical playing-card back surface design for a premium friendly cartoon TriPeaks game. Twilight violet woven cloth and painted paper texture, a large simple symmetrical emblem of three rounded mountain peaks beneath one crescent moon, delicate golden route lines and a few oversized star dots, deep plum shadow channels, soft lavender edge glow, broad readable shapes, clean soft bevels, restrained magical highlights. Fill the entire canvas edge-to-edge as a flat orthographic texture, centered and vertically symmetrical, readable at tiny mobile-card size. No card object, no surrounding scene, no mockup, no outside drop shadow, no letters, no numbers, no suit symbols, no UI text, no watermark, no photorealism.",
+      "style_reference_prompt": "2D premium mobile cartoon game art; hand-painted gouache surfaces; rounded chunky forms; twilight plum, lavender, moon cream and soft gold palette; one clear focal motif; low visual noise; tactile but not photorealistic; whimsical mountain expedition at dusk. Never render text.",
+      "source_master": {
+        "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/card_games/gag_v1/tripeaks/generated_images__20260820_183925_FAL.ai.png",
+        "sha256": "ee12d4a1dcb9045b5f4886b4a3b2ab96ed2b1c2f3b12d2b5e13977cc28805e98",
+        "detected_format": "JPEG",
+        "dimensions": [768, 1024],
+        "shipped": false
+      },
+      "critique": {
+        "decision": "accept",
+        "notes": "moon and three-peak silhouette remain unmistakable at runtime size; route line supports the climb fantasy; no text or rule state"
+      },
+      "derivation": {
+        "operations": "center crop 742x1024, Lanczos resize 290x400, libwebp quality 84",
+        "runtime_path": "assets/art/cards/tripeaks_card_back_gag_v1.webp",
+        "sha256": "8c5410baf838b4444a19d24db7bc7fe06aa51fe038905af2de3d94045bfb2ab7",
+        "dimensions": [290, 400]
+      },
+      "runtime_reference": {
+        "preload": "main.gd::TRIPEAKS_CARD_BACK_TEXTURE",
+        "selection": "main.gd::_card_back_texture",
+        "draw": "main.gd::_draw_card_back",
+        "first_visible_beat": "stable gameplay before the first player action",
+        "visible_instances_at_start": 6,
+        "visible_locations": ["five locked tableau cards", "stock"]
+      }
+    },
+    {
+      "id": "tripeaks_streak_peak_gag_v1",
+      "game": "tripeaks",
+      "kind": "sfx",
+      "role": "accepted-card, streak, summit and win reward",
+      "route": "GAG generate_audio pure API",
+      "provider": "ElevenLabs",
+      "model": "eleven_text_to_sound_v2",
+      "version": "v3",
+      "seed": null,
+      "prompt": "A polished full-bodied TriPeaks streak-reward sound, around 1.0 second: crisp playing-card snap into felt, two strong delicate glass-and-brass chime notes ascending, then a compact shimmering twilight tail. The paper impact and both notes stay clearly audible with even energy and balanced loudness, no long silence, no clipping, no music bed, no ambience, no voice.",
+      "gag_delivery": {
+        "digest": "d17bef0fb43769bfb989d2a4b3d7a268084e769e308e919461bf4176bad61940",
+        "master_path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/card_games/gag_v1/tripeaks/sfx/tripeaks_streak_peak_gag_v1/v3/tripeaks_streak_peak_gag_v1_master.wav",
+        "master_sha256": "aded93626e8ff04cb444267c1355f6f79d3b4cac37d91370ac6e645bc106a7ea",
+        "published_ogg_path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/card_games/gag_v1/tripeaks/sfx/tripeaks_streak_peak_gag_v1/v3/tripeaks_streak_peak_gag_v1.ogg",
+        "published_ogg_sha256": "6b8a11a83a537b2ad0e67ae01a72b31456cb6c49819f6717a4d98920a3e8376d",
+        "source_quality": {
+          "status": "issues_detected",
+          "failed_check": "loudness",
+          "duration_seconds": 0.748354,
+          "integrated_lufs": -17.68,
+          "true_peak_dbtp": -1.03
+        },
+        "source_master_shipped": false
+      },
+      "repair_and_derivation": {
+        "decision": "repair before engine",
+        "operations": "48 kHz mono OGG; +2 dB gain into -1.5 dB nominal look-ahead limiter; preserve full 0.748 s cadence",
+        "runtime_path": "assets/audio/cards/tripeaks_streak_peak_gag_v1.ogg",
+        "sha256": "84e2ef3574f32fbfc6ee87c1279f02c845d953510800980546678369b3c9ee3b",
+        "measured_integrated_lufs": -16.2,
+        "measured_true_peak_dbtp": -1.7
+      },
+      "runtime_reference": {
+        "preload": "main.gd::SFX_TRIPEAKS_STREAK_PEAK",
+        "router": "main.gd::_catalog_event_sfx",
+        "events": ["card_streak", "peak_milestone", "tripeaks_win"],
+        "intensity": "semantic grade drives pitch and gain"
+      }
+    }
+  ],
+  "shipping_gate": {
+    "source_masters_in_repository": false,
+    "unused_generations_in_repository": false,
+    "runtime_derivatives": 2,
+    "every_derivative_has_runtime_reference": true,
+    "stable_or_frequent_signature_asset": true,
+    "evidence_root": "docs/audit/tripeaks-v2/candidate"
+  }
+}

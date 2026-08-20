@@ -53,6 +53,7 @@ const SNAKE_GARDEN_TEXTURE: Texture2D = preload("res://assets/art/snake/modern_g
 const SNAKE_GB_TEXTURE: Texture2D = preload("res://assets/art/snakes/gb_handheld.webp")
 const SNAKES_DOODLE_TEXTURE: Texture2D = preload("res://assets/art/snakes/arena_doodles.webp")
 const SOLITAIRE_CARD_BACK_TEXTURE: Texture2D = preload("res://assets/art/cards/solitaire_card_back_gag_v1.webp")
+const TRIPEAKS_CARD_BACK_TEXTURE: Texture2D = preload("res://assets/art/cards/tripeaks_card_back_gag_v1.webp")
 const SNAKE_RULES = preload("res://snake_model.gd")
 const SNAKE_GB_RULES = preload("res://models/snake_gb_model.gd")
 const SNAKES_ARENA_RULES = preload("res://models/snakes_arena_model.gd")
@@ -81,6 +82,7 @@ const SFX_LOGIC_BLOCK: AudioStream = preload("res://assets/audio/logic/block_sta
 const SFX_LOGIC_COMPLETE: AudioStream = preload("res://assets/audio/logic/folio_complete.wav")
 const SFX_MEOW_GAG_COMPLETE: AudioStream = preload("res://assets/audio/logic/gag-v1/meowdoku_complete_reward.ogg")
 const SFX_SOLITAIRE_CARD_SETTLE: AudioStream = preload("res://assets/audio/cards/solitaire_card_settle_gag_v1.ogg")
+const SFX_TRIPEAKS_STREAK_PEAK: AudioStream = preload("res://assets/audio/cards/tripeaks_streak_peak_gag_v1.ogg")
 
 var catalog: Array = [
 	{"id":"merge2248", "title":"2248", "subtitle":"数字连线", "group":"数字", "accent":Color("ffbf2f"), "desc":"八方向连接数字，把相邻数合成到 2048"},
@@ -398,6 +400,8 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 		var event_volume := -17.0 + float(event_grade) * 1.5
 		if event_sfx == SFX_SOLITAIRE_CARD_SETTLE:
 			event_volume = -11.5 + float(event_grade) * 1.1
+		elif event_sfx == SFX_TRIPEAKS_STREAK_PEAK:
+			event_volume = -12.5 + float(event_grade) * 1.2
 		_play_sfx(event_sfx, event_volume, 0.92 + float(event_grade) * 0.09)
 		if event_grade == 1:
 			_haptic(8)
@@ -408,6 +412,8 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 func _catalog_event_sfx(kind: String, grade: int) -> AudioStream:
 	if game_id == "solitaire" and kind in ["card_draw", "card_recycle", "card_move", "foundation_place", "solitaire_win"]:
 		return SFX_SOLITAIRE_CARD_SETTLE
+	if game_id == "tripeaks" and kind in ["card_streak", "peak_milestone", "tripeaks_win"]:
+		return SFX_TRIPEAKS_STREAK_PEAK
 	return SFX_SNAKE_EAT if grade >= 2 else SFX_SNAKE_KEY
 
 func _play_meowdoku_event_sfx(kind: String, grade: int) -> void:
@@ -1095,7 +1101,7 @@ func _draw_game() -> void:
 		draw_rect(Rect2(toast_x, 129, 5, 42), Color(feedback_color, alpha))
 		_draw_center(feedback_text, Vector2(toast_x + 123, 150), 13, Color(INK, alpha))
 	_draw_motion_overlay()
-	_draw_solitaire_object_fx()
+	_draw_card_game_object_fx()
 	_draw_impact_fx()
 	_draw_catalog_fx()
 
@@ -1283,30 +1289,30 @@ func _card_event_progress(effect: Dictionary) -> float:
 	var duration := maxf(0.001, float(effect.get("duration", 0.72)))
 	return clampf((elapsed - float(effect.get("started", elapsed))) / duration, 0.0, 1.0)
 
-func _latest_solitaire_effect() -> Dictionary:
-	if game_id != "solitaire":
+func _latest_card_effect() -> Dictionary:
+	if game_id not in ["solitaire", "tripeaks"]:
 		return {}
 	for index in range(catalog_fx.size() - 1, -1, -1):
 		var effect: Dictionary = catalog_fx[index]
-		if str(effect.get("game_id", "")) == "solitaire":
+		if str(effect.get("game_id", "")) == game_id:
 			return effect
 	return {}
 
-func _solitaire_reject_offset(column: int) -> Vector2:
-	var effect := _latest_solitaire_effect()
+func _card_object_reject_offset(object_index: int) -> Vector2:
+	var effect := _latest_card_effect()
 	if effect.is_empty() or "reject" not in str(effect.get("kind", "")):
 		return Vector2.ZERO
-	if int(effect.get("column", -1)) != column:
+	if int(effect.get("card_index", effect.get("column", -1))) != object_index:
 		return Vector2.ZERO
 	var t := _card_event_progress(effect)
 	var envelope := pow(1.0 - t, 2.0)
 	return Vector2(sin(t * PI * 11.0) * 7.0 * envelope, 2.5 * sin(t * PI) * envelope)
 
-func _draw_solitaire_object_fx() -> void:
-	if game_id != "solitaire":
+func _draw_card_game_object_fx() -> void:
+	if game_id not in ["solitaire", "tripeaks"]:
 		return
 	for effect in catalog_fx:
-		if str(effect.get("game_id", "")) != "solitaire" or not effect.has("from") or not effect.has("to"):
+		if str(effect.get("game_id", "")) != game_id or not effect.has("from") or not effect.has("to"):
 			continue
 		var kind := str(effect.get("kind", ""))
 		if "reject" in kind or "select" in kind:
@@ -1393,7 +1399,7 @@ func _draw_status_badge(text: String, pos: Vector2, color: Color, positive: bool
 	_draw_center(text, pos + Vector2(width * 0.5 + 6, 15), 12, color)
 
 func _draw_playing_card(rect: Rect2, rank: int, accent: Color = RED, suit_index := -1, emphasis := 0.0) -> void:
-	if game_id != "solitaire":
+	if game_id not in ["solitaire", "tripeaks"]:
 		_draw_panel(Rect2(rect.position + Vector2(0, 4), rect.size), Color(0, 0, 0, 0.30), Color.TRANSPARENT, 6, 0)
 		_draw_panel(rect, WARM_PAPER, Color(accent, 0.64), 6, 1)
 		var other_suit := posmod(rank - 1, 4) if suit_index < 0 else posmod(suit_index, 4)
@@ -1448,6 +1454,20 @@ func _draw_card_back(rect: Rect2, accent: Color) -> void:
 		_draw_panel(solitaire_inset, Color(accent.darkened(0.35), 0.58), Color("d7b965", 0.66), maxi(2, radius - 2), 1)
 		draw_circle(rect.get_center(), rect.size.x * 0.15, Color("d7b965", 0.62))
 		return
+	if game_id == "tripeaks":
+		var tripeaks_radius := maxi(3, int(rect.size.x * 0.095))
+		_draw_panel(Rect2(rect.position + Vector2(0, 5), rect.size), Color("05070d", 0.36), Color.TRANSPARENT, tripeaks_radius, 0)
+		_draw_panel(rect, Color("30204f"), Color("cbb0f6", 0.86), tripeaks_radius, 2)
+		if TRIPEAKS_CARD_BACK_TEXTURE != null and rect.size.x >= 34.0:
+			var tripeaks_material_rect := rect.grow(-3.0)
+			draw_texture_rect(TRIPEAKS_CARD_BACK_TEXTURE, tripeaks_material_rect, false, Color.WHITE)
+			draw_rect(tripeaks_material_rect, Color("cbb0f6", 0.54), false, 1.2)
+			draw_line(tripeaks_material_rect.position + Vector2(3, 3), Vector2(tripeaks_material_rect.end.x - 3, tripeaks_material_rect.position.y + 3), Color(Color.WHITE, 0.28), 1.0, true)
+			return
+		var tripeaks_inset := rect.grow(-5)
+		_draw_panel(tripeaks_inset, Color(accent.darkened(0.35), 0.58), Color("cbb0f6", 0.66), maxi(2, tripeaks_radius - 2), 1)
+		draw_circle(rect.get_center(), rect.size.x * 0.15, Color("cbb0f6", 0.62))
+		return
 	_draw_panel(Rect2(rect.position + Vector2(0, 4), rect.size), Color(0, 0, 0, 0.30), Color.TRANSPARENT, 6, 0)
 	_draw_panel(rect, Color("26355a"), Color(WARM_PAPER, 0.66), 6, 2)
 	var inset := rect.grow(-6)
@@ -1456,7 +1476,10 @@ func _draw_card_back(rect: Rect2, accent: Color) -> void:
 		draw_line(Vector2(inset.position.x + 3, y), Vector2(inset.end.x - 3, y), Color(WARM_PAPER, 0.12), 1.0)
 
 func _card_back_texture() -> Texture2D:
-	return SOLITAIRE_CARD_BACK_TEXTURE if game_id == "solitaire" else null
+	match game_id:
+		"solitaire": return SOLITAIRE_CARD_BACK_TEXTURE
+		"tripeaks": return TRIPEAKS_CARD_BACK_TEXTURE
+		_: return null
 
 func _card_rank(rank: int) -> String:
 	match rank:
@@ -4288,7 +4311,7 @@ func _draw_solitaire() -> void:
 		_draw_panel(lane, Color("082b24", 0.20), Color("f0d578", 0.22 if target_hint else 0.10), 9, 1)
 		if target_hint:
 			draw_circle(Vector2(lane.get_center().x, lane.end.y - 13), 3.0, Color("f0d578", 0.62))
-		var column_offset := _solitaire_reject_offset(col)
+		var column_offset := _card_object_reject_offset(col)
 		var lift := -10.0 if selected == col else 0.0
 		for row in range(max(1, count)):
 			var rect := Rect2(origin.x + col * 68, origin.y + row * 42 + lift, 58, 80)
@@ -4322,11 +4345,16 @@ func _tripeaks_next() -> void:
 		state["moves"] = int(state["moves"]) + 1
 		state["streak"] = 0
 		_flash_feedback("翻开 %s" % _card_rank(int(state["current"])), VIOLET)
-		_start_motion("card", Vector2(74, 758), Vector2(74, 758), VIOLET, str(state["current"]), 0.40)
-		_start_catalog_event("card_draw", Vector2(72, 754), VIOLET, 1, "暮色翻牌", 0.56)
+		_start_catalog_event("card_draw", Vector2(76, 748), VIOLET, 1, "暮色翻牌", 0.72, {
+			"from": Vector2(157, 748), "to": Vector2(76, 748),
+			"rank": int(state["current"]), "suit": int(state["current"]) % 4,
+			"card_size": Vector2(58, 78), "flip": true,
+		})
 		_log_event("tripeaks_stock", {"current":state["current"], "stock":state["stock"]})
 	else:
 		state["status"] = "over"
+		_flash_feedback("牌库已空", RED)
+		_start_catalog_event("card_reject_empty_stock", Vector2(157, 748), RED, 2, "牌库已空", 0.72, {"card_index": -2})
 
 func _tripeaks_tap(pos: Vector2) -> void:
 	if game_id != "tripeaks" or state.get("status") != "playing":
@@ -4341,8 +4369,9 @@ func _tripeaks_tap(pos: Vector2) -> void:
 			var locked := i < 5 and not (i + 5) in removed
 			if locked:
 				_flash_feedback("先清除压住它的牌", RED)
-				_impact(center, RED, 0.42)
-				_start_catalog_event("card_reject_locked", center, RED, 1, "仍被压住", 0.58)
+				_start_catalog_event("card_reject_locked", center, RED, 1, "", 0.62, {
+					"card_index": i, "rank": int(cards[i]), "suit": i % 4,
+				})
 				return
 			var value := int(cards[i])
 			var current := int(state["current"])
@@ -4352,46 +4381,96 @@ func _tripeaks_tap(pos: Vector2) -> void:
 				state["current"] = value
 				state["score"] = int(state["score"]) + 30
 				state["moves"] = int(state["moves"]) + 1
-				_flash_feedback("连牌成功 · +30", MINT)
-				_impact(center, MINT, 0.75)
 				var streak := int(state["streak"])
 				var streak_grade := clampi(1 + streak / 2, 1, 4)
-				_start_catalog_event("card_streak", center, MINT if streak_grade < 3 else GOLD, streak_grade, "连牌 ×%d" % streak, 0.62 + streak_grade * 0.08)
-				if removed.size() == cards.size():
+				var won := removed.size() == cards.size()
+				var event_kind := "tripeaks_win" if won else "card_streak"
+				var event_label := "三峰全清" if won else "连牌 ×%d" % streak
+				var event_color := GOLD if won or streak_grade >= 3 else MINT
+				var event_position := Vector2(270, 372) if won else center.lerp(Vector2(270, center.y), 0.28 if streak_grade >= 3 else 0.0)
+				_flash_feedback("%s · +30" % event_label, event_color)
+				_start_catalog_event(event_kind, event_position, event_color, 4 if won else streak_grade, event_label, 1.24 if won else 0.70 + streak_grade * 0.09, {
+					"from": center, "to": Vector2(76, 748),
+					"rank": value, "suit": i % 4, "card_index": i,
+					"card_size": Vector2(58, 78), "streak": streak,
+				})
+				if removed.size() in [5, 10] and not won:
+					_start_catalog_event("peak_milestone", Vector2(270, 340), GOLD, 3, "峰顶点亮", 0.96, {
+						"cleared": removed.size(), "card_index": i,
+					})
+				if won:
 					state["status"] = "won"
 					_capture("tripeaks_win")
 				_log_event("tripeaks_clear", {"card":value, "cleared":removed.size()})
 			else:
 				state["streak"] = 0
 				_flash_feedback("点数不相邻", RED)
-				_start_catalog_event("card_reject_rank", center, RED, 1, "点数不相邻", 0.58)
+				_start_catalog_event("card_reject_rank", center, RED, 1, "", 0.62, {
+					"card_index": i, "rank": value, "suit": i % 4, "current": current,
+				})
 				_log_event("tripeaks_invalid", {"card":value, "current":current})
 			return
 
 func _draw_tripeaks() -> void:
 	_draw_section_heading("三座暮色牌峰", "相邻点数可收入牌堆", VIOLET)
 	var streak := int(state.get("streak", 0))
-	if streak > 1:
-		_draw_status_badge("连牌 ×%d" % streak, Vector2(382, 190), GOLD, true, 116)
+	_draw_panel(Rect2(22, 223, 496, 435), Color("160f31", 0.72), Color("c6a4f0", 0.24), 15, 1)
+	for peak in range(3):
+		var peak_center_x := 108.0 + float(peak) * 162.0
+		var ridge_color := Color("a987d5", 0.13 + float(peak) * 0.018)
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(peak_center_x - 114, 642), Vector2(peak_center_x, 236), Vector2(peak_center_x + 114, 642),
+		]), ridge_color)
+		draw_line(Vector2(peak_center_x - 114, 642), Vector2(peak_center_x, 236), Color("e8d1ff", 0.18), 2.0, true)
+		draw_line(Vector2(peak_center_x, 236), Vector2(peak_center_x + 114, 642), Color("e8d1ff", 0.10), 2.0, true)
 	var cards: Array = state["cards"]
 	var removed: Array = state["removed"]
 	for i in range(cards.size()):
 		var center := _tripeaks_card_center(i)
 		var available := not i in removed
 		var locked := i < 5 and not (i + 5) in removed
-		if locked and available:
-			_draw_card_back(Rect2(center - Vector2(29, 39), Vector2(58, 78)), VIOLET)
-		else:
-			_draw_playing_card(Rect2(center - Vector2(29, 39), Vector2(58, 78)), cards[i], VIOLET if available else Color(INK, 0.1), i % 4)
+		var rect := Rect2(center - Vector2(29, 39), Vector2(58, 78))
 		if not available:
-			draw_rect(Rect2(center - Vector2(29, 39), Vector2(58, 78)), Color(COAL, 0.72))
-		elif locked:
-			draw_arc(center, 12, 0, TAU, 24, Color(VIOLET, 0.72), 2.0)
-	_draw_panel(Rect2(30, 684, 480, 118), Color("102b27", 0.92), Color("e2c48a", 0.34), 12, 1)
-	_draw_text("当前牌", Vector2(48, 708), 11, Color("e7dcc0"))
-	_draw_playing_card(Rect2(42, 716, 58, 76), int(state["current"]), VIOLET, int(state["current"]) % 4)
-	_draw_text("牌库 %d" % int(state["stock"]), Vector2(120, 754), 13, Color("e7dcc0"))
-	_draw_text("点击相邻点数 · A 与 K 相接", Vector2(252, 754), 13, Color("e7dcc0"))
+			_draw_panel(rect, Color("bfa8df", 0.025), Color("d9c2f2", 0.16), 7, 1)
+			draw_circle(center, 4.0, Color("f5de98", 0.34))
+			for ray in range(4):
+				var direction := Vector2.RIGHT.rotated(float(ray) * PI * 0.5)
+				draw_line(center + direction * 7.0, center + direction * 12.0, Color("f5de98", 0.22), 1.3, true)
+			continue
+		var reject_offset := _card_object_reject_offset(i)
+		rect.position += reject_offset
+		center += reject_offset
+		if locked and available:
+			_draw_card_back(rect, VIOLET)
+			var band_y := center.y + 8.0
+			draw_line(Vector2(rect.position.x + 6, band_y), Vector2(rect.end.x - 6, band_y), Color("d9c477", 0.64), 2.0, true)
+			draw_circle(Vector2(center.x, band_y), 7.0, Color("2b1b42"))
+			draw_arc(Vector2(center.x, band_y - 5), 5.0, PI, TAU, 12, Color("e8d28a", 0.76), 1.6, true)
+		else:
+			draw_circle(center + Vector2(0, 5), 38.0, Color("f3d17a", 0.055))
+			_draw_playing_card(rect, cards[i], Color("d2adff"), i % 4, 0.18)
+			draw_line(Vector2(rect.position.x + 10, rect.end.y + 5), Vector2(rect.end.x - 10, rect.end.y + 5), Color("f2d37a", 0.62), 2.2, true)
+	_draw_panel(Rect2(30, 684, 480, 118), Color("17102f", 0.96), Color("d4b7f4", 0.42), 13, 1)
+	_draw_text("当前牌", Vector2(47, 705), 11, Color("efe3ff"))
+	_draw_playing_card(Rect2(47, 712, 58, 78), int(state["current"]), VIOLET, int(state["current"]) % 4, 0.34)
+	_draw_text("牌库", Vector2(133, 705), 11, Color("efe3ff"))
+	if int(state["stock"]) > 0:
+		_draw_card_back(Rect2(130, 715, 54, 72), VIOLET)
+	else:
+		_draw_panel(Rect2(130, 715, 54, 72), Color("f7edff", 0.025), Color("f7edff", 0.18), 7, 1)
+	_draw_status_badge(str(state["stock"]), Vector2(188, 733), VIOLET, int(state["stock"]) > 0, 56)
+	_draw_text("点击相邻点数", Vector2(262, 728), 13, Color("f0e6fb"))
+	_draw_text("A 与 K 也相接", Vector2(262, 751), 12, Color("c9b8dd"))
+	var streak_grade := clampi(1 + streak / 2, 1, 4) if streak > 0 else 0
+	_draw_text("连牌", Vector2(398, 705), 11, Color("efe3ff"))
+	for pip in range(4):
+		var lit := pip < streak_grade
+		var pip_center := Vector2(405 + pip * 23, 774)
+		draw_colored_polygon(PackedVector2Array([
+			pip_center + Vector2(-8, 5), pip_center + Vector2(0, -8), pip_center + Vector2(8, 5),
+		]), Color("f2cb69", 0.86) if lit else Color("b899cf", 0.18))
+	if streak > 0:
+		_draw_center_font(NUMBER_FONT, "×%d" % streak, Vector2(445, 738), 14, GOLD)
 
 func _tripeaks_card_center(index: int) -> Vector2:
 	var centers := [
