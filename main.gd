@@ -54,6 +54,8 @@ const SNAKE_GB_TEXTURE: Texture2D = preload("res://assets/art/snakes/gb_handheld
 const SNAKES_DOODLE_TEXTURE: Texture2D = preload("res://assets/art/snakes/arena_doodles.webp")
 const SOLITAIRE_CARD_BACK_TEXTURE: Texture2D = preload("res://assets/art/cards/solitaire_card_back_gag_v1.webp")
 const TRIPEAKS_CARD_BACK_TEXTURE: Texture2D = preload("res://assets/art/cards/tripeaks_card_back_gag_v1.webp")
+const MAHJONG_TILE_BASE_TEXTURE: Texture2D = preload("res://assets/art/catalog/tile_games/mahjong_tile_base.svg")
+const MAHJONG_GAG_TILE_TEXTURE: Texture2D = preload("res://assets/art/catalog/tile_games/gag/mahjong_tile_blank_gag_v1.png")
 const SNAKE_RULES = preload("res://snake_model.gd")
 const SNAKE_GB_RULES = preload("res://models/snake_gb_model.gd")
 const SNAKES_ARENA_RULES = preload("res://models/snakes_arena_model.gd")
@@ -84,6 +86,7 @@ const SFX_MEOW_GAG_COMPLETE: AudioStream = preload("res://assets/audio/logic/gag
 const SFX_SUDOKU_GAG_COMPLETE: AudioStream = preload("res://assets/audio/logic/gag-v1/sudoku_complete_reward.ogg")
 const SFX_SOLITAIRE_CARD_SETTLE: AudioStream = preload("res://assets/audio/cards/solitaire_card_settle_gag_v1.ogg")
 const SFX_TRIPEAKS_STREAK_PEAK: AudioStream = preload("res://assets/audio/cards/tripeaks_streak_peak_gag_v1.ogg")
+const SFX_MAHJONG_GAG_PAIR: AudioStream = preload("res://assets/audio/catalog/tile_games/gag/jade_pair_resonance_gag_v1.ogg")
 
 var catalog: Array = [
 	{"id":"merge2248", "title":"2248", "subtitle":"数字连线", "group":"数字", "accent":Color("ffbf2f"), "desc":"八方向连接数字，把相邻数合成到 2048"},
@@ -155,6 +158,7 @@ var merge2048_classic_presenter = MERGE2048_CLASSIC_PRESENTATION.new()
 var catalog_art_director = CATALOG_ART_DIRECTION.new()
 var watermelon_presenter = WATERMELON_PRESENTATION.new()
 var logic_game_presenter = LOGIC_GAME_PRESENTATION.new()
+var mahjong_object_fx: Dictionary = {}
 var catalog_fx: Array[Dictionary] = []
 var catalog_fx_serial := 0
 var merge2248_drag_active := false
@@ -348,13 +352,13 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 		"duration": duration,
 		"seed": catalog_fx_serial,
 	}
-	if game_id in ["sudoku", "meowdoku"]:
+	if game_id in ["sudoku", "meowdoku", "mahjong"]:
 		effect["font_role"] = "ui_cjk"
 	effect.merge(metadata, true)
 	catalog_fx.append(effect)
 	# The fruit burst is a large transparent texture. Six concurrent envelopes
 	# preserve rapid taps and cascades while bounding overdraw on WebGL/Canvas.
-	var catalog_fx_cap := 6 if game_id in ["watermelon", "merge2048"] else 12
+	var catalog_fx_cap := 6 if game_id in ["watermelon", "merge2048", "mahjong"] else 12
 	while catalog_fx.size() > catalog_fx_cap:
 		catalog_fx.pop_front()
 	var semantic := str(metadata.get("semantic", kind))
@@ -403,6 +407,8 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 			event_volume = -11.5 + float(event_grade) * 1.1
 		elif event_sfx == SFX_TRIPEAKS_STREAK_PEAK:
 			event_volume = -12.5 + float(event_grade) * 1.2
+		elif event_sfx == SFX_MAHJONG_GAG_PAIR:
+			event_volume = -7.0 + float(event_grade)
 		_play_sfx(event_sfx, event_volume, 0.92 + float(event_grade) * 0.09)
 		if event_grade == 1:
 			_haptic(8)
@@ -415,6 +421,8 @@ func _catalog_event_sfx(kind: String, grade: int) -> AudioStream:
 		return SFX_SOLITAIRE_CARD_SETTLE
 	if game_id == "tripeaks" and kind in ["card_streak", "peak_milestone", "tripeaks_win"]:
 		return SFX_TRIPEAKS_STREAK_PEAK
+	if game_id == "mahjong" and kind == "jade_pair":
+		return SFX_MAHJONG_GAG_PAIR
 	return SFX_SNAKE_EAT if grade >= 2 else SFX_SNAKE_KEY
 
 func _play_logic_event_sfx(kind: String, grade: int) -> void:
@@ -1227,6 +1235,16 @@ func _draw_result_overlay(won: bool) -> void:
 		_draw_center_font(DISPLAY_FONT, "手账完成" if meow else "逻辑完成", Vector2(270, 438), 30, ink)
 		_draw_center_font(UI_FONT, "得分 %d · 步数 %d" % [int(state.get("score", 0)), int(state.get("moves", 0))], Vector2(270, 480), 16, Color(ink, 0.88))
 		_draw_center_font(UI_FONT, "点击右上角“重开”继续挑战", Vector2(270, 526), 13, Color(ink, 0.68))
+		return
+	if game_id == "mahjong":
+		draw_rect(Rect2(0, 112, 540, 848), Color("061b17", 0.68))
+		_draw_panel(Rect2(54, 344, 432, 236), Color("03110e", 0.34), Color.TRANSPARENT, 12, 0)
+		_draw_panel(Rect2(48, 338, 444, 238), Color("f5eed8"), Color("69caaa", 0.94), 10, 3)
+		draw_line(Vector2(70, 356), Vector2(470, 356), Color("ffffff", 0.78), 2.0, true)
+		_draw_mahjong_tile(Rect2(239, 350, 62, 82), 5)
+		_draw_center_font(DISPLAY_FONT, "玉阵完成", Vector2(270, 456), 29, Color("19483e"))
+		_draw_center_font(UI_FONT, "得分 %d · 步数 %d" % [int(state.get("score", 0)), int(state.get("moves", 0))], Vector2(270, 493), 16, Color("24594d"))
+		_draw_center_font(UI_FONT, "点击右上角“重开”继续挑战", Vector2(270, 536), 13, Color("4d6f66"))
 		return
 	draw_rect(Rect2(0, 112, 540, 848), Color(COAL, 0.72))
 	var color := GREEN if won else RED
@@ -4471,6 +4489,7 @@ func _init_mahjong() -> void:
 	state["removed"] = []
 	state["selected"] = -1
 	state["score"] = 0
+	mahjong_object_fx = {}
 
 func _mahjong_tap(pos: Vector2) -> void:
 	if game_id != "mahjong" or state.get("status") != "playing":
@@ -4488,11 +4507,19 @@ func _mahjong_tap(pos: Vector2) -> void:
 	var selected := int(state["selected"])
 	if selected < 0:
 		state["selected"] = index
+		mahjong_object_fx = {
+			"kind":"select", "indices":[index], "value":int(state["tiles"][index]),
+			"grade":1, "started":elapsed, "duration":0.48,
+		}
 		_flash_feedback("已选中第 %d 张牌" % (index + 1), CYAN)
-		_start_catalog_event("jade_select", origin + Vector2((col + 0.43) * cell.x, (row + 0.43) * cell.y), CYAN, 1, "玉牌抬起", 0.48)
+		_start_catalog_event("jade_select", _mahjong_tile_center(index), CYAN, 1, "玉牌抬起", 0.48)
 		return
 	if selected == index:
 		state["selected"] = -1
+		mahjong_object_fx = {
+			"kind":"deselect", "indices":[index], "value":int(state["tiles"][index]),
+			"grade":1, "started":elapsed, "duration":0.28,
+		}
 		return
 	var tiles: Array = state["tiles"]
 	if tiles[selected] == tiles[index]:
@@ -4500,10 +4527,16 @@ func _mahjong_tap(pos: Vector2) -> void:
 		removed.append(index)
 		state["selected"] = -1
 		state["score"] = int(state["score"]) + 50
-		_flash_feedback("配对成功 · +50", MINT)
 		state["moves"] = int(state["moves"]) + 1
 		var mahjong_grade := 4 if removed.size() == tiles.size() else 2
-		_start_catalog_event("jade_pair", origin + Vector2((col + 0.43) * cell.x, (row + 0.43) * cell.y), MINT if mahjong_grade < 4 else GOLD, mahjong_grade, "同纹共鸣 · +50", 0.82 if mahjong_grade < 4 else 1.08)
+		var pair_duration := 1.08 if mahjong_grade == 4 else 0.82
+		_flash_feedback("牌阵清空 · 玉成" if mahjong_grade == 4 else "配对成功 · +50", GOLD if mahjong_grade == 4 else MINT)
+		mahjong_object_fx = {
+			"kind":"clear" if mahjong_grade == 4 else "pair", "indices":[selected, index],
+			"value":int(tiles[index]), "grade":mahjong_grade, "started":elapsed, "duration":pair_duration,
+		}
+		var pair_center := (_mahjong_tile_center(selected) + _mahjong_tile_center(index)) * 0.5
+		_start_catalog_event("jade_pair", pair_center, MINT if mahjong_grade < 4 else GOLD, mahjong_grade, "牌阵清空 · 玉成" if mahjong_grade == 4 else "同纹共鸣 · +50", pair_duration)
 		_log_event("mahjong_pair", {"tile":tiles[index], "remaining":tiles.size() - removed.size()})
 		if removed.size() == tiles.size():
 			state["status"] = "won"
@@ -4511,51 +4544,153 @@ func _mahjong_tap(pos: Vector2) -> void:
 	else:
 		state["selected"] = index
 		state["mistakes"] = int(state.get("mistakes", 0)) + 1
+		mahjong_object_fx = {
+			"kind":"mismatch", "indices":[selected, index], "value":int(tiles[index]),
+			"grade":2, "started":elapsed, "duration":0.62,
+		}
 		_flash_feedback("牌面不一致", RED)
-		_start_catalog_event("jade_mismatch", origin + Vector2((col + 0.43) * cell.x, (row + 0.43) * cell.y), RED, 2, "纹样不同", 0.62)
+		_start_catalog_event("jade_mismatch", _mahjong_tile_center(index), RED, 2, "纹样不同", 0.62)
 		_log_event("mahjong_mismatch", {"first":tiles[selected], "second":tiles[index]})
 
 func _draw_mahjong() -> void:
 	_draw_section_heading("静心牌阵", "配对相同牌面 · 已收起 %d / 20" % int(state["removed"].size()), MINT)
-	var origin := Vector2(44, 242)
-	var cell := Vector2(88, 112)
 	var tiles: Array = state["tiles"]
 	var removed: Array = state["removed"]
 	for index in range(tiles.size()):
-		var row := index / 5
-		var col := index % 5
-		var rect := Rect2(origin + Vector2(col * cell.x, row * cell.y), Vector2(76, 96))
+		var rect := _mahjong_tile_rect(index)
 		if index in removed:
-			draw_circle(rect.get_center(), 4.0, Color("8be5c7", 0.16))
+			draw_circle(rect.get_center(), 3.5, Color("8be5c7", 0.18))
+			draw_arc(rect.get_center(), 11.0, -PI * 0.25, PI * 1.25, 18, Color("8be5c7", 0.12), 1.2)
 			continue
 		var selected := int(state["selected"]) == index
+		var mismatch_amount := 0.0
+		var object_scale := 1.0
+		var object_offset := Vector2.ZERO
+		var fx_age := elapsed - float(mahjong_object_fx.get("started", -10.0))
+		var fx_duration := float(mahjong_object_fx.get("duration", 0.0))
+		var fx_indices: Array = mahjong_object_fx.get("indices", [])
+		if fx_duration > 0.0 and fx_age >= 0.0 and fx_age < fx_duration and index in fx_indices:
+			var fx_t := clampf(fx_age / fx_duration, 0.0, 1.0)
+			match str(mahjong_object_fx.get("kind", "")):
+				"select":
+					object_scale = 1.0 + sin(minf(1.0, fx_t / 0.62) * PI) * 0.055
+					object_offset.y -= sin(minf(1.0, fx_t / 0.52) * PI) * 5.0
+				"deselect":
+					object_offset.y += sin(fx_t * PI) * 3.0
+				"mismatch":
+					var envelope := pow(1.0 - fx_t, 1.8)
+					var direction := -1.0 if index == int(fx_indices[0]) else 1.0
+					object_offset.x += sin(fx_t * TAU * 4.5) * 6.0 * envelope * direction
+					mismatch_amount = sin(minf(1.0, fx_t / 0.30) * PI) * envelope
 		if selected:
-			rect.position.y -= 7.0
-		_draw_panel(Rect2(rect.position + Vector2(0, 8), rect.size), Color("071c19", 0.48), Color.TRANSPARENT, 8, 0)
-		_draw_panel(Rect2(rect.position + Vector2(0, 4), rect.size), Color("99cdbb"), Color("5d8c7d", 0.72), 8, 1)
-		var face := Rect2(rect.position, rect.size - Vector2(0, 5))
-		_draw_panel(face, Color("f2ebd6") if not selected else Color("b8f0db"), CYAN if selected else Color("d4c7a7"), 8, 2)
-		_draw_mahjong_face(face, int(tiles[index]))
-		if selected:
-			draw_rect(face.grow(4), CYAN, false, 3.0)
-	_draw_text("象牙牌面 · 选中牌会抬起发光", Vector2(44, 728), 13, Color("d5e8df"))
+			object_offset.y -= 8.0
+		if object_scale != 1.0:
+			var center := rect.get_center()
+			rect.size *= object_scale
+			rect.position = center - rect.size * 0.5
+		rect.position += object_offset
+		_draw_mahjong_tile(rect, int(tiles[index]), selected, mismatch_amount)
+	_draw_mahjong_pair_feedback()
+	_draw_text("象牙玉底 · 点选抬牌 · 同纹共鸣", Vector2(44, 728), 13, Color("d5e8df"))
 
-func _draw_mahjong_face(rect: Rect2, value: int) -> void:
+func _mahjong_tile_rect(index: int) -> Rect2:
+	var origin := Vector2(44, 242)
+	var cell := Vector2(88, 112)
+	return Rect2(origin + Vector2((index % 5) * cell.x, (index / 5) * cell.y), Vector2(76, 96))
+
+func _mahjong_tile_center(index: int) -> Vector2:
+	return _mahjong_tile_rect(index).get_center()
+
+func _draw_mahjong_tile(rect: Rect2, value: int, selected := false, mismatch_amount := 0.0, alpha := 1.0) -> void:
+	# The authored SVG is the jade/contact backing. The visible ivory hero body
+	# is the blank GAG component; all gameplay glyphs stay live and code-native.
+	draw_texture_rect(MAHJONG_TILE_BASE_TEXTURE, rect, false, Color(1, 1, 1, alpha))
+	var source_size := MAHJONG_GAG_TILE_TEXTURE.get_size()
+	var available_size := rect.size - Vector2(12.0, 4.0)
+	var fit_scale := minf(available_size.x / source_size.x, available_size.y / source_size.y)
+	var gag_size := source_size * fit_scale
+	var gag_rect := Rect2(rect.get_center() - gag_size * 0.5 + Vector2(0, -1.0), gag_size)
+	draw_texture_rect(MAHJONG_GAG_TILE_TEXTURE, gag_rect, false, Color(1, 1, 1, alpha))
+	var face := Rect2(rect.position, rect.size - Vector2(0, rect.size.y * 0.08))
+	var inset := face.grow(-maxf(5.0, rect.size.x * 0.07))
+	if selected:
+		_draw_panel(inset, Color("a8f0d8", 0.16 * alpha), Color.TRANSPARENT, 5, 0)
+	_draw_mahjong_face(inset, value, alpha)
+	if selected:
+		draw_arc(face.get_center(), minf(face.size.x, face.size.y) * 0.54, -PI * 0.82, PI * 0.16, 30, Color("9effe1", 0.78 * alpha), 3.0, true)
+		draw_circle(face.position + Vector2(face.size.x - 12, 12), 4.0, Color("eafff8", 0.88 * alpha))
+	if mismatch_amount > 0.01:
+		draw_line(face.position + Vector2(12, 17), face.end - Vector2(12, 17), Color("e44f62", mismatch_amount * alpha), 3.0)
+		draw_line(Vector2(face.end.x - 12, face.position.y + 17), Vector2(face.position.x + 12, face.end.y - 17), Color("ff9ba8", mismatch_amount * 0.72 * alpha), 2.0)
+
+func _draw_mahjong_pair_feedback() -> void:
+	var kind := str(mahjong_object_fx.get("kind", ""))
+	if kind not in ["pair", "clear"]:
+		return
+	var age := elapsed - float(mahjong_object_fx.get("started", -10.0))
+	var duration := float(mahjong_object_fx.get("duration", 0.0))
+	if duration <= 0.0 or age < 0.0 or age >= duration:
+		return
+	var indices: Array = mahjong_object_fx.get("indices", [])
+	if indices.size() != 2:
+		return
+	var t := clampf(age / duration, 0.0, 1.0)
+	var gather := 1.0 - pow(1.0 - clampf((t - 0.10) / 0.46, 0.0, 1.0), 3.0)
+	var settle := clampf((t - 0.58) / 0.42, 0.0, 1.0)
+	var source_a := _mahjong_tile_center(int(indices[0]))
+	var source_b := _mahjong_tile_center(int(indices[1]))
+	var midpoint := (source_a + source_b) * 0.5
+	var value := int(mahjong_object_fx.get("value", 1))
+	var alpha := 1.0 - settle
+	for ghost in range(2):
+		var source := source_a if ghost == 0 else source_b
+		var side := -1.0 if ghost == 0 else 1.0
+		var target := midpoint + Vector2(side * (12.0 if kind == "pair" else 7.0), -10.0 - sin(gather * PI) * 11.0)
+		var center := source.lerp(target, gather)
+		var scale := 1.0 + sin(minf(1.0, t / 0.42) * PI) * (0.07 if kind == "pair" else 0.12) - settle * 0.32
+		var ghost_size := Vector2(76, 96) * scale
+		_draw_mahjong_tile(Rect2(center - ghost_size * 0.5, ghost_size), value, false, 0.0, alpha)
+		draw_line(source, center, Color("8ff0ce", 0.22 * alpha), 2.0)
+	if kind == "clear":
+		var bloom := sin(minf(1.0, t / 0.66) * PI)
+		for petal in range(8):
+			var angle := float(petal) / 8.0 * TAU + t * 0.35
+			var p := midpoint + Vector2(cos(angle), sin(angle)) * (20.0 + gather * 46.0)
+			draw_circle(p, 3.0 + bloom * 3.0, Color("f6d987", 0.74 * alpha))
+
+func _draw_mahjong_face(rect: Rect2, value: int, alpha := 1.0) -> void:
 	var center := rect.get_center()
 	match value:
 		1, 2, 3, 4:
-			_draw_center(["", "东", "南", "西", "北"][value], center + Vector2(0, 6), 27, Color("214d47"))
+			var wind_color := Color("28594f", alpha)
+			for spoke in range(4):
+				var angle := float(spoke) * PI * 0.5
+				var direction := Vector2(cos(angle), sin(angle))
+				draw_line(center + direction * 22.0, center + direction * 28.0, Color("62a28f", 0.46 * alpha), 2.0)
+			_draw_center_font(UI_FONT, ["", "东", "南", "西", "北"][value], center + Vector2(1, 7), 27, Color("756d59", 0.22 * alpha))
+			_draw_center_font(UI_FONT, ["", "东", "南", "西", "北"][value], center + Vector2(0, 5), 27, wind_color)
 		5:
-			_draw_center("中", center + Vector2(0, 6), 29, Color("c83f4f"))
+			_draw_panel(Rect2(center - Vector2(19, 23), Vector2(38, 46)), Color("d44b58", 0.06 * alpha), Color("c83f4f", 0.58 * alpha), 5, 2)
+			_draw_center_font(UI_FONT, "中", center + Vector2(0, 6), 29, Color("c83f4f", alpha))
+			draw_line(center + Vector2(-13, 26), center + Vector2(13, 26), Color("c83f4f", 0.48 * alpha), 2.0)
 		6:
-			_draw_center("发", center + Vector2(0, 6), 29, Color("3c8c64"))
+			_draw_center_font(UI_FONT, "发", center + Vector2(0, 6), 29, Color("3c8c64", alpha))
+			for leaf in [-1.0, 1.0]:
+				var leaf_center := center + Vector2(leaf * 18.0, -21)
+				draw_colored_polygon(PackedVector2Array([leaf_center + Vector2(0, -6), leaf_center + Vector2(5 * leaf, 0), leaf_center + Vector2(0, 6), leaf_center - Vector2(5 * leaf, 0)]), Color("3c8c64", 0.62 * alpha))
 		7:
-			_draw_center("白", center + Vector2(0, 6), 27, Color("4385c6"))
-			draw_rect(Rect2(center - Vector2(16, 20), Vector2(32, 40)), Color("4385c6", 0.58), false, 2.0)
+			_draw_panel(Rect2(center - Vector2(18, 23), Vector2(36, 46)), Color("f8fbf3", 0.34 * alpha), Color("4385c6", 0.72 * alpha), 3, 2)
+			for notch in [-1.0, 1.0]:
+				draw_line(center + Vector2(notch * 18, -13), center + Vector2(notch * 13, -18), Color("4385c6", 0.58 * alpha), 2.0)
+			_draw_center_font(UI_FONT, "白", center + Vector2(0, 5), 20, Color("4385c6", 0.76 * alpha))
 		8, 9, 10:
 			var count := value - 7
 			for i in range(count):
-				draw_circle(center + Vector2((i - (count - 1) * 0.5) * 17, 0), 7.0, [Color("4385c6"), Color("c84b58"), Color("47a06e")][i % 3])
+				var pip_center := center + Vector2((i - (count - 1) * 0.5) * 18, 0)
+				var pip_color: Color = [Color("4385c6"), Color("c84b58"), Color("47a06e")][i % 3]
+				draw_circle(pip_center, 8.5, Color(pip_color.darkened(0.18), alpha))
+				draw_circle(pip_center, 6.8, Color(pip_color, alpha))
+				draw_circle(pip_center + Vector2(-2, -2), 2.0, Color("f8fff8", 0.46 * alpha))
 
 func _init_tileclub() -> void:
 	var tiles: Array = []

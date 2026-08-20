@@ -1,0 +1,44 @@
+{
+  "result": "PASS",
+  "game_id": "mahjong",
+  "viewport": [540, 960],
+  "stable_signature": {
+    "asset": "res://assets/art/catalog/tile_games/gag/mahjong_tile_blank_gag_v1.png",
+    "visible_before_input": true,
+    "instances": 20,
+    "runtime_component_size": [76, 96],
+    "stable_frame": "00-stable.webp",
+    "stable_frame_sha256": "5f077ce8dc5b2c6153b003fa2f351b82bb13c7ec96cc8a1b783dcfed3d9c225e"
+  },
+  "events": {
+    "selection": {"grade": 1, "frames": ["01-select-intent.webp", "02-select-impact.webp", "03-select-settle.webp"]},
+    "mismatch": {"grade": 2, "frames": ["04-mismatch-intent.webp", "05-mismatch-impact.webp", "06-mismatch-settle.webp", "07-mismatch-recovery.webp"]},
+    "pair": {"grade": 2, "frames": ["08-pair-intent.webp", "09-pair-anticipation.webp", "10-pair-impact.webp", "11-pair-settle.webp", "12-pair-recovery.webp"]},
+    "clear": {"grade": 4, "frames": ["13-clear-intent.webp", "14-clear-impact.webp", "15-clear-settle.webp", "16-result-entrance.webp", "17-result-stable.webp"]}
+  },
+  "state_snapshots": {
+    "selection": {"selected": 0, "moves": 0, "mistakes": 0, "score": 0, "status": "playing", "kind": "jade_select", "grade": 1},
+    "mismatch": {"selected": 1, "removed": 0, "moves": 0, "mistakes": 1, "score": 0, "status": "playing", "kind": "jade_mismatch", "grade": 2},
+    "pair": {"selected": -1, "removed": [0, 10], "moves": 1, "mistakes": 0, "score": 50, "status": "playing", "kind": "jade_pair", "grade": 2},
+    "clear": {"selected": -1, "removed_count": 20, "moves": 1, "mistakes": 0, "score": 50, "status": "won", "kind": "jade_pair", "grade": 4}
+  },
+  "continuous_peak": {
+    "path": "continuous/mahjong-clear.webm",
+    "frames": 36,
+    "fps": 30,
+    "duration_seconds": 1.2,
+    "sha256": "72d4ca5e38e4b7ec76160a3ae577d731d497ae20ba177066d361f5d2ad1e8f58"
+  },
+  "comparison": {
+    "path": "../stable-comparison.webp",
+    "sha256": "932e7dda841dc44cbba43c03a114bbfe9b567323a9e6e540a0e2fcc6a50ab2a4",
+    "layout": "baseline left, candidate right"
+  },
+  "font_and_generated_text": {
+    "live_cjk_font": "UI_FONT / bundled Noto Sans CJK subset",
+    "generated_text_present": false,
+    "stable_contrast": "PASS",
+    "mismatch_contrast": "PASS",
+    "result_contrast": "PASS"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "event": {
+    "duration": 0.62,
+    "font_role": "ui_cjk",
+    "game_id": "mahjong",
+    "grade": 2,
+    "kind": "jade_mismatch",
+    "label": "纹样不同"
+  },
+  "game_id": "mahjong",
+  "mistakes": 1,
+  "moves": 0,
+  "object_fx": {
+    "duration": 0.62,
+    "grade": 2,
+    "indices": [
+      0,
+      1
+    ],
+    "kind": "mismatch",
+    "value": 2
+  },
+  "removed": [],
+  "score": 0,
+  "selected": 1,
+  "status": "playing",
+  "tiles": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ]
+}

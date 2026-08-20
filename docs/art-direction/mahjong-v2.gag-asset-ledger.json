@@ -1,0 +1,118 @@
+{
+  "schema_version": "offline-games-gag-ledger/v1",
+  "created_at": "2026-08-20T10:50:00Z",
+  "scope": ["mahjong"],
+  "starting_commit": "8891069cf0831550f1ff35a24ef4bf7923dcc342",
+  "gag": {
+    "endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+    "transport": "MCP Streamable HTTP via direct Python client",
+    "server": "game-assets-generator",
+    "server_version_reported": "0.2.0",
+    "tools_count": 21,
+    "execution_mode": {
+      "local_gpu": false,
+      "image": "fal.ai API",
+      "background_removal": "Remove.bg API",
+      "audio": "ElevenLabs API",
+      "semantic_embedding": "Gemini API"
+    }
+  },
+  "semantic_searches": [
+    {
+      "id": "mahjong_visual_search",
+      "query": "无文字 卡通玉石麻将牌纹 玉雕祥云 竹叶 奖励光效 透明背景 游戏素材",
+      "result_count": 12,
+      "candidates": [
+        ["conquest-vfx-atlas-chroma-v2.png", 0.4256426303934061],
+        ["ring_1.png", 0.40631012068746103],
+        ["ring_1_196948.png", 0.40631012068746103],
+        ["conquest-vfx-atlas-v2.png", 0.4007037339811399],
+        ["ring_2.png", 0.39986963510703455],
+        ["ring_2_97740.png", 0.39986963510703455],
+        ["card-ui-chrome-atlas-chroma-v1.png", 0.3996847865750833],
+        ["card-tier-ui-material.png", 0.3958523979003559],
+        ["card-tier-ui-material_2327013.png", 0.3958523979003559],
+        ["card-tier-ui-minimal.png", 0.3932512213255878],
+        ["card-tier-ui-minimal_2241828.png", 0.3932512213255878],
+        ["impact-arrow.png", 0.3927500456297941]
+      ],
+      "decision": "reject all and generate",
+      "reason": "The results were generic rings, VFX atlases, card chrome and an arrow impact; none was a blank jade/ivory Mahjong hero component."
+    },
+    {
+      "id": "mahjong_audio_search",
+      "query": "玉石碰撞 清脆风铃 麻将配对 清盘 奖励 游戏音效",
+      "result_count": 12,
+      "candidates": [
+        ["music_20260330_002207_peaceful_ambient_exploration_m_loop.mp3", 0.6465467407660386],
+        ["music_20260330_002207_peaceful_ambient_exploration_m.wav", 0.6286506794566183],
+        ["accept.wav", 0.6210291626939822],
+        ["accept_32078.wav", 0.6210291626939822],
+        ["sfx_20260330_002333_coin_collect_ding_sp_1.mp3", 0.6149239897173927],
+        ["d3fb372d8ab42f2a3c03201566490e02c861396c1faa7e38f7b5b50b8baca23d.mp3", 0.6141341436716006],
+        ["80e0abaecab2e0e37b0f8161075ea64aa6ff09915861fe0b884fdac1f62b12a0.mp3", 0.6066838460632739],
+        ["sfx_20251213_095805_coin_collect_ding_sp_3.wav", 0.6050069338122351],
+        ["sfx_20251213_095805_coin_collect_ding_sp_3_19278.wav", 0.6050069338122351],
+        ["warning.wav", 0.6041685883282053],
+        ["warning_48078.wav", 0.6041685883282053],
+        ["fruit_cascade_reward_01_master.wav", 0.6017319643081257]
+      ],
+      "decision": "reject all and generate",
+      "reason": "Music, generic accept/coin/warning sounds and fruit audio did not combine a tile clack with jade resonance."
+    }
+  ],
+  "image_generation": {
+    "provider": "fal.ai",
+    "model": "fal-ai/flux-pro/v1.1",
+    "seed": null,
+    "rejected": {
+      "asset_id": "gag-image-20260820-183609-fal",
+      "source_sha256": "4e1c8295024b2760c1af757db02c37de348bda10e3e482d6d2cad66e209b4507",
+      "reason": "The top-right key-fret ornament read as an invented character and violated the no-pseudo-glyph boundary."
+    },
+    "selected": {
+      "asset_id": "gag-image-20260820-183729-fal",
+      "server_source": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/tile_games/gag_v1/mahjong/generated_images__20260820_183729_FAL.ai.png",
+      "source_sha256": "95aca2558e805ede5140a31bc799fe84d82cdef2943c30715c369e14efba45bb",
+      "prompt": "Isolated production-ready 2D cartoon mobile game asset, exactly one single blank front-facing mahjong tile centered, tall rounded rectangle in straight orthographic view. Warm ivory ceramic face inset into a translucent deep jade-green base, clean simple double-line frame, one small natural bamboo leaf sprig at lower right only, tactile premium toy proportions, coherent soft contact shadow, crisp bevel, restrained pearly edge highlight, subtle mineral grain, large completely empty central face reserved for live code-drawn glyph. Absolutely no writing and no character-like ornaments: no Chinese characters, no letters, no numbers, no pips, no symbols, no key-fret, no meander, no maze motif, no text, no logo, no UI, no hands, no scene, no multiple objects. Plain neutral gray studio background with strong silhouette separation for later background removal.",
+      "style_reference_prompt": "Warm crafted pocket-game cartoon art; structured rounded silhouette readable at 76 by 96 pixels; jade teahouse palette; clean contact, body, edge, highlight and texture layers; stylized, not photoreal."
+    },
+    "derivations": [
+      {"tool": "remove_background", "provider": "removebg", "sha256": "62f919da6ec61cbe3a3e9c95600798594938530599b83c6fe6ae539f2f48889b", "size": [500, 500]},
+      {"tool": "crop_image", "mode": "auto_trim", "padding": 8, "sha256": "7ddfb512f1bde4c9c46447d92121b2e3c766e19e6d13a5a332cc52ba0ed1cdbc", "size": [275, 408]}
+    ],
+    "runtime_asset": "res://assets/art/catalog/tile_games/gag/mahjong_tile_blank_gag_v1.png",
+    "runtime_sha256": "7ddfb512f1bde4c9c46447d92121b2e3c766e19e6d13a5a332cc52ba0ed1cdbc",
+    "first_visible_beat": "stable board before input; 20 visible instances at 76x96 component size",
+    "runtime_references": ["main.gd::_draw_mahjong_tile", "stable board", "select", "mismatch", "pair ghosts", "terminal result badge"]
+  },
+  "audio_generation": {
+    "asset_id": "jade_pair_resonance",
+    "version": "v1",
+    "provider": "elevenlabs",
+    "model": "eleven_text_to_sound_v2",
+    "seed": null,
+    "prompt": "A short tactile mobile puzzle game sound effect: two warm ivory mahjong tiles make a precise soft clack, immediately followed by a delicate jade chime resonance and one tiny celebratory sparkle. Premium, clean, cozy teahouse tone, fast attack, short decay, no voice, no speech, no music, no ambience.",
+    "delivery_digest": "94fd48e18447e583703d467ad491b63dc54d13f8cac09a56f2eef80f93c9ad61",
+    "source_master_remote": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/tile_games/gag_v1/mahjong/jade_pair_resonance_01_master.wav",
+    "source_sha256": "205cdbb86682665230d5235d660b73c2d4e877ecfb1ccc55a8958423e9583e15",
+    "selected_variation": 1,
+    "source_qa": {"status": "issues_detected", "measured_lufs": -22.27, "measured_true_peak_db": -7.57, "duration_seconds": 0.699625, "sample_rate": 48000, "channels": 1},
+    "derivation": "ffmpeg loudnorm I=-16:TP=-1.5:LRA=7; 48 kHz mono; libvorbis q5",
+    "runtime_asset": "res://assets/audio/catalog/tile_games/gag/jade_pair_resonance_gag_v1.ogg",
+    "runtime_sha256": "fe213b4ff0241ff6b3936adc02cd1830f2b9ff7563161b1ce25d85fc0a511472",
+    "runtime_reference": "main.gd::_catalog_event_sfx -> jade_pair grade 2 and grade 4"
+  },
+  "authored_support_asset": {
+    "path": "res://assets/art/catalog/tile_games/mahjong_tile_base.svg",
+    "provenance": "project-authored SVG; not GAG",
+    "sha256": "88ae2dba64f3c832a20f3c086ed94219d2b6939c5a693fb7c94427dfaafc9fbd",
+    "role": "jade/contact backing beneath the generated ivory hero body"
+  },
+  "shipping_boundary": {
+    "source_masters_in_repository": 0,
+    "rejected_candidates_in_repository": 0,
+    "only_runtime_derivatives_ship": true,
+    "ephemeral_download_urls": "omitted because signed URLs expire"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "event": {
+    "duration": 0.82,
+    "font_role": "ui_cjk",
+    "game_id": "mahjong",
+    "grade": 2,
+    "kind": "jade_pair",
+    "label": "同纹共鸣 · +50"
+  },
+  "game_id": "mahjong",
+  "mistakes": 0,
+  "moves": 1,
+  "object_fx": {
+    "duration": 0.82,
+    "grade": 2,
+    "indices": [
+      0,
+      10
+    ],
+    "kind": "pair",
+    "value": 1
+  },
+  "removed": [
+    0,
+    10
+  ],
+  "score": 50,
+  "selected": -1,
+  "status": "playing",
+  "tiles": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ]
+}
