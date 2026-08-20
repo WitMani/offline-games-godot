@@ -1,0 +1,34 @@
+{
+  "average_frame_ms": 17.4083388888889,
+  "busy_effect_cap": 6,
+  "game_id": "merge2048",
+  "max_frame_ms": 33.729,
+  "note": "Xvfb/llvmpipe comparative trace: full GAG material board, six capped grade-four catalog envelopes, and one GAG wood-shaving burst; not a device FPS claim",
+  "p95_frame_ms": 21.884,
+  "phases": {
+    "empty_board_baseline": {
+      "average_frame_ms": 13.4359555555556,
+      "max_frame_ms": 25.072,
+      "p95_frame_ms": 17.61,
+      "sample_count": 90
+    },
+    "full_board_six_fx_plus_burst": {
+      "average_frame_ms": 17.4083388888889,
+      "max_frame_ms": 33.729,
+      "p95_frame_ms": 21.884,
+      "sample_count": 180
+    },
+    "full_material_board": {
+      "average_frame_ms": 18.1659444444444,
+      "max_frame_ms": 28.663,
+      "p95_frame_ms": 23.531,
+      "sample_count": 90
+    }
+  },
+  "renderer": "llvmpipe (LLVM 21.1.8, 256 bits)",
+  "sample_count": 180,
+  "viewport": [
+    540,
+    960
+  ]
+}

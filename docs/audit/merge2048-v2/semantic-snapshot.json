@@ -1,0 +1,58 @@
+{
+  "events": [
+    {
+      "grade": 1,
+      "kind": "merge_reject",
+      "label": "",
+      "semantic": "wood_reject"
+    }
+  ],
+  "game_id": "merge2048",
+  "runtime_assets": [
+    "tile_tier_1.png",
+    "tile_tier_2.png",
+    "tile_tier_3.png",
+    "tile_tier_4.png",
+    "wood_shaving_burst.png",
+    "tile_slide.ogg",
+    "tile_merge.ogg",
+    "tile_milestone.ogg"
+  ],
+  "state": {
+    "board": [
+      [
+        2,
+        4,
+        8,
+        16
+      ],
+      [
+        32,
+        64,
+        128,
+        256
+      ],
+      [
+        4,
+        8,
+        16,
+        32
+      ],
+      [
+        64,
+        128,
+        256,
+        512
+      ]
+    ],
+    "game_id": "merge2048",
+    "moves": 0,
+    "score": 0,
+    "status": "playing",
+    "target": 2048
+  },
+  "viewport": [
+    540,
+    960
+  ]
+}

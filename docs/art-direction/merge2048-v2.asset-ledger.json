@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-08-20T11:00:00Z",
+  "game_id": "merge2048",
+  "runtime_presenter": "res://presentation/merge2048_classic_presenter.gd",
+  "gag_endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+  "semantic_search": {
+    "status": "completed",
+    "queries": [
+      "cozy premium cartoon 2048 number tile plaques, coherent material family, blank faces, wood workshop",
+      "wood shaving merge burst, hollow center, transparent game VFX, crafted workshop",
+      "polished wooden tile slide merge milestone short game sound effects"
+    ],
+    "rejected_candidates": [
+      {
+        "path": "animations/2048-merge-burst-spritesheet.png",
+        "score": 0.429,
+        "sha256": "7812b17b3e5a044a6b3fec9060e07c6ca7b67d35d6fc854cb2857e865f67ba40",
+        "decision": "rejected: teal/orange sci-fi rune circles, baked numeric marks, and pseudo-text contradict the crafted-atelier pillars"
+      },
+      {
+        "path": "vfx/reward-reveal-burst.png",
+        "sha256": "ba915024e59cd52b95bfe6e63f85d0949e5972867632d0b4a7af78a0b1eb3e90",
+        "decision": "rejected: generic pink/yellow starburst lacks the wood material language"
+      }
+    ],
+    "decision": "No existing candidate met the locked pillars. Fresh coherent-family generation was authorized after semantic search and visual inspection."
+  },
+  "source_masters": [
+    {
+      "id": "gag-merge2048-tile-family-20260820-183538",
+      "archive_path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/merge2048/v2/generated_images__20260820_183538_FAL.ai.png",
+      "provider": "fal",
+      "model": "fal-ai/flux-pro/v1.1",
+      "size": "square_hd",
+      "bytes": 288470,
+      "sha256": "c3d36213618dc3a38538be3b2fc4435c16d6662986c5e62934104ebf69dfb711",
+      "route_note": "Generated through GAG pure-API mode. The archive uses a .png name but contains JPEG content.",
+      "prompt_summary": "A coherent 2 by 2 sprite-family sheet of four blank premium 2048 plaques: pale birch, amber lacquer, blue enamel over dark wood, and purple masterwork enamel; centered orthographic objects, consistent silhouette and lighting, white background, no numbers, text, UI, logo, hands, or scene."
+    },
+    {
+      "id": "gag-merge2048-wood-burst-20260820-183756",
+      "archive_path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/merge2048/v2/generated_images__20260820_183756_FAL.ai.png",
+      "provider": "fal",
+      "model": "fal-ai/flux-pro/v1.1",
+      "size": "square_hd",
+      "bytes": 398653,
+      "sha256": "f14501b189e18ae98c541820451e8189779783f0c48c3f56d79abef608478bf7",
+      "route_note": "Generated through GAG pure-API mode. The archive uses a .png name but contains JPEG content.",
+      "prompt_summary": "Single isolated premium cartoon ring of honey-colored wood shavings and tiny crafted splinters, strong hollow readable center, warm workshop palette, white background, no tile, text, number, UI, logo, fire, smoke, or sci-fi glow."
+    },
+    {
+      "id": "gag-merge2048-slide-v1",
+      "archive_path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/merge2048/v2/sfx/wood_tile_slide/v1/wood_tile_slide_01.ogg",
+      "provider": "elevenlabs",
+      "digest": "ff826846be054c125c1390884dace7c7b3a1b0d6137943e4a335b4917dcbd539",
+      "duration_seconds": 0.536729,
+      "measured_lufs": -16.99,
+      "measured_true_peak_db": -3.49,
+      "prompt": "A very short polished wooden game tile sliding across a smooth lacquer board and settling with a soft tactile stop, cozy premium mobile puzzle sound, no music, no voice, no echo"
+    },
+    {
+      "id": "gag-merge2048-merge-v1",
+      "archive_path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/merge2048/v2/sfx/wood_tile_merge/v1/wood_tile_merge_01.ogg",
+      "provider": "elevenlabs",
+      "digest": "0ac7f13f3e987c99a139c665cc6bf2df7e19e24027d09bac6b7ff2e0e810872d",
+      "duration_seconds": 0.227708,
+      "measured_lufs": null,
+      "measured_true_peak_db": -1.07,
+      "prompt": "Two chunky lacquered wooden number tiles meeting and fusing with one warm rounded clack, a tiny bright brass ping at the impact, premium cozy puzzle game, no music, no voice, no echo"
+    },
+    {
+      "id": "gag-merge2048-milestone-v1",
+      "archive_path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/merge2048/v2/sfx/wood_tile_milestone/v1/wood_tile_milestone_01.ogg",
+      "provider": "elevenlabs",
+      "digest": "4ab935e1a3d3c580ca1e6d85dec9f6299275d05ec61607c4e3e20884424747e7",
+      "duration_seconds": 1.0815,
+      "measured_lufs": -17.85,
+      "measured_true_peak_db": -2.38,
+      "prompt": "A rare triumphant wooden tile merge: deep crafted wood knock followed by a concise rising three-note brass and marimba sparkle, premium cozy 2048 milestone reward, no voice, no ambience"
+    }
+  ],
+  "produced_assets": [
+    {
+      "path": "assets/art/merge2048/tile_tier_1.png",
+      "dimensions": [256, 258],
+      "bytes": 93659,
+      "sha256": "9b467e880d0283953979dcd92a5d1b35075dda1e94da220150295e0981d958af",
+      "source_derivative_sha256": "a16a5e81fa9afa06812cf061197a7fa47664a355c4e1d9731fe30d41f3384d28",
+      "reference": "runtime preload; values 2 and 4",
+      "pipeline": "GAG fal generate_image -> crop_image(manual) -> Remove.bg -> crop_image(auto_trim,padding=8) -> Lanczos runtime downscale",
+      "source_master": "gag-merge2048-tile-family-20260820-183538",
+      "shipped": true
+    },
+    {
+      "path": "assets/art/merge2048/tile_tier_2.png",
+      "dimensions": [256, 264],
+      "bytes": 106866,
+      "sha256": "c569bdcddbab59f69f07fba6ffc8e13090c55ddc3929060cfbeaa9ecd1f27c56",
+      "source_derivative_sha256": "07b6aab68443d91b1607cfd2d6d8d33a17f755a44a9028d882571ab7d26cbe18",
+      "reference": "runtime preload; values 8 through 32",
+      "pipeline": "GAG fal generate_image -> crop_image(manual) -> Remove.bg -> crop_image(auto_trim,padding=8) -> Lanczos runtime downscale",
+      "source_master": "gag-merge2048-tile-family-20260820-183538",
+      "shipped": true
+    },
+    {
+      "path": "assets/art/merge2048/tile_tier_3.png",
+      "dimensions": [256, 254],
+      "bytes": 90107,
+      "sha256": "c53f928b86829cb1af2a0eabd812e0c0394de93e67cb68e0ac45724869a1fa5f",
+      "source_derivative_sha256": "07c3050c7295fd1e6b567cf13244fb948f3d63b67f32f43e4103cf49e7e4d041",
+      "reference": "runtime preload; values 64 through 256",
+      "pipeline": "GAG fal generate_image -> crop_image(manual) -> Remove.bg -> crop_image(auto_trim,padding=8) -> Lanczos runtime downscale",
+      "source_master": "gag-merge2048-tile-family-20260820-183538",
+      "shipped": true
+    },
+    {
+      "path": "assets/art/merge2048/tile_tier_4.png",
+      "dimensions": [256, 260],
+      "bytes": 95292,
+      "sha256": "a94f0110c9116d93d29412a786fc6eea7623ef41b6fae19e22fea3d230bc5ebb",
+      "source_derivative_sha256": "8a3f2663b2610650882d9d07170378dcffd7f997b3f6ab78365541fb002befcd",
+      "reference": "runtime preload; values 512 and above",
+      "pipeline": "GAG fal generate_image -> crop_image(manual) -> Remove.bg -> crop_image(auto_trim,padding=8) -> Lanczos runtime downscale",
+      "source_master": "gag-merge2048-tile-family-20260820-183538",
+      "shipped": true
+    },
+    {
+      "path": "assets/art/merge2048/wood_shaving_burst.png",
+      "dimensions": [320, 314],
+      "bytes": 153362,
+      "sha256": "51ab379127f1db6997aeec5b7d7e7af48c3986268871f70e12a90c2086c96a93",
+      "source_derivative_sha256": "64f7a6fcd0b95093298068d12b3fae30463b1ea0236858abd3588766bf9f3102",
+      "reference": "grade 3 and 4 authoritative impact cell",
+      "pipeline": "GAG fal generate_image(square_hd) -> Remove.bg -> crop_image(auto_trim,padding=8) -> Lanczos runtime downscale",
+      "source_master": "gag-merge2048-wood-burst-20260820-183756",
+      "shipped": true
+    },
+    {
+      "path": "assets/audio/merge2048/tile_slide.ogg",
+      "bytes": 9654,
+      "sha256": "dedf5416757fb8d88ba0574cca319395b9626e7229fe285dbe62d1313b8d217d",
+      "reference": "wood_slide and all legal merge semantics",
+      "pipeline": "GAG generate_audio(provider=elevenlabs, asset_id=wood_tile_slide, version=v1, variation=1)",
+      "source_master": "gag-merge2048-slide-v1",
+      "shipped": true
+    },
+    {
+      "path": "assets/audio/merge2048/tile_merge.ogg",
+      "bytes": 6152,
+      "sha256": "84fa2f41442ad097c5df003c64cc7ea0cc973ac97a405ab84c2b50fd4719e",
+      "reference": "wood_merge, wood_milestone, and wood_masterpiece semantic events",
+      "pipeline": "GAG generate_audio(provider=elevenlabs, asset_id=wood_tile_merge, version=v1, variation=1)",
+      "source_master": "gag-merge2048-merge-v1",
+      "shipped": true
+    },
+    {
+      "path": "assets/audio/merge2048/tile_milestone.ogg",
+      "bytes": 15084,
+      "sha256": "819b7f77bcd05cd787b3357c9b9281dda944366c8d4db405ab84c2b50fd4719e",
+      "reference": "grade 3 and 4 milestone layer",
+      "pipeline": "GAG generate_audio(provider=elevenlabs, asset_id=wood_tile_milestone, version=v1, variation=1)",
+      "source_master": "gag-merge2048-milestone-v1",
+      "shipped": true
+    }
+  ]
+}

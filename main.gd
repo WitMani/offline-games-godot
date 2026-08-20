@@ -57,6 +57,7 @@ const SNAKE_GB_RULES = preload("res://models/snake_gb_model.gd")
 const SNAKES_ARENA_RULES = preload("res://models/snakes_arena_model.gd")
 const MERGE2248_RULES = preload("res://models/merge2248_model.gd")
 const MERGE2248_PRESENTATION = preload("res://presentation/merge2248_presenter.gd")
+const MERGE2048_CLASSIC_PRESENTATION = preload("res://presentation/merge2048_classic_presenter.gd")
 const CATALOG_ART_DIRECTION = preload("res://presentation/catalog_art_director.gd")
 const WATERMELON_PRESENTATION = preload("res://presentation/watermelon_presenter.gd")
 const SFX_CASE_OPEN: AudioStream = preload("res://assets/audio/ui/case_open.wav")
@@ -68,6 +69,9 @@ const SFX_SNAKE_WIN: AudioStream = preload("res://assets/audio/snake/win.wav")
 const SFX_FRUIT_DROP: AudioStream = preload("res://assets/audio/2048balls/fruit_drop.ogg")
 const SFX_FRUIT_MERGE: AudioStream = preload("res://assets/audio/2048balls/fruit_merge.ogg")
 const SFX_FRUIT_CASCADE: AudioStream = preload("res://assets/audio/2048balls/fruit_cascade.ogg")
+const SFX_2048_SLIDE: AudioStream = preload("res://assets/audio/merge2048/tile_slide.ogg")
+const SFX_2048_MERGE: AudioStream = preload("res://assets/audio/merge2048/tile_merge.ogg")
+const SFX_2048_MILESTONE: AudioStream = preload("res://assets/audio/merge2048/tile_milestone.ogg")
 
 var catalog: Array = [
 	{"id":"merge2248", "title":"2248", "subtitle":"数字连线", "group":"数字", "accent":Color("ffbf2f"), "desc":"八方向连接数字，把相邻数合成到 2048"},
@@ -135,6 +139,7 @@ var snake_gb_model = SNAKE_GB_RULES.new()
 var snakes_arena_model = SNAKES_ARENA_RULES.new()
 var merge2248_model = MERGE2248_RULES.new()
 var merge2248_presenter = MERGE2248_PRESENTATION.new()
+var merge2048_classic_presenter = MERGE2048_CLASSIC_PRESENTATION.new()
 var catalog_art_director = CATALOG_ART_DIRECTION.new()
 var watermelon_presenter = WATERMELON_PRESENTATION.new()
 var catalog_fx: Array[Dictionary] = []
@@ -151,6 +156,7 @@ var merge2248_juice_grade := 0
 var merge2248_juice_destination := Vector2.ZERO
 var merge2248_score_started := -10.0
 var merge2248_score_grade := 1
+var merge2048_motion: Dictionary = {}
 var snake_ghosts: Array[Dictionary] = []
 var snake_pixels: Array[Dictionary] = []
 var snake_fx_kind := ""
@@ -314,11 +320,11 @@ func _start_motion(kind: String, from: Vector2, to: Vector2, color: Color, label
 	motion_label = label
 	queue_redraw()
 
-func _start_catalog_event(kind: String, position: Vector2, color: Color, grade := 1, label := "", duration := 0.72) -> void:
+func _start_catalog_event(kind: String, position: Vector2, color: Color, grade := 1, label := "", duration := 0.72, metadata: Dictionary = {}) -> void:
 	if game_id in ["merge2248", "snake_classic", "snake_io"]:
 		return
 	catalog_fx_serial += 1
-	catalog_fx.append({
+	var effect := {
 		"game_id": game_id,
 		"kind": kind,
 		"position": position,
@@ -328,13 +334,34 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 		"started": elapsed,
 		"duration": duration,
 		"seed": catalog_fx_serial,
-	})
+	}
+	effect.merge(metadata, true)
+	catalog_fx.append(effect)
 	# The fruit burst is a large transparent texture. Six concurrent envelopes
 	# preserve rapid taps and cascades while bounding overdraw on WebGL/Canvas.
-	var catalog_fx_cap := 6 if game_id == "watermelon" else 12
+	var catalog_fx_cap := 6 if game_id in ["watermelon", "merge2048"] else 12
 	while catalog_fx.size() > catalog_fx_cap:
 		catalog_fx.pop_front()
-	if "error" in kind or "reject" in kind or "mismatch" in kind:
+	var semantic := str(metadata.get("semantic", kind))
+	if game_id == "merge2048":
+		var wood_grade := clampi(grade, 1, 4)
+		if semantic == "wood_reject":
+			_play_sfx(SFX_SNAKE_REJECT, -17.0, 0.88)
+			_haptic_pattern([9, 22, 9])
+		elif semantic == "wood_slide":
+			_play_sfx(SFX_2048_SLIDE, -15.5, 0.96 + float(wood_grade) * 0.025)
+			_haptic(6)
+		else:
+			_play_sfx(SFX_2048_SLIDE, -20.0, 1.02)
+			_play_sfx(SFX_2048_MERGE, -13.5 + float(wood_grade) * 1.2, 0.92 + float(wood_grade) * 0.045)
+			if wood_grade >= 3:
+				_play_sfx(SFX_2048_MILESTONE, -19.0 + float(wood_grade) * 1.8, 0.94 + float(wood_grade) * 0.025)
+			match wood_grade:
+				1: _haptic(8)
+				2: _haptic_pattern([12, 18, 19])
+				3: _haptic_pattern([16, 15, 27])
+				_: _haptic_pattern([18, 13, 24, 13, 36])
+	elif "error" in kind or "reject" in kind or "mismatch" in kind:
 		_play_sfx(SFX_SNAKE_REJECT, -16.0, 0.94)
 		_haptic(12)
 	elif game_id == "watermelon":
@@ -1601,6 +1628,7 @@ func _draw_merge2248_fx(juice_transform: Transform2D = Transform2D.IDENTITY) -> 
 # -----------------------------------------------------------------------------
 
 func _init_merge() -> void:
+	merge2048_motion.clear()
 	var board := _new_grid(4, 4, 0)
 	board[1][1] = 2
 	board[2][2] = 2
@@ -1612,7 +1640,7 @@ func _init_merge() -> void:
 	_spawn_merge_tile()
 	_spawn_merge_tile()
 
-func _spawn_merge_tile() -> void:
+func _spawn_merge_tile() -> Dictionary:
 	var empty: Array[Vector2i] = []
 	var board: Array = state["board"]
 	for y in range(4):
@@ -1620,30 +1648,51 @@ func _spawn_merge_tile() -> void:
 			if int(board[y][x]) == 0:
 				empty.append(Vector2i(x, y))
 	if empty.is_empty():
-		return
+		return {}
 	var p: Vector2i = empty[rng.randi_range(0, empty.size() - 1)]
-	board[p.y][p.x] = 4 if rng.randf() > 0.86 else 2
+	var value := 4 if rng.randf() > 0.86 else 2
+	board[p.y][p.x] = value
+	return {"position":p, "value":value}
 
 func _slide_line(line: Array) -> Dictionary:
 	var compact: Array = []
-	for value in line:
+	for source_index in range(line.size()):
+		var value := int(line[source_index])
 		if int(value) > 0:
-			compact.append(int(value))
+			compact.append({"value":value, "sources":[source_index]})
 	var merged: Array = []
 	var gained := 0
 	var i := 0
 	while i < compact.size():
-		if i + 1 < compact.size() and compact[i] == compact[i + 1]:
-			var value: int = int(compact[i]) * 2
-			merged.append(value)
+		var current: Dictionary = compact[i]
+		if i + 1 < compact.size() and int(current["value"]) == int(compact[i + 1]["value"]):
+			var value: int = int(current["value"]) * 2
+			var sources: Array = current["sources"].duplicate()
+			sources.append_array(compact[i + 1]["sources"])
+			merged.append({"value":value, "sources":sources})
 			gained += value
 			i += 2
 		else:
-			merged.append(compact[i])
+			merged.append(current)
 			i += 1
-	while merged.size() < line.size():
-		merged.append(0)
-	return {"line":merged, "gained":gained, "changed":merged != line}
+	var result_line: Array = []
+	var moves: Array[Dictionary] = []
+	for destination_index in range(merged.size()):
+		var group: Dictionary = merged[destination_index]
+		var result_value := int(group["value"])
+		result_line.append(result_value)
+		var sources: Array = group["sources"]
+		for source_index in sources:
+			moves.append({
+				"from_index":int(source_index),
+				"to_index":destination_index,
+				"source_value":int(line[int(source_index)]),
+				"result_value":result_value,
+				"merged":sources.size() > 1,
+			})
+	while result_line.size() < line.size():
+		result_line.append(0)
+	return {"line":result_line, "gained":gained, "changed":result_line != line, "moves":moves}
 
 func _merge_move(direction: Vector2i) -> void:
 	if state.get("status", "playing") != "playing":
@@ -1652,6 +1701,7 @@ func _merge_move(direction: Vector2i) -> void:
 	var board_before: Array = board.duplicate(true)
 	var changed := false
 	var gained := 0
+	var motion_moves: Array[Dictionary] = []
 	for index in range(4):
 		var line: Array = []
 		if direction == Vector2i.LEFT or direction == Vector2i.RIGHT:
@@ -1663,6 +1713,22 @@ func _merge_move(direction: Vector2i) -> void:
 			line.reverse()
 		var outcome: Dictionary = _slide_line(line)
 		var result_line: Array = outcome["line"]
+		for line_move in outcome["moves"]:
+			var from_index := int(line_move["from_index"])
+			var to_index := int(line_move["to_index"])
+			if direction == Vector2i.RIGHT or direction == Vector2i.DOWN:
+				from_index = 3 - from_index
+				to_index = 3 - to_index
+			var from := Vector2i(from_index, index) if direction.x != 0 else Vector2i(index, from_index)
+			var to := Vector2i(to_index, index) if direction.x != 0 else Vector2i(index, to_index)
+			if from != to or bool(line_move["merged"]):
+				motion_moves.append({
+					"from":from,
+					"to":to,
+					"source_value":int(line_move["source_value"]),
+					"result_value":int(line_move["result_value"]),
+					"merged":bool(line_move["merged"]),
+				})
 		if direction == Vector2i.RIGHT or direction == Vector2i.DOWN:
 			result_line.reverse()
 		if direction == Vector2i.LEFT or direction == Vector2i.RIGHT:
@@ -1673,21 +1739,50 @@ func _merge_move(direction: Vector2i) -> void:
 		changed = changed or bool(outcome["changed"])
 		gained += int(outcome["gained"])
 	if not changed:
+		if game_id == "merge2048":
+			var reject_position := Vector2(270, 454) + Vector2(direction) * 116.0
+			_flash_feedback("这一侧已经锁住", RED)
+			# The persistent top toast carries the copy; keep the local rejection
+			# mark text-free so it cannot cover live tile values on a full board.
+			_start_catalog_event("merge_reject", reject_position, RED, 1, "", 0.58, {"semantic":"wood_reject", "direction":direction})
+			_log_event("merge_rejected", {"direction":str(direction), "score":state["score"]})
 		return
+	var board_after_slide: Array = board.duplicate(true)
 	state["moves"] = int(state["moves"]) + 1
 	state["score"] = int(state["score"]) + gained
-	_spawn_merge_tile()
-	_flash_feedback("合成 +%d" % gained, GOLD if gained > 0 else CYAN)
-	var impact_position := _merge_impact_position(board_before, board, direction, gained)
+	var spawn := _spawn_merge_tile()
+	_flash_feedback("合成 +%d" % gained if gained > 0 else "木牌滑动归位", GOLD if gained > 0 else CYAN)
+	var impact_position := _merge_impact_position(board_before, board_after_slide, direction, gained)
 	var merge_color := GOLD if gained > 0 else CYAN
 	var merge_grade := 1
 	if gained >= 8: merge_grade = 2
 	if gained >= 32: merge_grade = 3
 	if gained >= 128: merge_grade = 4
+	var reached_target := _merge_has_target()
+	if reached_target:
+		merge_grade = 4
+	var impact_cell := Vector2i(
+		clampi(int(floor((impact_position.x - 42.0) / 109.0)), 0, 3),
+		clampi(int(floor((impact_position.y - 236.0) / 109.0)), 0, 3)
+	)
+	if game_id == "merge2048":
+		merge2048_motion = {
+			"started":elapsed,
+			"duration":0.62 + float(merge_grade) * 0.04,
+			"moves":motion_moves,
+			"spawn":spawn,
+			"grade":merge_grade,
+			"impact_cell":impact_cell,
+			"direction":direction,
+			"board_before":board_before,
+			"board_after_slide":board_after_slide,
+		}
 	_impact(impact_position, merge_color, 0.7 if gained == 0 else 1.0)
-	_start_catalog_event("merge", impact_position, merge_color, merge_grade, "木作合成 · +%d" % gained, 0.66 + merge_grade * 0.07)
-	_log_event("merge_move", {"direction":str(direction), "gained":gained, "score":state["score"]})
-	if _merge_has_target():
+	var semantic := "wood_slide" if gained == 0 else ("wood_masterpiece" if merge_grade == 4 else ("wood_milestone" if merge_grade == 3 else "wood_merge"))
+	var label := "木牌归位" if gained == 0 else ("大师雕版 · +%d" % gained if merge_grade == 4 else ("金纹连携 · +%d" % gained if merge_grade == 3 else "木作合成 · +%d" % gained))
+	_start_catalog_event("merge", impact_position, merge_color, merge_grade, label, 0.66 + merge_grade * 0.07, {"semantic":semantic, "gained":gained, "direction":direction})
+	_log_event("merge_move", {"direction":str(direction), "gained":gained, "score":state["score"], "grade":merge_grade, "semantic":semantic, "motion_count":motion_moves.size()})
+	if reached_target:
 		state["status"] = "won"
 		_capture("win_%s" % game_id)
 	elif not _merge_has_moves():
@@ -1738,37 +1833,28 @@ func _draw_merge() -> void:
 	var origin := Vector2(42, 236)
 	var tile := 109.0
 	var accent: Color = _catalog_item(game_id).accent
-	var board_fill := Color("10302f") if game_id == "merge2248" else Color("402819")
-	var tile_radius := 19 if game_id == "merge2248" else 8
+	var board_fill := Color("10302f") if game_id == "merge2248" else Color("3b271c")
 	_draw_panel(Rect2(origin - Vector2(13, 8) + Vector2(0, 8), Vector2(466, 462)), Color("140a05", 0.48), Color.TRANSPARENT, 24 if game_id == "merge2248" else 18, 0)
 	_draw_panel(Rect2(origin - Vector2(13, 8), Vector2(466, 462)), board_fill, Color(accent, 0.70), 24 if game_id == "merge2248" else 18, 4)
 	if game_id == "merge2248":
 		for row in range(5):
 			draw_line(origin + Vector2(0, row * tile - 4), origin + Vector2(430, row * tile - 4), Color(accent, 0.07), 2.0)
-	for y in range(4):
-		for x in range(4):
-			var value := int(board[y][x])
-			var rect := Rect2(origin + Vector2(x * tile, y * tile), Vector2(tile - 7, tile - 7))
-			var color := _merge_color(value)
-			_draw_panel(Rect2(rect.position + Vector2(0, 6), rect.size), Color(0, 0, 0, 0.34), Color.TRANSPARENT, tile_radius + 1, 0)
-			_draw_panel(rect, color, Color("f7d9a6", 0.18 if value > 0 else 0.08), tile_radius, 2 if value > 0 else 1)
-			if value > 0:
-				if game_id == "merge2248":
+		for y in range(4):
+			for x in range(4):
+				var value := int(board[y][x])
+				var rect := Rect2(origin + Vector2(x * tile, y * tile), Vector2(tile - 7, tile - 7))
+				var color := _merge_color(value)
+				_draw_panel(Rect2(rect.position + Vector2(0, 6), rect.size), Color(0, 0, 0, 0.34), Color.TRANSPARENT, 20, 0)
+				_draw_panel(rect, color, Color("f7d9a6", 0.18 if value > 0 else 0.08), 19, 2 if value > 0 else 1)
+				if value > 0:
 					draw_circle(rect.get_center(), 38.0 if value < 100 else 31.0, Color(INK, 0.08))
 					draw_arc(rect.get_center(), 43.0, -PI * 0.75, PI * 0.75, 24, Color(accent, 0.28), 3.0)
-				else:
-					_draw_panel(rect.grow(-5), color.lightened(0.06), Color("6d3f23", 0.28), tile_radius - 2, 1)
-					draw_line(rect.position + Vector2(16, 15), rect.end - Vector2(16, rect.size.y - 17), Color("fff2d7", 0.24), 3.0, true)
-					if value >= 128:
-						draw_arc(rect.get_center(), 37.0, 0, TAU, 28, Color("fff1bd", 0.40), 2.2, true)
-						for pip in range(mini(4, int(log(float(value)) / log(2.0)) - 6)):
-							draw_circle(rect.position + Vector2(15 + pip * 8, rect.size.y - 14), 2.1, Color("fff1bd", 0.74))
-				var number_color := _readable_number_color(_merge_number_background(value))
-				if game_id == "merge2048":
-					var number_size := 31 if value < 100 else (25 if value < 1000 else 20)
-					_draw_center_font(TILE_NUMBER_FONT, str(value), rect.get_center() + Vector2(0, 2), number_size, number_color)
-				else:
+					var number_color := _readable_number_color(_merge_number_background(value))
 					_draw_segment_number(value, rect.get_center(), 28.0 if value < 100 else 20.0, number_color)
+	else:
+		# The renderer owns appearance and timing only; the authoritative board and
+		# source-to-destination mappings are produced by the rule path above.
+		merge2048_classic_presenter.draw_board(self, board, origin, tile, elapsed, merge2048_motion, TILE_NUMBER_FONT)
 	_draw_section_heading("能量矩阵" if game_id == "merge2248" else "经典方阵", "滑动合并同值方块", accent)
 	_draw_text("每次合并都会为高能方块充能" if game_id == "merge2248" else "雕版会随数值升级，冲向同侧完成合并", Vector2(42, 734), 12, Color(_game_secondary_text(), 0.82))
 
@@ -1802,6 +1888,8 @@ func _merge_color(value: int) -> Color:
 		_: return Color("c45fe0")
 
 func _merge_number_background(value: int) -> Color:
+	if game_id == "merge2048" and value > 0:
+		return merge2048_classic_presenter.number_background(value)
 	var fill := _merge_color(value)
 	# 2248's energy halo is drawn directly under the digits. Contrast must be
 	# chosen against that composited pixel color, not the unmodified tile fill.
