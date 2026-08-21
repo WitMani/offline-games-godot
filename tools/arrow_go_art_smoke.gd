@@ -1,24 +1,12 @@
 extends SceneTree
 
-const UI_FONT: Font = preload("res://assets/fonts/NotoSansCJKsc-Subset.otf")
-const GAG_PLATE: Texture2D = preload("res://assets/art/catalog/path_games/gag/arrow_go_wind_plate_gag_v1.png")
-const GAG_COURIER_RIGHT: Texture2D = preload("res://assets/art/catalog/path_games/gag/arrow_go_courier_right_gag_v1.png")
-const GAG_COURIER_DOWN: Texture2D = preload("res://assets/art/catalog/path_games/gag/arrow_go_courier_down_gag_v1.png")
-const GAG_HARBOR: Texture2D = preload("res://assets/art/catalog/path_games/gag/arrow_go_harbor_gag_v1.png")
-const GAG_STEP: AudioStream = preload("res://assets/audio/catalog/path_games/gag/arrow_go_kite_step_gag_v1.ogg")
-const GAG_DOCK: AudioStream = preload("res://assets/audio/catalog/path_games/gag/arrow_go_harbor_dock_gag_v1.ogg")
-const PLATE_SHA := "7c94f74f1b6cc1d201d57bdd1e292e2d04ed73ba2c9ff62da390d8593770492b"
-const COURIER_RIGHT_SHA := "2e726e25b6c295d3b948bef538b0227da3e4460767497e646db7033805f8f35e"
-const COURIER_DOWN_SHA := "32a64feed8c0bd0d889714ba19412bfdc3985ffb8c4485683b241ef7f38b2604"
-const HARBOR_SHA := "6ac5c0c32e5c22836625c1eb1e0bb5e7bbc9be9c91a2aa2634b6a3c8f026bf79"
-const STEP_SHA := "af778d06bdbfe61e82c0a2c599a35e4c2f25da8cceba634ed6e54213333f358e"
-const DOCK_SHA := "2fa028f08202076d7210c31af40c8c1597bd1f0dbeb9825d7b38a7cad051a07f"
-const REQUIRED_COPY := [
-	"午夜风筝邮局", "相邻格点击或方向键移动", "航线 17 格",
-	"顺着每格风向，把纸翼信使送进星港", "星港在右下角",
-	"箭流推进", "轨迹 ×5", "逆着箭流", "已到边界", "全域完成",
-	"航信送达", "得分 180 · 步数 16", "点击右上角“重开”继续挑战",
-]
+const FOX_PATH := "res://assets/art/catalog/path_games/gag/arrow_go_fox_center_gag_v3.png"
+const ESCAPE_PATH := "res://assets/audio/catalog/path_games/gag/arrow_go_arrow_escape_gag_v3.ogg"
+const REVEAL_PATH := "res://assets/audio/catalog/path_games/gag/arrow_go_fox_reveal_gag_v3.ogg"
+const FOX_SHA := "9e19d9af49091876c2cbb7d19aa86f521f7998b3a14e09a3159164f6dcc16f2b"
+const ESCAPE_SHA := "ae236ab82a2cb2ac252b3f5124d4c2759b93008696b9b75655d879425371c1e6"
+const REVEAL_SHA := "67520ae739f20fd223e8b03cdd8c22fe620471ffe5e5630cd10fb0a351b85fdc"
+const SOLUTION: Array[String] = ["b", "a", "d", "c", "k", "g", "f", "l", "i", "e", "j", "h"]
 
 var game: Control
 var failures: Array[String] = []
@@ -33,167 +21,90 @@ func _run() -> void:
 	game = load("res://main.tscn").instantiate()
 	root.add_child(game)
 	await process_frame
-	_test_gag_runtime_assets()
-	_test_dynamic_font_role()
-	_test_initial_signature_contract()
-	_test_direction_rejection()
-	_test_step_feedback()
-	_test_waypoint_feedback()
-	_test_edge_rejection()
-	_test_completion_feedback()
-	_test_shared_path_games_isolation()
-	print("ARROW_GO_ART_SMOKE=%d" % assertions)
+	game._arrow_go_clear_recovery()
+	_test_gag_runtime_derivatives()
+	_test_stable_binding()
+	_test_feedback_hierarchy()
+	_test_reduced_effects()
+	game._arrow_go_clear_recovery()
+	print("ARROW_GO_ART_ASSERTIONS=%d" % assertions)
 	print("ARROW_GO_ART_RESULT=%s" % ("PASS" if failures.is_empty() else "FAIL " + ",".join(failures)))
 	quit(0 if failures.is_empty() else 1)
 
 
-func _expect(condition: bool, message: String) -> void:
+func _expect(condition: bool, label: String) -> void:
 	assertions += 1
 	if not condition:
-		failures.append(message)
+		failures.append(label)
 
 
 func _open() -> void:
 	game._open_game("arrow_go")
-	game.has_transitioned = false
+	game._reset_current()
+	game.catalog_fx.clear()
+	game.arrow_go_object_fx = {}
 
 
 func _last_event() -> Dictionary:
 	return {} if game.catalog_fx.is_empty() else game.catalog_fx.back()
 
 
-func _last_sfx() -> AudioStream:
-	var player_index := posmod(game.sfx_cursor - 1, game.sfx_players.size())
-	return game.sfx_players[player_index].stream
+func _test_gag_runtime_derivatives() -> void:
+	_expect(FileAccess.get_sha256(FOX_PATH) == FOX_SHA, "fox_hash")
+	_expect(FileAccess.get_sha256(ESCAPE_PATH) == ESCAPE_SHA, "escape_hash")
+	_expect(FileAccess.get_sha256(REVEAL_PATH) == REVEAL_SHA, "reveal_hash")
+	var fox_texture: Texture2D = load(FOX_PATH)
+	var image := fox_texture.get_image()
+	_expect(image.get_width() == 256 and image.get_height() == 256, "fox_dimensions")
+	_expect(image.get_format() in [Image.FORMAT_RGBA8, Image.FORMAT_RGBAF, Image.FORMAT_RGBAH], "fox_alpha_format")
+	_expect(image.get_pixel(0, 0).a < 0.02 and image.get_pixel(128, 128).a > 0.95, "fox_alpha_content")
+	var escape: AudioStream = load(ESCAPE_PATH)
+	var reveal: AudioStream = load(REVEAL_PATH)
+	_expect(escape != null and absf(escape.get_length() - 0.497646) < 0.02, "escape_duration")
+	_expect(reveal != null and absf(reveal.get_length() - 0.986188) < 0.02, "reveal_duration")
 
 
-func _expect_event(kind: String, grade: int, label: String) -> void:
-	var event := _last_event()
-	_expect(str(event.get("game_id", "")) == "arrow_go", "%s_wrong_game" % kind)
-	_expect(str(event.get("kind", "")) == kind, "%s_wrong_kind" % kind)
-	_expect(int(event.get("grade", 0)) == grade, "%s_wrong_grade" % kind)
-	_expect(str(event.get("label", "")) == label, "%s_wrong_label" % kind)
-	_expect(str(event.get("font_role", "")) == "ui_cjk", "%s_wrong_font_role" % kind)
-
-
-func _test_gag_runtime_assets() -> void:
-	var textures := [
-		[GAG_PLATE, "res://assets/art/catalog/path_games/gag/arrow_go_wind_plate_gag_v1.png", PLATE_SHA, "plate"],
-		[GAG_COURIER_RIGHT, "res://assets/art/catalog/path_games/gag/arrow_go_courier_right_gag_v1.png", COURIER_RIGHT_SHA, "courier_right"],
-		[GAG_COURIER_DOWN, "res://assets/art/catalog/path_games/gag/arrow_go_courier_down_gag_v1.png", COURIER_DOWN_SHA, "courier_down"],
-		[GAG_HARBOR, "res://assets/art/catalog/path_games/gag/arrow_go_harbor_gag_v1.png", HARBOR_SHA, "harbor"],
-	]
-	for item in textures:
-		var texture: Texture2D = item[0]
-		var label: String = item[3]
-		_expect(texture != null, "gag_%s_missing" % label)
-		_expect(texture.get_size() == Vector2(192, 192), "gag_%s_dimensions" % label)
-		_expect(texture.get_image().detect_alpha() != Image.ALPHA_NONE, "gag_%s_alpha" % label)
-		_expect(FileAccess.get_sha256(item[1]) == item[2], "gag_%s_hash" % label)
-	_expect(GAG_STEP != null, "gag_step_missing")
-	_expect(GAG_STEP.get_length() >= 0.48 and GAG_STEP.get_length() < 0.50, "gag_step_duration")
-	_expect(FileAccess.get_sha256("res://assets/audio/catalog/path_games/gag/arrow_go_kite_step_gag_v1.ogg") == STEP_SHA, "gag_step_hash")
-	_expect(GAG_DOCK != null, "gag_dock_missing")
-	_expect(GAG_DOCK.get_length() >= 0.86 and GAG_DOCK.get_length() < 0.88, "gag_dock_duration")
-	_expect(FileAccess.get_sha256("res://assets/audio/catalog/path_games/gag/arrow_go_harbor_dock_gag_v1.ogg") == DOCK_SHA, "gag_dock_hash")
-
-
-func _test_dynamic_font_role() -> void:
-	for sample in REQUIRED_COPY:
-		for index in range(sample.length()):
-			var codepoint: int = sample.unicode_at(index)
-			_expect(UI_FONT.has_char(codepoint), "font_U+%04X" % codepoint)
-
-
-func _test_initial_signature_contract() -> void:
+func _test_stable_binding() -> void:
 	_open()
-	_expect(game.arrow_go_route == [Vector2i.ZERO], "initial_route")
-	_expect(game.arrow_go_facing == Vector2i.RIGHT, "initial_facing")
-	_expect(game.arrow_go_object_fx.is_empty(), "initial_object_fx")
-	_expect(game.ARROW_GO_GAG_WIND_PLATE_TEXTURE == GAG_PLATE, "plate_runtime_binding")
-	_expect(game.ARROW_GO_GAG_COURIER_RIGHT_TEXTURE == GAG_COURIER_RIGHT, "courier_right_runtime_binding")
-	_expect(game.ARROW_GO_GAG_COURIER_DOWN_TEXTURE == GAG_COURIER_DOWN, "courier_down_runtime_binding")
-	_expect(game.ARROW_GO_GAG_HARBOR_TEXTURE == GAG_HARBOR, "harbor_runtime_binding")
-	_expect(game._painted_count() == 1, "initial_painted")
-	_expect(game._path_cell_center(0, 0, 9).is_equal_approx(Vector2(77.888885, 259.888885)), "initial_signature_position")
+	_expect(game.ARROW_GO_GAG_FOX_TEXTURE.resource_path == FOX_PATH, "fox_preload")
+	_expect(game.SFX_ARROW_GO_GAG_ESCAPE.resource_path == ESCAPE_PATH, "escape_preload")
+	_expect(game.SFX_ARROW_GO_GAG_REVEAL.resource_path == REVEAL_PATH, "reveal_preload")
+	_expect(int(game.state.get("remaining", 0)) == 12, "stable_remaining")
+	_expect(game.arrow_go_model.live_ids().size() == 12, "stable_arrow_family")
+	_expect(game._arrow_go_board_rect().has_point(game._arrow_go_board_rect().get_center()), "stable_center_role")
+	var preset_text := FileAccess.get_file_as_string("res://export_presets.cfg")
+	_expect("arrow_go_*_gag_v1.png" in preset_text and "arrow_go_*_gag_v1.ogg" in preset_text, "legacy_assets_export_excluded")
 
 
-func _test_direction_rejection() -> void:
+func _test_feedback_hierarchy() -> void:
 	_open()
 	var before: Dictionary = game.state.duplicate(true)
-	game._amaze_step(Vector2i.DOWN)
-	_expect(game.state == before, "direction_reject_mutated_rules")
-	_expect(game.arrow_go_route == [Vector2i.ZERO], "direction_reject_mutated_route")
-	_expect(str(game.arrow_go_object_fx.get("kind", "")) == "crosswind_reject", "direction_object_kind")
-	_expect(int(game.arrow_go_object_fx.get("grade", 0)) == 2, "direction_object_grade")
-	_expect(game.arrow_go_object_fx.get("expected") == Vector2i.RIGHT, "direction_expected")
-	_expect(game.arrow_go_object_fx.get("attempted") == Vector2i.DOWN, "direction_attempted")
-	_expect_event("path_reject_arrow", 2, "逆着箭流")
+	game._arrow_go_attempt("a", "art_probe")
+	_expect(game.state.get("removed_ids", []) == before.get("removed_ids", []), "reject_atomic")
+	_expect(str(game.arrow_go_object_fx.get("kind", "")) == "blocked", "reject_object")
+	_expect(str(_last_event().get("kind", "")) == "arrow_reject" and int(_last_event().get("grade", 0)) == 2, "reject_event")
+	var turn: Dictionary = game._arrow_go_attempt("b", "art_probe")
+	_expect(str(turn.kind) == "turn_escape" and int(turn.grade) == 2, "turn_grade")
+	_expect(game._catalog_event_sfx("arrow_turn_escape", 2) == game.SFX_ARROW_GO_GAG_ESCAPE, "turn_gag_audio_route")
+	game._arrow_go_attempt("a", "art_probe")
+	_expect(str(_last_event().get("kind", "")) == "arrow_escape" and int(_last_event().get("grade", 0)) == 1, "routine_grade")
+	for index in range(2, SOLUTION.size()):
+		game._arrow_go_attempt(SOLUTION[index], "art_probe")
+		if index in [3, 7]:
+			_expect(str(_last_event().get("kind", "")) == "arrow_waypoint", "waypoint_kind_%d" % index)
+		if index in [9, 10]:
+			_expect(str(_last_event().get("kind", "")) == "arrow_near_clear" and int(_last_event().get("grade", 0)) == 3, "near_grade_%d" % index)
+	_expect(str(_last_event().get("kind", "")) == "arrow_win" and int(_last_event().get("grade", 0)) == 4, "win_grade")
+	_expect(game._catalog_event_sfx("arrow_win", 4) == game.SFX_ARROW_GO_GAG_REVEAL, "win_gag_audio_route")
+	_expect(str(game.state.get("status", "")) == "won" and int(game.state.get("remaining", -1)) == 0, "win_authority")
 
 
-func _test_step_feedback() -> void:
+func _test_reduced_effects() -> void:
 	_open()
-	game._amaze_step(Vector2i.RIGHT)
-	_expect(game.arrow_go_route == [Vector2i.ZERO, Vector2i.RIGHT], "step_route")
-	_expect(game.arrow_go_facing == Vector2i.RIGHT, "step_facing")
-	_expect(str(game.arrow_go_object_fx.get("kind", "")) == "step", "step_object_kind")
-	_expect(int(game.arrow_go_object_fx.get("grade", 0)) == 1, "step_object_grade")
-	_expect(game.motion_kind == "path", "step_motion_kind")
-	_expect(game.motion_from != game.motion_to, "step_motion_span")
-	_expect_event("path_step", 1, "箭流推进")
-	_expect(_last_sfx() == GAG_STEP, "step_gag_sound_not_routed")
-
-
-func _test_waypoint_feedback() -> void:
-	_open()
-	for _step in range(5):
-		game._amaze_step(Vector2i.RIGHT)
-	_expect(game.arrow_go_route.size() == 6, "waypoint_route_size")
-	_expect(str(game.arrow_go_object_fx.get("kind", "")) == "waypoint", "waypoint_object_kind")
-	_expect(int(game.arrow_go_object_fx.get("grade", 0)) == 2, "waypoint_object_grade")
-	_expect_event("path_step", 2, "轨迹 ×5")
-	_expect(_last_sfx() == GAG_STEP, "waypoint_gag_sound_not_routed")
-
-
-func _test_edge_rejection() -> void:
-	_open()
-	game.state["player"] = [8, 8]
-	var before: Dictionary = game.state.duplicate(true)
-	game._amaze_step(Vector2i.DOWN)
-	_expect(game.state == before, "edge_reject_mutated_rules")
-	_expect(str(game.arrow_go_object_fx.get("kind", "")) == "edge_reject", "edge_object_kind")
-	_expect(int(game.arrow_go_object_fx.get("grade", 0)) == 1, "edge_object_grade")
-	_expect(game.arrow_go_route == [Vector2i.ZERO], "edge_reject_mutated_route")
-	_expect_event("path_reject_edge", 1, "已到边界")
-
-
-func _test_completion_feedback() -> void:
-	_open()
-	game.state["player"] = [8, 7]
-	game.arrow_go_route.clear()
-	game.arrow_go_route.append(Vector2i(8, 7))
-	game._amaze_step(Vector2i.DOWN)
-	_expect(str(game.state.get("status", "")) == "won", "complete_status")
-	_expect(game.state["player"] == [8, 8], "complete_player")
-	_expect(int(game.state["moves"]) == 1, "complete_moves")
-	_expect(int(game.state["score"]) == 105, "complete_score")
-	_expect(game.arrow_go_route == [Vector2i(8, 7), Vector2i(8, 8)], "complete_route")
-	_expect(game.arrow_go_facing == Vector2i.DOWN, "complete_facing")
-	_expect(str(game.arrow_go_object_fx.get("kind", "")) == "complete", "complete_object_kind")
-	_expect(int(game.arrow_go_object_fx.get("grade", 0)) == 4, "complete_object_grade")
-	_expect_event("path_complete", 4, "全域完成")
-	_expect(_last_sfx() == GAG_DOCK, "complete_gag_sound_not_routed")
-
-
-func _test_shared_path_games_isolation() -> void:
-	game._open_game("amaze_go")
-	game.has_transitioned = false
-	_expect(game.arrow_go_route.is_empty(), "amaze_go_inherited_arrow_route")
-	_expect(game.arrow_go_object_fx.is_empty(), "amaze_go_inherited_arrow_fx")
-	game._amaze_step(Vector2i.RIGHT)
-	_expect(game.arrow_go_route.is_empty(), "amaze_go_mutated_arrow_route")
-	game._open_game("amaze")
-	game.has_transitioned = false
-	_expect(game.arrow_go_route.is_empty(), "amaze_inherited_arrow_route")
-	game._amaze_step(Vector2i.RIGHT)
-	_expect(game.arrow_go_route.is_empty(), "amaze_mutated_arrow_route")
+	game._arrow_go_set_reduced_effects(true)
+	game._arrow_go_attempt("b", "art_probe")
+	_expect(bool(game.state.get("reduced_effects", false)), "reduced_state")
+	_expect(game._catalog_shake_offset() == Vector2.ZERO, "reduced_shake")
+	_expect(game.state.get("removed_ids", []) == ["b"], "reduced_authority")
+	_expect(str(game.arrow_go_object_fx.get("kind", "")) == "turn_escape", "reduced_semantic_event")
+	game._arrow_go_set_reduced_effects(false)

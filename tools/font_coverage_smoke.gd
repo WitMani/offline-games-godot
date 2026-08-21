@@ -44,6 +44,12 @@ const SNAKES_FEEDBACK_COPY := [
 ]
 const SYMBOL_COPY := ["♥♠◆♣"]
 const TILE_NUMBER_COPY := ["0123456789"]
+const ARROW_GO_V3_COPY := [
+	"动物箭阵", "点整支箭头 · 按自身方向移出", "剩余 12 支",
+	"先移走无遮挡的箭，逐层露出中央动物", "方向键选箭 · 回车移出", "低特效",
+	"顺势移出", "转折移出", "遮挡松开", "动物快出现了", "全部清空 · 动物现身",
+	"箭阵锁死", "去路被挡", "这支可以移出", "已标出一支可移箭", "前方有箭挡住",
+]
 
 var failures: Array[String] = []
 
@@ -59,7 +65,8 @@ func _init() -> void:
 	_check_font(NUMBER_FONT, [NUMBER_COPY], "number_font")
 	_check_font(TILE_NUMBER_FONT, TILE_NUMBER_COPY, "tile_number_font")
 	_check_font(SYMBOL_FONT, SYMBOL_COPY, "symbol_font")
-	print("FONT_COVERAGE_SMOKE=%d" % (MERGE_FEEDBACK_COPY.size() + CATALOG_EVENT_COPY.size() + MEOWDOKU_V3_COPY.size() + SNAKES_FEEDBACK_COPY.size() + TILE_NUMBER_COPY.size() + SYMBOL_COPY.size() + 1))
+	_check_font(UI_FONT, ARROW_GO_V3_COPY, "arrow_go_v3_ui_cjk")
+	print("FONT_COVERAGE_SMOKE=%d" % (MERGE_FEEDBACK_COPY.size() + CATALOG_EVENT_COPY.size() + MEOWDOKU_V3_COPY.size() + SNAKES_FEEDBACK_COPY.size() + TILE_NUMBER_COPY.size() + SYMBOL_COPY.size() + ARROW_GO_V3_COPY.size() + 1))
 	print("FONT_COVERAGE_RESULT=%s" % ("PASS" if failures.is_empty() else "FAIL " + ",".join(failures)))
 	quit(0 if failures.is_empty() else 1)
 

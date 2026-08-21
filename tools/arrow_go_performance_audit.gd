@@ -1,6 +1,7 @@
 extends SceneTree
 
-const OUTPUT := "res://docs/audit/arrow-go-v2/candidate/performance.json"
+const OUTPUT := "res://docs/audit/arrow-go-v3/performance.json"
+const SOLUTION: Array[String] = ["b", "a", "d", "c", "k", "g", "f", "l", "i", "e", "j", "h"]
 
 var game: Control
 
@@ -12,13 +13,10 @@ func _init() -> void:
 func _run() -> void:
 	game = load("res://main.tscn").instantiate()
 	root.add_child(game)
+	await process_frame
+	game._arrow_go_clear_recovery()
 	game._open_game("arrow_go")
 	game.has_transitioned = false
-	game.arrow_go_route.clear()
-	for x in range(9):
-		game.arrow_go_route.append(Vector2i(x, 0))
-	for y in range(1, 9):
-		game.arrow_go_route.append(Vector2i(8, y))
 	for _warmup in range(60):
 		await process_frame
 	game.catalog_fx.clear()
@@ -26,6 +24,11 @@ func _run() -> void:
 	game.catalog_fx.clear()
 	game.arrow_go_object_fx = {}
 	var busy := await _collect(180, true)
+	game._arrow_go_set_reduced_effects(true)
+	game.catalog_fx.clear()
+	var reduced_busy := await _collect(120, true)
+	game._arrow_go_set_reduced_effects(false)
+	game._arrow_go_clear_recovery()
 	var report := {
 		"game_id":"arrow_go",
 		"runtime":"Godot %s / Xvfb llvmpipe" % Engine.get_version_info().get("string", "4.6"),
@@ -33,7 +36,9 @@ func _run() -> void:
 		"viewport":[int(game.size.x), int(game.size.y)],
 		"stable":stable,
 		"busy":busy,
-		"busy_case":"grade-4 harbor docking, 81 generated wind plates, generated courier/harbor, ordered route, directional fins, catalog burst, real GAG dock sound and haptic route retriggered every 60 frames",
+		"reduced_busy":reduced_busy,
+		"busy_case":"Repeated authoritative final-arrow clear: 256px GAG fox, 12-arrow live vector family, whole-arrow ghost, grade-4 semantic catalog event, GAG reveal sound route and result plate retriggered every 60 frames",
+		"reduced_case":"Same authoritative clear with displacement, board shake, catalog particles and haptics suppressed",
 		"catalog_effect_cap":12,
 		"note":"Software-renderer regression trace; not a physical-device FPS claim.",
 	}
@@ -41,7 +46,7 @@ func _run() -> void:
 	var file := FileAccess.open(ProjectSettings.globalize_path(OUTPUT), FileAccess.WRITE)
 	file.store_string(JSON.stringify(report, "  ") + "\n")
 	file.close()
-	print("ARROW_GO_PERFORMANCE=%s" % ProjectSettings.globalize_path(OUTPUT))
+	print("ARROW_GO_V3_PERFORMANCE=%s" % ProjectSettings.globalize_path(OUTPUT))
 	quit()
 
 
@@ -72,14 +77,10 @@ func _collect(frame_count: int, busy: bool) -> Dictionary:
 
 
 func _emit_busy_completion() -> void:
-	var goal: Vector2 = game._path_cell_center(8, 8, 9)
-	var before_goal: Vector2 = game._path_cell_center(8, 7, 9)
 	game.catalog_fx.clear()
-	game.arrow_go_facing = Vector2i.DOWN
-	game.arrow_go_object_fx = {
-		"kind":"complete", "from":before_goal, "to":goal,
-		"direction":Vector2i.DOWN, "grade":4,
-		"started":game.elapsed, "duration":1.18,
-	}
-	game._start_motion("path", before_goal, goal, Color("b69cff"), "", 0.24)
-	game._start_catalog_event("path_complete", goal, Color("f6c667"), 4, "全域完成", 1.18, {"direction":[0, 1], "label_position":Vector2(270, 711)})
+	game.arrow_go_object_fx = {}
+	game.arrow_go_model.reset()
+	for index in range(SOLUTION.size() - 1):
+		game.arrow_go_model.attempt(SOLUTION[index])
+	game._sync_arrow_go_state()
+	game._arrow_go_attempt(SOLUTION.back(), "performance_audit")

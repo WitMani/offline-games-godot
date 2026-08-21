@@ -82,12 +82,13 @@ func _trigger_peak(id: String) -> void:
 			game._set_tileclub_reduced_effects(false)
 			for tile_id in game.tileclub_model.solution_for_level():
 				game._tileclub_collect_id(tile_id)
-		"amaze_go", "arrow_go":
-			var grid_size := int(game.state["size"])
-			game.state["player"] = [grid_size - 2, grid_size - 1]
-			if id == "arrow_go":
-				game.state["arrows"][grid_size - 1][grid_size - 2] = [1, 0]
-			game._amaze_step(Vector2i.RIGHT)
+		"arrow_go":
+			game._reset_current()
+			for arrow_id in ["b", "a", "d", "c", "k", "g", "f", "l", "i", "e", "j", "h"]:
+				game._arrow_go_attempt(arrow_id, "catalog_peak")
+		"amaze_go":
+			for arrow_id in ["a1", "a0", "a10", "a3", "a2", "a4", "a6", "a8", "a11", "a5", "a9", "a7"]:
+				game._amaze_go_attempt(arrow_id, "catalog_peak")
 		"amaze":
 			game._amaze_step(Vector2i.UP)
 			game._amaze_step(Vector2i.RIGHT)

@@ -88,5 +88,6 @@ func _exercise(id: String) -> void:
 			var tile_col := tile_index % 7
 			var tile_row := tile_index / 7
 			game._tileclub_tap(Vector2(42 + tile_col * 64, 248 + tile_row * 64))
-		"amaze_go", "arrow_go": game._amaze_step(Vector2i.RIGHT)
+		"amaze_go": game._amaze_step(Vector2i.RIGHT)
 		"amaze": game._amaze_step(Vector2i.UP)
+		"arrow_go": game._arrow_go_attempt("b", "visual_audit")

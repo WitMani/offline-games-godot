@@ -24,13 +24,15 @@ func _run() -> void:
 
 func _test_arrow_rule() -> void:
 	game._open_game("arrow_go")
-	var before: Array = game.state["player"].duplicate()
-	game._amaze_step(Vector2i.DOWN)
-	if game.state["player"] != before:
+	game._reset_current()
+	var before: Array = game.state["removed_ids"].duplicate()
+	game._arrow_go_attempt("a", "rules_smoke")
+	if game.state["removed_ids"] != before:
 		failures.append("arrow_reject")
-	game._amaze_step(Vector2i.RIGHT)
-	if game.state["player"] != [1, 0]:
+	game._arrow_go_attempt("b", "rules_smoke")
+	if game.state["removed_ids"] != ["b"] or "a" not in game.state["legal_ids"]:
 		failures.append("arrow_accept")
+	game._arrow_go_clear_recovery()
 
 func _test_maze_wall_rule() -> void:
 	game._open_game("amaze_go")

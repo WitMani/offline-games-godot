@@ -173,15 +173,22 @@ func _test_path_completion(id: String) -> void:
 			game._amaze_go_attempt(arrow_id, "catalog")
 		_expect_event(id, "arrow_win", 4)
 		return
+	if id == "arrow_go":
+		game._reset_current()
+		for arrow_id in ["b", "a", "d", "c", "k", "g", "f", "l", "i", "e", "j", "h"]:
+			game._arrow_go_attempt(arrow_id, "catalog_art_smoke")
+		_expect_event(id, "arrow_win", 4)
+		game._arrow_go_clear_recovery()
+		return
 	var grid_size := int(game.state["size"])
 	game.state["player"] = [grid_size - 2, grid_size - 1]
-	if id == "arrow_go":
-		game.state["arrows"][grid_size - 1][grid_size - 2] = [1, 0]
 	game._amaze_step(Vector2i.RIGHT)
 	_expect_event(id, "path_complete", 4)
 
 
 func _test_paint_completion() -> void:
+	game._clear_amaze_checkpoint()
+	game.amaze_level_index = 0
 	game._open_game("amaze")
 	game._amaze_step(Vector2i.UP)
 	game._amaze_step(Vector2i.RIGHT)

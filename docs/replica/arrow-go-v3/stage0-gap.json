@@ -1,0 +1,67 @@
+{
+  "schema": "offline-games.replica-stage0.v1",
+  "game_id": "arrow_go",
+  "research_date": "2026-08-21",
+  "exact_baseline": "3e561fb3c55f3b0b813da2b9ee9468cd4d290bae",
+  "target": {
+    "title": "Arrow GO: Logic Puzzle Game",
+    "android_package": "com.reda.arrow",
+    "android_version": "1.0",
+    "developer": "chouikh.app",
+    "listing_updated": "2026-08-11",
+    "internal_level_resource_id": null,
+    "package_sha256": null,
+    "evidence_status": "PARTIAL_EVIDENCE"
+  },
+  "catalog_disambiguation": {
+    "arrow_go": "com.reda.arrow",
+    "amaze_go": "com.oakever.arrows",
+    "offline_games_141_arrows_is_target": false
+  },
+  "first_party_contract": {
+    "tap_arrow": true,
+    "launches_in_own_direction": true,
+    "other_arrows_block": true,
+    "order_opens_paths": true,
+    "clear_all_reveals_animal": true,
+    "board_shapes": ["square", "circle", "triangle"],
+    "no_time_pressure": true,
+    "exact_collision_and_scoring": "unknown",
+    "reproducible_action_trace": false
+  },
+  "baseline": {
+    "engine": "4.6.stable.official.89cea1439",
+    "broad_smoke_scripts": 28,
+    "broad_smoke_result": "PASS",
+    "arrow_go_mechanics_assertions": 175,
+    "arrow_go_art_assertions": 189,
+    "mismatch": "fixed 9x9 courier route and harbor instead of tap-selecting and clearing mutually blocking arrows"
+  },
+  "required_mechanics_slice": [
+    "connected_orthogonal_arrow_topology",
+    "cardinal_head_direction",
+    "clear_path_sweep",
+    "legal_removal",
+    "blocked_atomic_rejection",
+    "unlock_order",
+    "clear_all_and_animal_reveal",
+    "local_deadlock_terminal",
+    "terminal_freeze",
+    "deterministic_restart",
+    "strict_recovery",
+    "mouse_touch_keyboard_parity"
+  ],
+  "gates": {
+    "identity": "pass",
+    "baseline_reproducible": "pass",
+    "mechanics": "fail",
+    "gag": "fail",
+    "presentation": "blocked",
+    "web_delivery": "not-started",
+    "production_authorized": false
+  },
+  "claim_boundary": {
+    "target_fidelity": "PARTIAL",
+    "surpasses_original": "NOT_CLAIMED"
+  }
+}

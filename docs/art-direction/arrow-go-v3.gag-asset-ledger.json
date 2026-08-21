@@ -1,0 +1,139 @@
+{
+  "schema_version": "offline-games-gag-ledger/v2",
+  "created_at": "2026-08-21T08:45:00Z",
+  "scope": ["arrow_go"],
+  "starting_commit": "3e561fb3c55f3b0b813da2b9ee9468cd4d290bae",
+  "gag": {
+    "endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+    "host": "HOME-WSL",
+    "transport": "MCP Streamable HTTP via direct Python client",
+    "server": "game-assets-generator",
+    "server_version": "1.29.0",
+    "health_checked_at": "2026-08-21",
+    "tools_count": 21,
+    "execution_mode": "pure API",
+    "system": {
+      "gpu": "not detected",
+      "main_service_pytorch": "not installed; pure API available",
+      "enabled_api_paths": ["gemini", "fal", "openrouter", "removebg", "elevenlabs", "codex"]
+    }
+  },
+  "legacy_rejection": {
+    "assets": [
+      "arrow_go_wind_plate_gag_v1.png",
+      "arrow_go_courier_right_gag_v1.png",
+      "arrow_go_courier_down_gag_v1.png",
+      "arrow_go_harbor_gag_v1.png",
+      "arrow_go_kite_step_gag_v1.ogg",
+      "arrow_go_harbor_dock_gag_v1.ogg"
+    ],
+    "reason": "They encode the disproved cell-by-cell courier-to-harbor substitute and conflict with the corrected tap-whole-arrow clear mechanic.",
+    "v3_runtime_references": 0,
+    "web_export": "explicitly excluded"
+  },
+  "semantic_searches": [
+    {
+      "id": "arrow_go_v3_animal",
+      "query": "无文字 正面 卡通 小狐狸 动物头像 温暖珊瑚橙 奶油色 紫色轮廓 圆润贴纸 透明背景 益智游戏中央隐藏主体 80像素可读",
+      "kind": "image",
+      "count": 15,
+      "reviewed": [
+        {"name": "20260109_011717_cute_cartoon_fox_res_gemini.png", "score": 0.44381207011860396, "decision": "reject", "reason": "clothed detective with glasses, pen and bags; full body; RGB baked checkerboard rather than alpha"},
+        {"name": "20260121_165421_16-bit_pixel_art_gam_ref2_gemini_no_bg.png", "score": 0.42539710153242927, "decision": "reject", "reason": "pixel-art style mismatch"},
+        {"name": "20260109_011735_cute_cartoon_fox_res_gemini.png", "score": 0.4079326557534865, "decision": "reject", "reason": "anxious clothed detective with magnifier and pseudo-writing; RGB baked checkerboard"},
+        {"name": "fruit_02_orange.png", "score": 0.40066830939731274, "decision": "reject", "reason": "fruit, not an animal subject"}
+      ],
+      "decision": "reject all and generate"
+    },
+    {
+      "id": "arrow_go_v3_board",
+      "query": "无文字 卡通 纸质拼图棋盘 奶油纸 紫罗兰边框 点阵背景 彩色连通箭头 消除游戏 柔和手工材质",
+      "kind": "image",
+      "count": 15,
+      "reviewed": [
+        {"name": "card-frame-sr.png", "score": 0.38430841327285076, "decision": "reject", "reason": "fantasy card frame, no puzzle-board material role"},
+        {"name": "generated_images__20260820_183925_FAL.ai.png", "score": 0.3839362148436288, "decision": "reject", "reason": "TriPeaks full source art would import another game's identity"},
+        {"name": "test_stone_texture_normal.png", "score": 0.37685634367217696, "decision": "reject", "reason": "technical stone normal map"}
+      ],
+      "decision": "reject all; build live paper board and arrow state code-native"
+    },
+    {
+      "id": "arrow_go_v3_audio",
+      "query": "卡通益智游戏 整支箭头快速滑出 纸片嗖声 木质咔嗒 短促 无人声 音效；清空后动物揭示 温暖庆祝铃声",
+      "kind": "audio",
+      "count": 15,
+      "reviewed": [
+        {"name": "offline_games_meowdoku_paw_complete_gag_02_master.wav", "score": 0.6461676500714348, "decision": "reject", "reason": "cat stationery completion identity"},
+        {"name": "fruit_cascade_reward_01_master.wav", "score": 0.6405632387509415, "decision": "reject", "reason": "fruit cascade reward identity"},
+        {"name": "accept.wav", "score": 0.6389839701921707, "decision": "reject", "reason": "generic accept with no paper-arrow role"},
+        {"name": "sfx_20251213_095805_coin_collect_ding_sp_3.wav", "score": 0.6381113280648322, "decision": "reject", "reason": "coin semantics"},
+        {"name": "music_20260330_002207_peaceful_ambient_exploration_m_loop.mp3", "score": 0.6364024370295609, "decision": "reject", "reason": "long-form music"}
+      ],
+      "decision": "reject all and generate two semantic cues"
+    }
+  ],
+  "image_generation": {
+    "asset_id": "arrow-go-v3-fox-center-20260821-084539",
+    "status": "selected",
+    "provider": "fal.ai",
+    "model": "fal-ai/flux-pro/v1.1",
+    "seed": null,
+    "server_source": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/arrow_go/v3/masters/generated_images__20260821_084539_FAL.ai.png",
+    "source_container": "JPEG payload with .png suffix",
+    "source_dimensions": [1024, 1024],
+    "source_sha256": "46d9e207c19f016132814a0e765058a2723bf5f2b8b27d90eb7ff8d7d8b6a4af",
+    "prompt": "One isolated production-ready central animal portrait for a premium 2D cartoon arrow-clearing puzzle. A friendly clever RED FOX seen straight from the front, head and upper chest only, perfectly centered, broad rounded silhouette, oversized triangular ears, warm coral-orange fur, creamy cheeks and chest, deep plum outlines, tiny dark nose, bright curious eyes, a calm delighted expression. Tactile layered cut-paper and soft enamel sticker craft, chunky clean shapes, subtle bevel and edge highlights, soft contact shadow, readable at 110 pixels and still recognizable when partly covered by colorful arrows. Exactly one fox portrait only with generous empty margin. No clothing, no glasses, no tools, no magnifying glass, no bag, no arrow, no chevron, no compass, no puzzle pieces, no letters, no words, no numbers, no symbols, no logo, no UI, no frame, no border, no scene, no props, no body below the chest. Plain neutral medium-gray background with strong silhouette separation for later background removal.",
+    "derivations": [
+      {"tool": "GAG remove_background", "provider": "removebg", "dimensions": [500, 500], "format": "RGBA PNG", "sha256": "850894549092d7a5df9628255152f96344d5a2fef3c2aa6b182205a761c4472b"},
+      {"tool": "GAG crop_image", "mode": "auto_trim", "padding": 12, "dimensions": [353, 475], "format": "RGBA PNG", "sha256": "4b71c45af973a65452cfe28def25fc30b69c2bf530f055327899944bf303ec2e"},
+      {"tool": "ffmpeg", "operation": "crop top 353x353; Lanczos scale to 256x256; preserve RGBA", "dimensions": [256, 256], "sha256": "9e19d9af49091876c2cbb7d19aa86f521f7998b3a14e09a3159164f6dcc16f2b"}
+    ],
+    "runtime_asset": "res://assets/art/catalog/path_games/gag/arrow_go_fox_center_gag_v3.png",
+    "first_visible_beat": "untouched opening board behind all 12 live arrows",
+    "intended_runtime_size": "172x172 logical pixels",
+    "runtime_references": ["ordinary stable board", "every legal and blocked state", "last-two reveal", "win result plaque"]
+  },
+  "audio_generations": [
+    {
+      "asset_id": "arrow_go_arrow_escape_gag",
+      "version": "v1",
+      "provider": "elevenlabs",
+      "model": "eleven_text_to_sound_v2",
+      "delivery_digest": "576c4a99611b56d94faa86549ee680df0328d882030cc72a2d7574c7eb77931e",
+      "prompt": "A very short tactile cartoon puzzle sound: one thick laminated paper arrow compresses for a split instant, then slides swiftly off a cream paper board with a clean airy whoosh and one soft wooden click as the hidden layer unlocks. Warm handmade, playful and crisp, immediate attack, very short clean decay, suitable for frequent repeated actions, no voice, no speech, no music, no ambience.",
+      "variations": 3,
+      "selected_variation": 3,
+      "selection_reason": "0.497646 s, 48 kHz mono, -17.05 LUFS source, -2.11 dBTP and zero measured leading/trailing silence; strongest objective frequent-action fit",
+      "source_master_remote": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/arrow_go/v3/audio/sfx/arrow_go_arrow_escape_gag/v1/arrow_go_arrow_escape_gag_03_master.wav",
+      "source_sha256": "458d65e2eeb37707091337aa0c6e6573163068a15b5a57ce90201bd98327aa44",
+      "derivation": "ffmpeg loudnorm I=-18 TP=-2 LRA=5; libvorbis q5; 48 kHz mono",
+      "runtime_asset": "res://assets/audio/catalog/path_games/gag/arrow_go_arrow_escape_gag_v3.ogg",
+      "runtime_sha256": "ae236ab82a2cb2ac252b3f5124d4c2759b93008696b9b75655d879425371c1e6",
+      "runtime_qa": {"duration_seconds": 0.497646, "sample_rate": 48000, "channels": 1, "measured_lufs": -18.25, "measured_true_peak_db": -3.19},
+      "runtime_reference": "arrow_escape, arrow_turn_escape, arrow_waypoint and arrow_near_clear"
+    },
+    {
+      "asset_id": "arrow_go_fox_reveal_gag",
+      "version": "v1",
+      "provider": "elevenlabs",
+      "model": "eleven_text_to_sound_v2",
+      "delivery_digest": "07885b8b377e30d79bde9bdf1938bc6fc59590ec650d52a19d4d9741ef1e9557",
+      "prompt": "A compact joyful cartoon puzzle completion sound: the final paper arrow zips away, a hidden friendly fox pops into view with a warm felt-and-wood bloom, followed by two restrained bright toy-bell notes and a soft paper confetti flutter. Clear satisfying reveal, strong but cozy, clean decay under 1.4 seconds, no voice, no speech, no music bed, no ambience.",
+      "variations": 3,
+      "selected_variation": 2,
+      "selection_reason": "0.986188 s, 48 kHz mono, -16.99 LUFS source, -1.83 dBTP, 0.021 ms measured leading silence and zero trailing silence",
+      "source_master_remote": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/arrow_go/v3/audio/sfx/arrow_go_fox_reveal_gag/v1/arrow_go_fox_reveal_gag_02_master.wav",
+      "source_sha256": "8d80daaf0178637001d68c03b722e6381894efca52bfbd95dab74c8303ee087a",
+      "derivation": "ffmpeg loudnorm I=-16 TP=-2 LRA=5; libvorbis q5; 48 kHz mono",
+      "runtime_asset": "res://assets/audio/catalog/path_games/gag/arrow_go_fox_reveal_gag_v3.ogg",
+      "runtime_sha256": "67520ae739f20fd223e8b03cdd8c22fe620471ffe5e5630cd10fb0a351b85fdc",
+      "runtime_qa": {"duration_seconds": 0.986188, "sample_rate": 48000, "channels": 1, "measured_lufs": -17.40, "measured_true_peak_db": -1.74},
+      "runtime_reference": "arrow_win only"
+    }
+  ],
+  "review_scope": {
+    "image": "source and runtime visual review plus actual container/dimensions/alpha/hash",
+    "audio": "prompt role, variation QA, waveform metadata, loudness, true peak, silence, import and runtime route; no subjective listening claim",
+    "source_masters": "retained only in HOME-WSL GAG; temporary EC2 review copies remain outside the repository and export"
+  }
+}
