@@ -9,6 +9,7 @@ func _init() -> void:
 func _run() -> void:
 	game = load("res://main.tscn").instantiate()
 	game.merge2248_persistence_enabled = false
+	game.amaze_go_recovery_enabled = false
 	root.add_child(game)
 	await process_frame
 	_test_arrow_rule()
@@ -33,22 +34,12 @@ func _test_arrow_rule() -> void:
 
 func _test_maze_wall_rule() -> void:
 	game._open_game("amaze_go")
-	var checked := false
-	var grid_size := int(game.state["size"])
-	for y in range(grid_size):
-		for x in range(grid_size):
-			for direction in [Vector2i.RIGHT, Vector2i.DOWN]:
-				if game._maze_blocks(x, y, direction):
-					game.state["player"] = [x, y]
-					game._amaze_step(direction)
-					if game.state["player"] != [x, y]:
-						failures.append("maze_wall")
-					checked = true
-					break
-			if checked: break
-		if checked: break
-	if not checked:
-		failures.append("maze_wall_missing")
+	game._amaze_go_attempt("a0", "rules")
+	if int(game.state.get("hearts", 0)) != 2 or "a0" in game.state.get("removed_ids", []):
+		failures.append("amaze_go_blocked_cost")
+	game._amaze_go_attempt("a1", "rules")
+	if "a1" not in game.state.get("removed_ids", []) or not game.amaze_go_model.is_legal("a0"):
+		failures.append("amaze_go_extract")
 
 func _test_paint_completion_rule() -> void:
 	game._clear_amaze_checkpoint()

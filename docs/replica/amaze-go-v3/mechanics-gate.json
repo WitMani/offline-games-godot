@@ -1,0 +1,57 @@
+{
+  "schema": "offline-games-mechanics-gate/v1",
+  "game_id": "amaze_go",
+  "target": "Amaze GO! 1.26.0 (Apple US id 6758326278)",
+  "baseline_commit": "3e561fb3c55f3b0b813da2b9ee9468cd4d290bae",
+  "stage0_audit_commit": "3ad25a7f61093efee7f69478cca4245d6c290d81",
+  "result": "PASS_BOUNDED_CORE",
+  "gag_gate": "OPEN_FOR_REAUDIT_ONLY",
+  "renderer_free": {
+    "script": "tools/amaze_go_model_smoke.gd",
+    "assertions": 242,
+    "result": "PASS",
+    "coverage": [
+      "12 distinct non-overlapping orthogonal arrow polylines",
+      "terminal-segment head direction",
+      "forward-ray blocker ownership",
+      "legal extraction and irreversible removal",
+      "blocked one-heart cost",
+      "bounded zero-heart failure",
+      "waypoint, near-clear and win progression",
+      "won and over terminal freeze",
+      "deterministic hint and spatial focus",
+      "deterministic restart",
+      "strict recovery round-trip and invalid-payload inertness"
+    ]
+  },
+  "runtime": {
+    "script": "tools/amaze_go_mechanics_smoke.gd",
+    "assertions": 76,
+    "result": "PASS",
+    "coverage": [
+      "authoritative model snapshot binding",
+      "polyline head and body hit ownership",
+      "pointer legal extraction",
+      "touch blocked rejection",
+      "keyboard focus and extraction route",
+      "hint route",
+      "win and loss terminal freeze",
+      "restart and strict recovery",
+      "Arrow GO and Amaze isolation"
+    ]
+  },
+  "regressions": {
+    "rules": {"assertions": 6, "result": "PASS"},
+    "catalog_smoke": {"games": 14, "result": "PASS"},
+    "catalog_art": {"assertions": 10, "result": "PASS"}
+  },
+  "local_decisions_not_original_facts": [
+    "bounded 12-arrow clean-room level",
+    "cell-ray collision resolver",
+    "three-heart capacity and zero-heart over state",
+    "free deterministic hint",
+    "keyboard controls and strict reload recovery",
+    "score and progress grades"
+  ],
+  "next_gate": "revalidate HOME-WSL GAG provenance, semantic role fit and ordinary runtime visibility"
+}

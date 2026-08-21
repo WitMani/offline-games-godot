@@ -14,6 +14,7 @@ func _init() -> void:
 func _run() -> void:
 	game = load("res://main.tscn").instantiate()
 	game.merge2248_persistence_enabled = false
+	game.amaze_go_recovery_enabled = false
 	root.add_child(game)
 	await process_frame
 	var failures: Array[String] = []

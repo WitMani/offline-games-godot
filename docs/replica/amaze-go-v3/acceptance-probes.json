@@ -1,0 +1,69 @@
+{
+  "schema": "offline-games-replica-probes/v1",
+  "game_id": "amaze_go",
+  "target": {
+    "name": "Amaze GO!",
+    "platform": "Apple App Store US",
+    "version": "1.26.0",
+    "resource_id": "6758326278",
+    "bundle_id": "com.oakever.arrows",
+    "evidence_acquired_utc": "2026-08-21"
+  },
+  "baseline_commit": "3e561fb3c55f3b0b813da2b9ee9468cd4d290bae",
+  "stage_order": [
+    "identity_and_claim_boundary",
+    "renderer_free_mechanics",
+    "runtime_integration",
+    "gag_provenance_and_visibility",
+    "presentation",
+    "web_release_integrity"
+  ],
+  "mechanics_gate": [
+    "distinct_arrow_ids_and_orthogonal_polylines",
+    "head_direction_matches_terminal_segment",
+    "occupied_cell_and_hit_owner_consistency",
+    "clear_forward_ray_is_legal",
+    "blocked_forward_ray_is_illegal",
+    "legal_extraction_removes_exactly_one_arrow",
+    "removed_arrow_is_inert_and_non_revisitable",
+    "blocked_selection_spends_exactly_one_heart",
+    "zero_heart_local_failure_and_terminal_freeze",
+    "clear_board_win_and_terminal_freeze",
+    "deterministic_hint_returns_live_legal_arrow",
+    "restart_determinism",
+    "strict_snapshot_recovery_and_invalid_rejection",
+    "mouse_touch_keyboard_route_parity",
+    "arrow_go_and_amaze_isolation"
+  ],
+  "art_gate_requires_mechanics_pass": true,
+  "presentation_gate": [
+    "gag_master_and_runtime_hash_reverification",
+    "fresh_semantic_search_and_candidate_rejection",
+    "signature_asset_visible_on_ordinary_stable_entry",
+    "authoritative_arrow_path_and_focus_states",
+    "step_reject_waypoint_near_destination_win_feedback_grammar",
+    "reduced_effects_suppresses_displacement_shake_haptic",
+    "cjk_dynamic_copy_uses_ui_font",
+    "matched_stable_to_peak_evidence",
+    "continuous_ordinary_and_completion_sequences",
+    "llvmpipe_busy_performance_comparison"
+  ],
+  "release_gate": [
+    "clean_implementation_commit_archive",
+    "clean_fingerprinted_web_export",
+    "pck_sha256_and_inventory",
+    "no_store_evidence_or_source_masters_or_full_cjk_fonts_in_pck",
+    "real_chrome_pointer_keyboard_legal_reject_restart_reload_reduced",
+    "ready_state_and_zero_console_errors",
+    "headers_range_and_full_transfer"
+  ],
+  "forbidden_claims": [
+    "exact_target_level_generator",
+    "exact_target_collision_tolerance",
+    "original_zero_heart_flow",
+    "original_hint_economy",
+    "all_modes_or_levels_aligned",
+    "deployed_or_online_visible",
+    "surpasses_original_before_user_review"
+  ]
+}

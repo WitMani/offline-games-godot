@@ -10,6 +10,7 @@ func _init() -> void:
 
 func _run() -> void:
 	game = load("res://main.tscn").instantiate()
+	game.amaze_go_recovery_enabled = false
 	root.add_child(game)
 	await process_frame
 	_test_merge2048_peak()
@@ -167,6 +168,11 @@ func _test_tileclub_completion() -> void:
 
 func _test_path_completion(id: String) -> void:
 	game._open_game(id)
+	if id == "amaze_go":
+		for arrow_id in ["a1", "a0", "a10", "a3", "a2", "a4", "a6", "a8", "a11", "a5", "a9", "a7"]:
+			game._amaze_go_attempt(arrow_id, "catalog")
+		_expect_event(id, "arrow_win", 4)
+		return
 	var grid_size := int(game.state["size"])
 	game.state["player"] = [grid_size - 2, grid_size - 1]
 	if id == "arrow_go":

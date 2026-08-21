@@ -1,0 +1,180 @@
+{
+  "schema_version": "offline-games-gag-ledger/v3",
+  "created_at": "2026-08-21T00:28:33Z",
+  "scope": ["amaze_go"],
+  "exact_baseline": "3e561fb3c55f3b0b813da2b9ee9468cd4d290bae",
+  "mechanics_commit": "6da260f299fe3168e02e7a49278d02ef9b57e43b",
+  "gag": {
+    "endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+    "transport": "MCP Streamable HTTP via /home/ubuntu/tmp/gag_mcp_client.py",
+    "server": "game-assets-generator",
+    "tools_count": 21,
+    "health_checked_at": "2026-08-21T00:28:33Z",
+    "system_info": {
+      "gpu_detected": false,
+      "main_service_pytorch": false,
+      "pure_api_available": true,
+      "enabled_providers": ["gemini", "doubao", "elevenlabs", "removebg", "fal", "openrouter", "tripo", "codex"],
+      "disabled_providers": ["openai", "stable_diffusion"]
+    }
+  },
+  "fresh_semantic_searches": [
+    {
+      "id": "amaze_go_v3_visual_unrestricted",
+      "query": "无文字 正交俯视 黄铜珐琅 箭头解谜 清路提示 导航徽章 终局印章 透明背景 纸艺 卡通游戏素材",
+      "kinds": ["image"],
+      "limit": 12,
+      "result_count": 12,
+      "candidates": [
+        ["conquest-vfx-atlas-v2.png", 0.43933939412722517],
+        ["vfx-coin-token.png", 0.43187369027774236],
+        ["2048-tile-surface-C6nXGAid.png", 0.4294611709610804],
+        ["2048-tile-surface.png", 0.4294611709610804],
+        ["conquest-vfx-atlas-chroma-v2.png", 0.4281149796375901],
+        ["conquest-world-ui-atlas-chroma-v3.png", 0.42368095942908557],
+        ["conquest-world-ui-atlas-v3.png", 0.418732465164657],
+        ["generated_images__20260820_183644_Gemini.png", 0.4170213462843811],
+        ["coin-burst.png", 0.41263422435213126],
+        ["generated_images__20260820_183633_Gemini_nobg_20260820_183911_cropped.png", 0.4116180588560138],
+        ["20251127_165315_pixel_art_style_sin.jpg", 0.4113929442054121],
+        ["mat_semiconductor_104854.png", 0.4092168339682161]
+      ],
+      "decision": "reject_all_reuse_compatible_historical_family",
+      "reason": "Generic conquest VFX/UI, coins, 2048 material, logic-game art, pixel art and semiconductor icon do not form a legible paper-arrow clearance station. Existing Amaze GO assets already cover the two non-authoritative signature roles."
+    },
+    {
+      "id": "amaze_go_v3_audio_unrestricted",
+      "query": "短促 箭头滑出 纸面摩擦 发条咔哒 解谜抽取 终局盖章 游戏音效 无音乐 无人声",
+      "kinds": ["audio"],
+      "limit": 12,
+      "result_count": 12,
+      "candidates": [
+        ["warning.wav", 0.6504780006483719],
+        ["warning_48078.wav", 0.6504780006483719],
+        ["offline_games_meowdoku_paw_complete_gag_02_master.wav", 0.648778749231844],
+        ["merge2248_candy_merge_01_master.wav", 0.6469564905801455],
+        ["sfx_20251213_095733_magic_spell_cast_spa_1.wav", 0.6459577845689477],
+        ["sfx_20251213_095733_magic_spell_cast_spa_1_64078.wav", 0.6459577845689477],
+        ["sfx_20251213_092835_sword_slash_whoosh_i_1.wav", 0.6442845036991971],
+        ["sfx_20251213_092835_sword_slash_whoosh_i_2.wav", 0.6434373479348211],
+        ["sfx_20251212_150056_sword_slash_whoosh_i.mp3", 0.6432008479394311],
+        ["sfx_attack_heavy.mp3", 0.6432008479394311],
+        ["sfx_attack_heavy_12285.mp3", 0.6432008479394311],
+        ["music_20260330_002207_peaceful_ambient_exploration_m_loop.mp3", 0.6424088947451939]
+      ],
+      "decision": "reject_all_reuse_compatible_historical_pair",
+      "reason": "Warnings, other-game rewards, magic/combat effects and long music are semantically wrong for repeatable paper-arrow extraction. The existing ratchet and seal are shorter and role-specific."
+    },
+    {
+      "id": "amaze_go_v3_historical_visual_scope",
+      "query": "Amaze GO surveyor beacon cartography arrow puzzle",
+      "paths": ["/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/path_games/gag-v1/amaze_go"],
+      "kinds": ["image"],
+      "limit": 20,
+      "result_count": 0,
+      "decision": "index_gap_recorded_no_index_mutation",
+      "reason": "The historical Amaze GO directory is not currently indexed. index_asset_library was not called because the task prohibits modifying the GAG repository/index."
+    },
+    {
+      "id": "amaze_go_v3_historical_audio_scope",
+      "query": "Amaze GO survey ratchet destination seal",
+      "paths": ["/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/path_games/gag-v1/amaze_go"],
+      "kinds": ["audio"],
+      "limit": 20,
+      "result_count": 0,
+      "decision": "index_gap_recorded_no_index_mutation",
+      "reason": "The historical Amaze GO directory is not currently indexed; no source master was re-downloaded through the read-only endpoint."
+    }
+  ],
+  "generation_action": {
+    "new_generation": false,
+    "reason": "No uncovered runtime role remained after mechanics correction and fresh search review.",
+    "gag_repository_modified": false
+  },
+  "selected_assets": [
+    {
+      "asset_id": "gag-image-20260820-220717-fal",
+      "type": "image",
+      "status": "historical_asset_reused_after_v3_role_review",
+      "provider": "fal.ai",
+      "model": "fal-ai/flux-pro/v1.1",
+      "source_master_remote": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/path_games/gag-v1/amaze_go/generated_images__20260820_220717_FAL.ai.png",
+      "source_master_sha256_historical": "25a693d4ac193e814dde5d4dff3547f657f336e2beafec2e61fc8283d82da324",
+      "prompt": "One isolated production-ready 2D cartoon board-game pawn, orthographic exact top-down view: a tiny round clockwork cartographer beetle / survey rover. Chunky aged-brass crescent legs and gear tabs form a clear circular silhouette, deep cobalt-blue enamel shell, one large ivory glass survey lens at the center, and one short coral-red feeler pointing straight upward to show its facing direction. Tiny screws, soft dark contact shadow, bright worn edge highlight. Friendly mechanical object, not a real insect and not a compass. Exact centered symmetrical body, readable at 52 pixels. Exactly one pawn only. The surface must be completely blank: no cardinal letters, no alphabet, no words, no numbers, no tick labels, no compass rose, no arrows, no symbols, no logo, no UI, no map, no maze, no separate props, no human, no hands. Plain neutral gray background with strong separation for later background removal.",
+      "derivations": [
+        {"tool": "remove_background", "provider": "removebg", "sha256_historical": "378e2399e64feda208976f84c778cf0d848f0f892e03dcd532586db1b3bfd8d6", "size": [500, 500]},
+        {"tool": "crop_image", "mode": "auto_trim", "padding": 6, "sha256": "baeb571dcb42962905a0f7c8dd8ff15f71625e7954739fb57cba746e62d4eddc", "size": [358, 347]}
+      ],
+      "runtime_asset": "res://assets/art/catalog/path_games/gag/amaze_go_surveyor_gag_v1.png",
+      "runtime_sha256_fresh": "baeb571dcb42962905a0f7c8dd8ff15f71625e7954739fb57cba746e62d4eddc",
+      "runtime_qa_fresh": {"size": [358, 347], "alpha": true},
+      "v3_runtime_role": "surveyor_clearance_station",
+      "first_visible_beat": "untouched ordinary entry below the board at approximately 43 pixels",
+      "actual_runtime_bindings": ["stable clearance-station emblem", "reject station ring", "loss result plaque"],
+      "authority_boundary": "non-playable; not a player, target, arrow, blocker or input target"
+    },
+    {
+      "asset_id": "gag-image-20260820-220519-fal",
+      "type": "image",
+      "status": "historical_asset_reused_after_v3_role_review",
+      "provider": "fal.ai",
+      "model": "fal-ai/flux-pro/v1.1",
+      "source_master_remote": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/path_games/gag-v1/amaze_go/generated_images__20260820_220519_FAL.ai.png",
+      "source_master_sha256_historical": "cef2dffb1bd172de47b36f0b69a8d3e3d4c5e3decc395e01faebb4ab729692e0",
+      "prompt": "One isolated production-ready 2D cartoon destination beacon token, orthographic top-down front-facing view: a circular cartographer seal with an aged-brass outer ring, scalloped ivory parchment layer, restrained coral-red wax center, and one bold raised eight-point destination-star / map-pin silhouette in warm gold. Chunky tactile board-game piece, tiny rivets, soft dark contact shadow and bright worn edge highlight, exact centered symmetrical silhouette, readable at 50 pixels. Exactly one token only. No compass letters, no arrows, no words, no numbers, no labels, no text, no logo, no UI, no map, no maze, no separate props, no character, no hands. Plain neutral gray background with strong separation for later background removal.",
+      "derivations": [
+        {"tool": "remove_background", "provider": "removebg", "sha256_historical": "cb3e479237e6e9e49bef6e02d0c923822d55a36738c96e37b99d3205c31d6f18", "size": [500, 500]},
+        {"tool": "crop_image", "mode": "auto_trim", "padding": 6, "sha256": "15ac1714e7d0bce2331b6c5280d2b6366598453d7ea9cd4299ffbe7e0282e6c8", "size": [393, 398]}
+      ],
+      "runtime_asset": "res://assets/art/catalog/path_games/gag/amaze_go_beacon_gag_v1.png",
+      "runtime_sha256_fresh": "15ac1714e7d0bce2331b6c5280d2b6366598453d7ea9cd4299ffbe7e0282e6c8",
+      "runtime_qa_fresh": {"size": [393, 398], "alpha": true},
+      "v3_runtime_role": "beacon_progress_seal",
+      "first_visible_beat": "untouched ordinary entry below the board at approximately 39 pixels",
+      "actual_runtime_bindings": ["stable progress seal with code-native completion arc", "waypoint/near register", "win impact", "win result plaque"],
+      "authority_boundary": "non-playable; not a destination, legal-state source, arrow or input target"
+    },
+    {
+      "asset_id": "amaze_go_survey_ratchet",
+      "type": "audio",
+      "status": "historical_asset_reused_after_v3_role_review",
+      "provider": "elevenlabs",
+      "model": "eleven_text_to_sound_v2",
+      "delivery_digest_historical": "2f79929fc319b65db716afe8588adc81b1aca0cbca52a0ea680cdefc94ce5f6d",
+      "prompt": "A very short tactile cartoon board-game movement sound: one tiny aged-brass clockwork ratchet advances exactly one notch, followed by a soft blueprint-paper ink pin tap. Crisp warm mechanical click, quick attack and fast clean decay, subtle and repeatable, no voice, no speech, no music, no ambience.",
+      "selected_variation": 1,
+      "source_master_remote": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/path_games/gag-v1/amaze_go/sfx/amaze_go_survey_ratchet/v1/amaze_go_survey_ratchet_01_master.wav",
+      "source_master_sha256_historical": "c3d6de913e1ce36116bc8703cc7689e2a0a2c969ee6a7a33279a6e5ed76d8c78",
+      "derivation": "ffmpeg trailing-silence trim then loudnorm target I=-18/TP=-2/LRA=5; 48 kHz mono; libvorbis q5",
+      "runtime_asset": "res://assets/audio/catalog/path_games/gag/amaze_go_survey_ratchet_gag_v1.ogg",
+      "runtime_sha256_fresh": "84ebcbb7a852593d8a20ab983afdbeb6e99ec205d59ea74520ff1254cff2d442",
+      "runtime_qa_fresh": {"codec": "vorbis", "duration_seconds": 0.499021, "sample_rate": 48000, "channels": 1},
+      "actual_runtime_bindings": ["arrow_extract grade 1", "arrow_waypoint grade 2", "arrow_near grade 3", "arrow_hint grade 1"]
+    },
+    {
+      "asset_id": "amaze_go_destination_seal",
+      "type": "audio",
+      "status": "historical_asset_reused_after_v3_role_review",
+      "provider": "elevenlabs",
+      "model": "eleven_text_to_sound_v2",
+      "delivery_digest_historical": "aea69a360913e986fd4cca9eea957292f0b8e015e193000702d095268c9a4408",
+      "prompt": "A short satisfying cartoon puzzle completion sound: a small brass cartographer iris locks into place, a coral wax seal stamps onto parchment with a tactile thump, then one restrained bright glass navigation chime. Warm handcrafted expedition tone, clear impact and short decay, no voice, no speech, no music, no ambience.",
+      "selected_variation": 2,
+      "source_master_remote": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/path_games/gag-v1/amaze_go/sfx/amaze_go_destination_seal/v1/amaze_go_destination_seal_02_master.wav",
+      "source_master_sha256_historical": "2044d3915975d58d3da663b7ac30f8e849ca881a3d50127dc7486dff2c172630",
+      "derivation": "ffmpeg silence trim, body gain and limiter; 48 kHz mono; libvorbis q5",
+      "runtime_asset": "res://assets/audio/catalog/path_games/gag/amaze_go_destination_seal_gag_v1.ogg",
+      "runtime_sha256_fresh": "7c6b5ae0487662e8e08b908ff5aaada815700b055e80f3acfbb38f9e5cf66c7b",
+      "runtime_qa_fresh": {"codec": "vorbis", "duration_seconds": 0.537542, "sample_rate": 48000, "channels": 1},
+      "actual_runtime_bindings": ["arrow_win grade 4"]
+    }
+  ],
+  "verification_boundary": {
+    "runtime_derivatives": "freshly hashed and probed in the v3 worktree",
+    "source_masters": "remote paths/provider/model/prompt/master hashes cross-checked against the committed v2 ledger; not independently re-downloaded because the historical directory is absent from the current read-only semantic index",
+    "index_mutation": "not performed",
+    "source_masters_in_repository": 0,
+    "new_generation": 0,
+    "only_runtime_derivatives_ship": true
+  }
+}

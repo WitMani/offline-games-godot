@@ -143,7 +143,7 @@ func draw_event_fx(canvas: CanvasItem, effect: Dictionary, now: float, label_fon
 			_draw_event_label(canvas, reduced_label_position, reduced_label, color, reduced_fade, label_font, 11)
 		return
 
-	var rejected := "error" in kind or "reject" in kind or "mismatch" in kind
+	var rejected := "error" in kind or "reject" in kind or "mismatch" in kind or (game_id == "amaze_go" and kind == "arrow_loss")
 	if bool(effect.get("reduced", false)) and game_id == "merge2048":
 		# A short semantic ring retains acknowledgment without screen shake,
 		# particle travel, or layered high-amplitude flashes.
@@ -162,7 +162,7 @@ func draw_event_fx(canvas: CanvasItem, effect: Dictionary, now: float, label_fon
 			"solitaire", "tripeaks": _draw_card_event(canvas, game_id, kind, position, color, grade, t, peak, fade, symbol_font, effect)
 			"mahjong": _draw_jade_event(canvas, position, color, grade, t, fade)
 			"tileclub": _draw_stitch_event(canvas, position, color, grade, t, fade)
-			"amaze_go": _draw_compass_event(canvas, position, color, grade, t, fade)
+			"amaze_go": _draw_clearance_event(canvas, position, color, grade, t, fade, effect.get("direction", [1, 0]))
 			"arrow_go": _draw_arrow_event(canvas, position, color, grade, t, fade, effect.get("direction", [1, 0]))
 			"amaze": _draw_paint_event(canvas, position, color, grade, t, fade)
 
@@ -399,6 +399,23 @@ func _draw_stitch_event(canvas: CanvasItem, p: Vector2, color: Color, grade: int
 
 func _draw_compass_event(canvas: CanvasItem, p: Vector2, color: Color, grade: int, t: float, fade: float) -> void:
 	_draw_brass_compass(canvas, p, 18.0 + t * (28.0 + grade * 5.0), Color(color, 0.74 * fade), t * PI * 0.75)
+
+
+func _draw_clearance_event(canvas: CanvasItem, p: Vector2, color: Color, grade: int, t: float, fade: float, direction_value: Variant) -> void:
+	var direction := Vector2.RIGHT
+	if direction_value is Array and direction_value.size() >= 2:
+		direction = Vector2(float(direction_value[0]), float(direction_value[1])).normalized()
+	elif direction_value is Vector2i or direction_value is Vector2:
+		direction = Vector2(direction_value).normalized()
+	if direction == Vector2.ZERO:
+		direction = Vector2.RIGHT
+	var side := Vector2(-direction.y, direction.x)
+	var lane_count := 2 + mini(grade, 3)
+	for index in range(lane_count):
+		var lane_t := clampf((t - float(index) * 0.055) / 0.78, 0.0, 1.0)
+		var center := p + direction * (12.0 + lane_t * (20.0 + float(grade) * 5.0)) + side * (float(index) - float(lane_count - 1) * 0.5) * 7.0
+		canvas.draw_line(center - direction * 4.5, center + direction * 4.5, Color(color.lightened(0.22), fade * (0.84 - float(index) * 0.10)), 2.2, true)
+	canvas.draw_arc(p, 15.0 + t * (13.0 + float(grade) * 3.0), 0, TAU, 28, Color(color.lightened(0.18), 0.46 * fade), 2.0, true)
 
 
 func _draw_arrow_event(canvas: CanvasItem, p: Vector2, color: Color, grade: int, t: float, fade: float, direction_value: Variant) -> void:

@@ -1,0 +1,36 @@
+{
+  "schema": "offline-games-stage0-gap/v1",
+  "game_id": "amaze_go",
+  "audited_commit": "3e561fb3c55f3b0b813da2b9ee9468cd4d290bae",
+  "target": "Amaze GO! 1.26.0 (Apple US id 6758326278, com.oakever.arrows)",
+  "result": "FAIL_MATERIAL_CONTRADICTION",
+  "gag_gate": "CLOSED",
+  "facts": [
+    "tap an arrow with a free path to the edge to slide it out",
+    "a wrong tap costs one heart",
+    "clearing every arrow finishes the level",
+    "long-press Guidance and hints are advertised"
+  ],
+  "observations": [
+    "first-party screenshots show many disconnected orthogonal arrow polylines",
+    "no player avatar, start cell, destination cell or wall maze is visible",
+    "screenshots show droplet hearts plus grid and light-bulb controls"
+  ],
+  "material_gaps": [
+    "avatar navigation instead of arrow extraction",
+    "fixed start and destination absent from the target evidence",
+    "five wall edges instead of many arrow bodies",
+    "legal revisit instead of irreversible removal",
+    "blocked action does not spend a heart",
+    "reaching one cell wins instead of clearing all arrows",
+    "no loss state, strict recovery or arrow keyboard route"
+  ],
+  "unknown_original_rules": [
+    "exact level resources and generator",
+    "polyline motion and collision tolerances",
+    "heart capacity and zero-heart transition",
+    "Guidance and hint economy",
+    "scoring, timing, zoom and persistence"
+  ],
+  "next_gate": "renderer-free Amaze GO arrow-extraction model probes"
+}
