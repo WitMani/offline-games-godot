@@ -79,13 +79,9 @@ func _trigger_peak(id: String) -> void:
 			game.state["selected"] = 0
 			game._mahjong_tap(Vector2(50, 242 + 2 * 112 + 10))
 		"tileclub":
-			var empty_tiles: Array = []
-			for _index in range(49):
-				empty_tiles.append(0)
-			game.state["tiles"] = empty_tiles
-			game.state["tiles"][24] = 1
-			game.state["tray"] = [1, 1]
-			game._tileclub_tap(Vector2(36 + 3 * 64 + 10, 236 + 3 * 64 + 10))
+			game._set_tileclub_reduced_effects(false)
+			for tile_id in game.tileclub_model.solution_for_level():
+				game._tileclub_collect_id(tile_id)
 		"amaze_go", "arrow_go":
 			var grid_size := int(game.state["size"])
 			game.state["player"] = [grid_size - 2, grid_size - 1]

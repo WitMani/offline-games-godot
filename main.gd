@@ -84,6 +84,9 @@ const SUDOKU_RULES = preload("res://models/sudoku_model.gd")
 const SOLITAIRE_RULES = preload("res://models/solitaire_model.gd")
 const TRIPEAKS_RULES = preload("res://models/tripeaks_model.gd")
 const MAHJONG_RULES = preload("res://models/mahjong_solitaire_model.gd")
+const TILECLUB_RULES = preload("res://models/tileclub_model.gd")
+const TILECLUB_CHECKPOINT_PATH := "user://offline_games_tileclub_checkpoint_v3.json"
+const TILECLUB_WEB_STORAGE_KEY := "offline-games.tileclub.checkpoint.v3"
 const MERGE2248_PRESENTATION = preload("res://presentation/merge2248_presenter.gd")
 const MERGE2248_SAVE_PATH := "user://offline_games_merge2248_v4.json"
 const MERGE2048_CLASSIC_PRESENTATION = preload("res://presentation/merge2048_classic_presenter.gd")
@@ -211,6 +214,15 @@ var sudoku_model = SUDOKU_RULES.new()
 var solitaire_model = SOLITAIRE_RULES.new()
 var tripeaks_model = TRIPEAKS_RULES.new()
 var mahjong_model = MAHJONG_RULES.new()
+var tileclub_model = TILECLUB_RULES.new()
+var tileclub_level_index := 0
+var tileclub_focus_id := -1
+var tileclub_last_outcome: Dictionary = {}
+var tileclub_checkpoint_restored := false
+var tileclub_reduced_effects := false
+var tileclub_haptic_emitted_count := 0
+var tileclub_haptic_suppressed_count := 0
+var tileclub_haptic_last_payload: Variant = null
 var merge2248_presenter = MERGE2248_PRESENTATION.new()
 var merge2048_classic_presenter = MERGE2048_CLASSIC_PRESENTATION.new()
 var catalog_art_director = CATALOG_ART_DIRECTION.new()
@@ -346,6 +358,7 @@ func _ready() -> void:
 	if OS.has_feature("web"):
 		var snakes_browser_preference: Variant = JavaScriptBridge.eval("window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : 0", true)
 		snakes_reduced_effects = snakes_reduced_effects or int(snakes_browser_preference) == 1
+	_configure_tileclub_effect_preferences()
 	var cjk_font := UI_FONT as FontFile
 	if cjk_font:
 		cjk_font.fallbacks = [LATIN_FONT, SYMBOL_FONT]
@@ -390,6 +403,7 @@ func _set_reduced_effects(value: bool) -> void:
 	solitaire_reduced_effects = value
 	tripeaks_reduced_effects = value
 	mahjong_reduced_effects = value
+	tileclub_reduced_effects = value
 	if game_id == "mahjong":
 		state["reduced_effects"] = value
 	haptics_enabled = not value
@@ -446,6 +460,12 @@ func _play_sfx(stream: AudioStream, volume_db := -7.0, pitch := 1.0) -> void:
 	player.play()
 
 func _haptic(duration_ms: int) -> void:
+	if game_id == "tileclub":
+		tileclub_haptic_last_payload = duration_ms
+		if tileclub_reduced_effects or reduced_effects or not haptics_enabled:
+			tileclub_haptic_suppressed_count += 1
+			return
+		tileclub_haptic_emitted_count += 1
 	if reduced_effects or _merge2048_effects_reduced() or not haptics_enabled:
 		return
 	if game_id == "snake_io" and snakes_reduced_effects:
@@ -468,6 +488,12 @@ func _haptic(duration_ms: int) -> void:
 		Input.vibrate_handheld(duration_ms)
 
 func _haptic_pattern(pattern: Array[int]) -> void:
+	if game_id == "tileclub":
+		tileclub_haptic_last_payload = pattern.duplicate()
+		if tileclub_reduced_effects or reduced_effects or not haptics_enabled:
+			tileclub_haptic_suppressed_count += 1
+			return
+		tileclub_haptic_emitted_count += 1
 	if pattern.is_empty() or reduced_effects or _merge2048_effects_reduced() or not haptics_enabled:
 		return
 	if game_id == "snake_io" and snakes_reduced_effects:
@@ -501,14 +527,18 @@ func _setup_accessibility_preferences() -> void:
 func _impact(position: Vector2, color: Color, strength := 1.0) -> void:
 	impact_position = position
 	impact_color = color
-	impact_strength = minf(strength, 0.28) if _merge2048_effects_reduced() else strength
-	impact_until = elapsed + (0.12 if _merge2048_effects_reduced() else 0.34)
+	if game_id == "tileclub" and tileclub_reduced_effects:
+		impact_strength = 0.0
+		impact_until = elapsed
+	else:
+		impact_strength = minf(strength, 0.28) if _merge2048_effects_reduced() else strength
+		impact_until = elapsed + (0.12 if _merge2048_effects_reduced() else 0.34)
 	queue_redraw()
 
 func _start_motion(kind: String, from: Vector2, to: Vector2, color: Color, label := "", duration := 0.34, visual_value := 0) -> void:
 	motion_kind = kind
 	motion_started = elapsed
-	motion_duration = duration
+	motion_duration = 0.0 if game_id == "tileclub" and tileclub_reduced_effects else duration
 	motion_from = from
 	motion_to = to
 	motion_color = color
@@ -520,7 +550,8 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 	if game_id in ["merge2248", "snake_classic", "snake_io"]:
 		return
 	catalog_fx_serial += 1
-	var reduced := reduced_effects or _merge2048_effects_reduced() or (game_id == "solitaire" and solitaire_reduced_effects) or (game_id == "tripeaks" and tripeaks_reduced_effects)
+	var reduced_tileclub := game_id == "tileclub" and tileclub_reduced_effects
+	var reduced := reduced_effects or _merge2048_effects_reduced() or (game_id == "solitaire" and solitaire_reduced_effects) or (game_id == "tripeaks" and tripeaks_reduced_effects) or reduced_tileclub
 	var effective_duration := duration
 	if reduced:
 		effective_duration = minf(duration, 0.24)
@@ -535,6 +566,7 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 		"duration": effective_duration,
 		"seed": catalog_fx_serial,
 		"reduced": reduced,
+		"reduced_effects": reduced_tileclub,
 	}
 	if game_id in ["merge2048", "sudoku", "meowdoku", "solitaire", "tripeaks", "mahjong", "tileclub", "amaze_go", "arrow_go"]:
 		effect["font_role"] = "ui_cjk"
@@ -542,6 +574,10 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 	if game_id == "solitaire":
 		effect["reduced_effects"] = solitaire_reduced_effects
 		effect["motion_mode"] = "static_result" if solitaire_reduced_effects else "object_arc"
+	if reduced_tileclub:
+		# The rules consequence and its readable status copy remain. Spatial travel,
+		# shake, object ghosts and vibration are removed for this preference.
+		tileclub_object_fx.clear()
 	catalog_fx.append(effect)
 	# The fruit burst is a large transparent texture. Six concurrent envelopes
 	# preserve rapid taps and cascades while bounding overdraw on WebGL/Canvas.
@@ -698,7 +734,7 @@ func _prune_catalog_fx() -> void:
 	catalog_fx = active
 
 func _catalog_shake_offset() -> Vector2:
-	if reduced_effects or (game_id == "sudoku" and sudoku_reduced_effects) or (game_id == "solitaire" and solitaire_reduced_effects) or (game_id == "tripeaks" and tripeaks_reduced_effects) or (game_id == "mahjong" and bool(state.get("reduced_effects", false))):
+	if reduced_effects or (game_id == "sudoku" and sudoku_reduced_effects) or (game_id == "solitaire" and solitaire_reduced_effects) or (game_id == "tripeaks" and tripeaks_reduced_effects) or (game_id == "mahjong" and bool(state.get("reduced_effects", false))) or (game_id == "tileclub" and tileclub_reduced_effects):
 		return Vector2.ZERO
 	for index in range(catalog_fx.size() - 1, -1, -1):
 		var effect: Dictionary = catalog_fx[index]
@@ -706,8 +742,33 @@ func _catalog_shake_offset() -> Vector2:
 			return catalog_art_director.shake_offset(effect, elapsed)
 	return Vector2.ZERO
 
+
+func _configure_tileclub_effect_preferences() -> void:
+	var reduced := OS.get_environment("OFFLINE_GAMES_REDUCED_EFFECTS").strip_edges().to_lower() in ["1", "true", "yes", "on"]
+	if OS.has_feature("web"):
+		# JavaScript numbers have an explicit Godot float mapping. Using a numeric
+		# bridge avoids relying on browser Boolean conversion through Variant.
+		var web_preference: Variant = JavaScriptBridge.eval("(() => ((window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || new URLSearchParams(window.location.search).get('reduced_effects') === '1') ? 1 : 0)()", true)
+		if web_preference != null:
+			reduced = reduced or int(web_preference) == 1
+	tileclub_reduced_effects = reduced
+
+
+func _set_tileclub_reduced_effects(enabled: bool) -> void:
+	tileclub_reduced_effects = enabled
+	motion_duration = 0.0
+	impact_strength = 0.0
+	impact_until = elapsed
+	tileclub_object_fx.clear()
+	var retained: Array[Dictionary] = []
+	for effect in catalog_fx:
+		if str(effect.get("game_id", "")) != "tileclub":
+			retained.append(effect)
+	catalog_fx = retained
+	queue_redraw()
+
 func _catalog_result_overlay_ready() -> bool:
-	if reduced_effects or (game_id == "sudoku" and sudoku_reduced_effects) or (game_id == "solitaire" and solitaire_reduced_effects) or (game_id == "tripeaks" and tripeaks_reduced_effects):
+	if reduced_effects or (game_id == "sudoku" and sudoku_reduced_effects) or (game_id == "solitaire" and solitaire_reduced_effects) or (game_id == "tripeaks" and tripeaks_reduced_effects) or (game_id == "tileclub" and tileclub_reduced_effects):
 		return true
 	# Let the authoritative board consequence and its local event read before a
 	# terminal modal covers the playfield. Rules already ended the game; this is
@@ -830,6 +891,21 @@ func _input(event: InputEvent) -> void:
 		if game_id == "mahjong" and _mahjong_keyboard_input(event.keycode):
 			get_viewport().set_input_as_handled()
 			return
+		if game_id == "tileclub":
+			if event.keycode in [KEY_UP, KEY_W]:
+				_tileclub_focus_move(Vector2i.UP)
+			elif event.keycode in [KEY_DOWN, KEY_S]:
+				_tileclub_focus_move(Vector2i.DOWN)
+			elif event.keycode in [KEY_LEFT, KEY_A]:
+				_tileclub_focus_move(Vector2i.LEFT)
+			elif event.keycode in [KEY_RIGHT, KEY_D]:
+				_tileclub_focus_move(Vector2i.RIGHT)
+			elif event.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]:
+				_tileclub_activate_focus()
+			else:
+				return
+			get_viewport().set_input_as_handled()
+			return
 		if event.keycode in [KEY_UP, KEY_W] or (game_id == "merge2048" and event.keycode == KEY_K):
 			_direction_input(Vector2i.UP)
 		elif event.keycode in [KEY_DOWN, KEY_S] or (game_id == "merge2048" and event.keycode == KEY_J):
@@ -925,6 +1001,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			pointer_down = Vector2(-1, -1)
 		else:
 			_handle_tap(event.position)
+		if game_id == "tileclub":
+			pointer_down = Vector2(-1, -1)
 	elif event is InputEventScreenDrag:
 		if game_id == "merge2248" and merge2248_drag_active:
 			_merge2248_extend_at(event.position)
@@ -964,7 +1042,11 @@ func _open_game(id: String) -> void:
 	screen = "game"
 	catalog_fx.clear()
 	rng.seed = abs(id.hash()) + 17
+	if id == "tileclub":
+		tileclub_level_index = 0
 	_start_game_state()
+	if id == "tileclub":
+		_try_restore_tileclub_checkpoint()
 	last_score = int(state.get("moves", 0)) if game_id == "merge2248" else int(state.get("score", 0))
 	_begin_transition(1.0)
 	_build_game_buttons()
@@ -1033,7 +1115,10 @@ func _build_game_buttons() -> void:
 			_add_button("撤销", Rect2(279, 810, 104, 50), Callable(self, "_mahjong_undo"), SURFACE_2, 14)
 			_add_button("低动态开" if mahjong_reduced_effects else "低动态关", Rect2(401, 810, 104, 50), Callable(self, "_toggle_mahjong_reduced"), SURFACE_2, 12)
 		"tileclub":
-			_add_button("槽位规则", Rect2(202, 816, 136, 52), Callable(self, "_tileclub_tray_hint"), SURFACE_2, 15)
+			if str(state.get("status", "playing")) == "won":
+				_add_button("下一关", Rect2(202, 816, 136, 52), Callable(self, "_tileclub_next_level"), SURFACE_2, 15)
+			else:
+				_add_button("槽位规则", Rect2(202, 816, 136, 52), Callable(self, "_tileclub_tray_hint"), SURFACE_2, 15)
 		"amaze_go", "arrow_go", "amaze":
 			_add_button("路线提示", Rect2(202, 816, 136, 52), Callable(self, "_amaze_hint"), SURFACE_2, 15)
 
@@ -1069,6 +1154,9 @@ func _reset_current() -> void:
 		_build_game_buttons()
 	if game_id == "sudoku":
 		_update_sudoku_tool_buttons()
+	if game_id == "tileclub":
+		tileclub_checkpoint_restored = false
+		_save_tileclub_checkpoint()
 	_log_event("game_reset", {"game_id":game_id})
 	_capture("reset_%s" % game_id)
 	if game_id == "snake_classic":
@@ -1615,6 +1703,58 @@ func _clear_mahjong_session() -> void:
 	if FileAccess.file_exists("user://offline_games_state.json"):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path("user://offline_games_state.json"))
 
+
+func _save_tileclub_checkpoint() -> bool:
+	if game_id != "tileclub":
+		return false
+	var encoded := JSON.stringify(tileclub_model.checkpoint())
+	var saved := false
+	var file := FileAccess.open(TILECLUB_CHECKPOINT_PATH, FileAccess.WRITE)
+	if file:
+		file.store_string(encoded)
+		saved = true
+	if OS.has_feature("web"):
+		var script := "try { localStorage.setItem(%s, %s); true; } catch (error) { false; }" % [JSON.stringify(TILECLUB_WEB_STORAGE_KEY), JSON.stringify(encoded)]
+		saved = bool(JavaScriptBridge.eval(script)) or saved
+	return saved
+
+
+func _load_tileclub_checkpoint_text() -> String:
+	if OS.has_feature("web"):
+		var script := "try { localStorage.getItem(%s) || ''; } catch (error) { ''; }" % JSON.stringify(TILECLUB_WEB_STORAGE_KEY)
+		var stored: Variant = JavaScriptBridge.eval(script)
+		if stored is String and not str(stored).is_empty():
+			return str(stored)
+	if FileAccess.file_exists(TILECLUB_CHECKPOINT_PATH):
+		return FileAccess.get_file_as_string(TILECLUB_CHECKPOINT_PATH)
+	return ""
+
+
+func _try_restore_tileclub_checkpoint() -> bool:
+	tileclub_checkpoint_restored = false
+	var encoded := _load_tileclub_checkpoint_text()
+	if encoded.is_empty():
+		return false
+	var decoded: Variant = JSON.parse_string(encoded)
+	if decoded == null or not tileclub_model.restore(decoded):
+		_clear_tileclub_checkpoint()
+		return false
+	tileclub_level_index = tileclub_model.level_index
+	tileclub_last_outcome = {}
+	tileclub_object_fx = {}
+	_sync_tileclub_state()
+	_tileclub_focus_first()
+	tileclub_checkpoint_restored = true
+	return true
+
+
+func _clear_tileclub_checkpoint() -> void:
+	if FileAccess.file_exists(TILECLUB_CHECKPOINT_PATH):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(TILECLUB_CHECKPOINT_PATH))
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("try { localStorage.removeItem(%s); } catch (error) {}" % JSON.stringify(TILECLUB_WEB_STORAGE_KEY))
+	tileclub_checkpoint_restored = false
+
 func _capture(reason: String) -> void:
 	if logger:
 		logger.capture(reason, {"game_id":game_id, "state":state.duplicate(true)})
@@ -1634,7 +1774,51 @@ func _publish_web_state() -> void:
 	if not OS.has_feature("web"):
 		return
 	var exposed := {"ready":true, "screen":screen, "game_id":game_id, "catalog_size":catalog.size(), "state":state.duplicate(true)}
+	if game_id == "tileclub":
+		exposed["presentation"] = _tileclub_presentation_state()
 	JavaScriptBridge.eval("window.__gameAcceptanceState = %s;" % JSON.stringify(exposed))
+
+
+func _tileclub_presentation_state() -> Dictionary:
+	var latest := {}
+	for index in range(catalog_fx.size() - 1, -1, -1):
+		var candidate: Dictionary = catalog_fx[index]
+		if str(candidate.get("game_id", "")) != "tileclub":
+			continue
+		latest = {
+			"kind":str(candidate.get("kind", "")),
+			"semantic":str(candidate.get("semantic", candidate.get("kind", ""))),
+			"grade":int(candidate.get("grade", 0)),
+			"label":str(candidate.get("label", "")),
+			"font_role":str(candidate.get("font_role", "")),
+			"reduced_effects":bool(candidate.get("reduced_effects", false)),
+		}
+		break
+	var board_instances := tileclub_model.active_tile_count()
+	var tray_instances := int(state.get("tray", []).size())
+	return {
+		"direction":"layered-keepsake-club-gag-v3",
+		"signature_role":"stable_board_and_tray_badges",
+		"signature_visible":board_instances + tray_instances > 0,
+		"stable_visible_instances":board_instances + tray_instances,
+		"board_badge_instances":board_instances,
+		"tray_badge_instances":tray_instances,
+		"gag_runtime_assets":[
+			"res://assets/art/catalog/tile_games/gag/tileclub_badge_atlas_gag_v1.png",
+			"res://assets/art/catalog/tile_games/gag/tileclub_shell_badge_gag_v1.png",
+			"res://assets/audio/catalog/tile_games/gag/fabric_triple_stitch_gag_v1.ogg",
+		],
+		"reduced_effects":tileclub_reduced_effects,
+		"motion_active":motion_duration > 0.0 and elapsed - motion_started < motion_duration,
+		"impact_active":elapsed < impact_until and impact_strength > 0.0,
+		"shake_offset":[_catalog_shake_offset().x, _catalog_shake_offset().y],
+		"object_fx_active":not tileclub_object_fx.is_empty(),
+		"haptic_emitted_count":tileclub_haptic_emitted_count,
+		"haptic_suppressed_count":tileclub_haptic_suppressed_count,
+		"haptic_last_payload":tileclub_haptic_last_payload,
+		"checkpoint_restored":tileclub_checkpoint_restored,
+		"latest_event":latest,
+	}
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), COAL)
@@ -1653,7 +1837,8 @@ func _draw_ambient_backdrop() -> void:
 	draw_circle(Vector2(500, 28), 156, Color(accent, 0.075))
 	draw_circle(Vector2(34, 904), 184, Color(accent, 0.045))
 	for i in range(18):
-		var px := fposmod(float(i * 83) + elapsed * (3.0 + float(i % 3)), 600.0) - 30.0
+		var backdrop_elapsed := 0.0 if game_id == "tileclub" and tileclub_reduced_effects else elapsed
+		var px := fposmod(float(i * 83) + backdrop_elapsed * (3.0 + float(i % 3)), 600.0) - 30.0
 		var py := fposmod(float(i * 137), 940.0) + 10.0
 		draw_circle(Vector2(px, py), 0.8 + float(i % 3) * 0.35, Color(INK, 0.055))
 	for y in range(0, 960, 5):
@@ -1661,6 +1846,8 @@ func _draw_ambient_backdrop() -> void:
 
 func _draw_transition_wipe() -> void:
 	if not has_transitioned:
+		return
+	if game_id == "tileclub" and tileclub_reduced_effects:
 		return
 	var progress := clampf((elapsed - screen_transition_started) / 0.24, 0.0, 1.0)
 	if progress >= 1.0:
@@ -1846,7 +2033,7 @@ func _game_secondary_text() -> Color:
 
 func _draw_catalog_fx() -> void:
 	var catalog_motion_reduced := reduced_effects or (game_id == "sudoku" and sudoku_reduced_effects) or (game_id == "solitaire" and solitaire_reduced_effects) or (game_id == "tripeaks" and tripeaks_reduced_effects)
-	if catalog_motion_reduced and game_id != "mahjong":
+	if (catalog_motion_reduced and game_id != "mahjong") or (game_id == "tileclub" and tileclub_reduced_effects):
 		return
 	for effect in catalog_fx:
 		if str(effect.get("game_id", "")) != game_id:
@@ -1897,7 +2084,7 @@ func _draw_score_panel() -> void:
 	_draw_panel(Rect2(18, 124, 504, 52), panel_fill, panel_border, 10, 1)
 	var compact := state.has("mistakes")
 	_draw_text("得分", Vector2(31, 142), 10, secondary_text)
-	var score_scale := 1.0 + (0.16 * clampf((score_pulse_until - elapsed) / 0.28, 0.0, 1.0))
+	var score_scale := 1.0 if game_id == "tileclub" and tileclub_reduced_effects else 1.0 + (0.16 * clampf((score_pulse_until - elapsed) / 0.28, 0.0, 1.0))
 	if candy_mode and _merge2248_reduced_effects_active():
 		score_scale = 1.0
 	var score_color := INK
@@ -2111,7 +2298,8 @@ func _draw_game_world(_accent: Color) -> void:
 		# authored edge props and warm material context.
 		draw_rect(Rect2(0, 112, 540, 848), Color("0f4d50", 0.10))
 		return
-	catalog_art_director.draw_environment(self, game_id, VIEW_SIZE, elapsed)
+	var environment_elapsed := 0.0 if game_id == "tileclub" and tileclub_reduced_effects else elapsed
+	catalog_art_director.draw_environment(self, game_id, VIEW_SIZE, environment_elapsed)
 
 func draw_triangle(a: Vector2, b: Vector2, c: Vector2, color: Color) -> void:
 	draw_colored_polygon(PackedVector2Array([a, b, c]), color)
@@ -7053,158 +7241,283 @@ func _draw_mahjong_face(rect: Rect2, value: int, alpha := 1.0) -> void:
 			_draw_center_font(UI_FONT, "万", center + Vector2(0, 13) * scale, maxi(7, int(18 * scale)), Color("b94750", alpha))
 
 func _init_tileclub() -> void:
-	var tiles: Array = []
-	for value in range(1, 8):
-		for _copy in range(6):
-			tiles.append(value)
-	# Two bonus triples plus one intentional open slot make a 7x7 composition
-	# while every playable symbol count stays divisible by three.
-	for bonus in [1, 1, 1, 2, 2, 2]:
-		tiles.append(bonus)
-	tiles.append(0)
-	# Deterministic Fisher-Yates shuffle keeps evaluator runs reproducible while
-	# avoiding the debug-looking striped test pattern.
-	for index in range(tiles.size() - 1, 0, -1):
-		var swap_index := rng.randi_range(0, index)
-		var temporary: Variant = tiles[index]
-		tiles[index] = tiles[swap_index]
-		tiles[swap_index] = temporary
-	state["tiles"] = tiles
-	state["tray"] = []
-	state["score"] = 0
-	state["moves"] = 0
+	tileclub_model.reset(tileclub_level_index)
+	tileclub_last_outcome = {}
 	tileclub_object_fx = {}
+	tileclub_checkpoint_restored = false
+	_sync_tileclub_state()
+	_tileclub_focus_first()
+
+
+func _sync_tileclub_state() -> void:
+	var snapshot: Dictionary = tileclub_model.snapshot()
+	for key in snapshot:
+		state[key] = snapshot[key]
+	state["game_id"] = "tileclub"
+
+
+func _tileclub_focus_first() -> void:
+	var available: Array[int] = tileclub_model.selectable_ids()
+	tileclub_focus_id = -1 if available.is_empty() else available[0]
+
+
+func _tileclub_focus_move(direction: Vector2i) -> void:
+	if game_id != "tileclub" or state.get("status") != "playing":
+		return
+	var available: Array[int] = tileclub_model.selectable_ids()
+	if available.is_empty():
+		tileclub_focus_id = -1
+		return
+	if tileclub_focus_id not in available:
+		tileclub_focus_id = available[0]
+		queue_redraw()
+		return
+	var current: Dictionary = tileclub_model.tile_by_id(tileclub_focus_id)
+	var current_position := Vector2(float(current["x"]), float(current["y"]))
+	var best_id := -1
+	var best_score := INF
+	var axis := Vector2(direction)
+	var perpendicular := Vector2(-axis.y, axis.x)
+	for candidate_id in available:
+		if candidate_id == tileclub_focus_id:
+			continue
+		var candidate: Dictionary = tileclub_model.tile_by_id(candidate_id)
+		var delta := Vector2(float(candidate["x"]), float(candidate["y"])) - current_position
+		var forward := delta.dot(axis)
+		if forward <= 0.01:
+			continue
+		var score_value := forward + absf(delta.dot(perpendicular)) * 2.4
+		if score_value < best_score:
+			best_score = score_value
+			best_id = candidate_id
+	if best_id >= 0:
+		tileclub_focus_id = best_id
+		_flash_feedback("已选择 · %s" % _tile_symbol(int(tileclub_model.tile_by_id(best_id)["value"])), CYAN)
+		queue_redraw()
+
+
+func _tileclub_activate_focus() -> void:
+	if tileclub_focus_id >= 0:
+		_tileclub_collect_id(tileclub_focus_id)
 
 func _tileclub_tap(pos: Vector2) -> void:
 	if game_id != "tileclub" or state.get("status") != "playing":
 		return
-	var origin := Vector2(36, 236)
-	var cell := 64.0
-	var col := int((pos.x - origin.x) / cell)
-	var row := int((pos.y - origin.y) / cell)
-	if col < 0 or col >= 7 or row < 0 or row >= 7:
+	var tile_id := _tileclub_tile_at(pos)
+	if tile_id < 0:
 		return
-	var index := row * 7 + col
-	var tiles: Array = state["tiles"]
-	if int(tiles[index]) == 0:
+	_tileclub_collect_id(tile_id)
+
+
+func _tileclub_collect_id(tile_id: int) -> void:
+	if game_id != "tileclub" or state.get("status") != "playing":
 		return
-	var value := int(tiles[index])
-	tiles[index] = 0
-	var tray: Array = state["tray"]
-	tray.append(value)
-	state["moves"] = int(state["moves"]) + 1
+	var tile: Dictionary = tileclub_model.tile_by_id(tile_id)
+	if tile.is_empty():
+		return
+	var tile_center := _tileclub_tile_center(tile_id)
+	var outcome: Dictionary = tileclub_model.collect(tile_id)
+	tileclub_last_outcome = outcome.duplicate(true)
+	if not bool(outcome.get("changed", false)):
+		if str(outcome.get("reason", "")) == "covered":
+			tileclub_object_fx = {
+				"kind":"blocked", "tile_id":tile_id, "grade":1,
+				"started":elapsed, "duration":0.46,
+			}
+			_flash_feedback("上层方块尚未移开", RED)
+			_start_catalog_event("stitch_blocked", tile_center, RED, 1, "被上层遮住", 0.46, {
+				"semantic":"tileclub_blocked", "tile_id":tile_id,
+				"blockers":outcome.get("blockers", []).duplicate(),
+			})
+			_log_event("tileclub_blocked", {"tile_id":tile_id, "blockers":outcome.get("blockers", [])})
+		return
+
+	_sync_tileclub_state()
+	_save_tileclub_checkpoint()
+	var value := int(outcome["value"])
 	_flash_feedback("收集 · %s" % _tile_symbol(value), _tile_color(value))
-	var tile_center := _tileclub_tile_center(index)
 	_impact(tile_center, _tile_color(value), 0.45)
-	var arrival := Vector2(66 + (tray.size() - 1) * 67, 759)
+	var arrival := Vector2(66 + int(outcome["insert_index"]) * 67, 759)
 	_start_motion("tile", tile_center, arrival, _tile_color(value), _tile_symbol(value), 0.44, value)
-	var removed_count := 0
-	var matched_value := 0
 	var matched_positions: Array = []
-	for n in range(1, 8):
-		var count := 0
-		for v in tray:
-			if int(v) == n:
-				count += 1
-		if count >= 3:
-			removed_count = 0
-			for i in range(tray.size() - 1, -1, -1):
-				if int(tray[i]) == n and removed_count < 3:
-					matched_positions.append(Vector2(66 + i * 67, 759))
-					tray.remove_at(i)
-					removed_count += 1
-			matched_value = n
-			state["score"] = int(state["score"]) + 100
-			_log_event("tileclub_match", {"tile":n, "score":state["score"]})
-		if removed_count > 0:
-			break
-	var cleared_after_action := _tileclub_cleared()
-	var tray_count := tray.size()
-	if removed_count > 0:
-		var match_grade := 4 if cleared_after_action else 3
-		var match_duration := 1.12 if match_grade == 4 else 0.96
+	for tray_index in outcome.get("matched_indices", []):
+		matched_positions.append(Vector2(66 + int(tray_index) * 67, 759))
+	var tray_count := int(outcome["tray_count"])
+	var completed := bool(outcome["completed"])
+	var failed := bool(outcome["failed"])
+	var cleared_layer: bool = not outcome.get("cleared_layers", []).is_empty()
+	if bool(outcome["matched"]):
+		var match_grade := 4 if completed else (3 if cleared_layer else 2)
+		var match_duration := 1.12 if match_grade == 4 else (0.96 if match_grade == 3 else 0.78)
 		tileclub_object_fx = {
-			"kind":"clear" if match_grade == 4 else "match", "value":matched_value,
+			"kind":"clear" if completed else ("layer" if cleared_layer else "match"), "value":value,
 			"positions":matched_positions, "grade":match_grade, "started":elapsed,
-			"duration":match_duration,
+			"duration":match_duration, "tile_id":tile_id,
 		}
-		_flash_feedback("织毯完成 · 清盘" if match_grade == 4 else "三枚消除 · +100", GOLD)
-		_impact(Vector2(270, 755), GOLD, 1.15 if match_grade == 4 else 0.92)
-		_start_catalog_event("stitch_match", Vector2(270, 755), GOLD, match_grade, "织毯完成 · 清盘" if match_grade == 4 else "三枚缝合 · +100", match_duration)
-	elif tray_count >= 7:
+		var match_label := "织毯完成 · 清盘" if completed else ("上层清开 · 三枚消除" if cleared_layer else "三枚缝合 · +100")
+		var semantic := "tileclub_complete" if completed else ("tileclub_layer_clear" if cleared_layer else "tileclub_match")
+		_flash_feedback(match_label, GOLD)
+		_impact(Vector2(270, 755), GOLD, 1.15 if completed else (0.98 if cleared_layer else 0.78))
+		_start_catalog_event("stitch_match", Vector2(270, 755), GOLD, match_grade, match_label, match_duration, {
+			"semantic":semantic, "tile_id":tile_id, "value":value,
+			"matched_indices":outcome["matched_indices"].duplicate(),
+			"newly_exposed":outcome["newly_exposed"].duplicate(),
+			"cleared_layers":outcome["cleared_layers"].duplicate(),
+			"remaining_tiles":outcome["remaining_tiles"],
+		})
+		_log_event(semantic, {"tile":value, "score":state["score"], "remaining_tiles":outcome["remaining_tiles"]})
+	elif failed:
 		tileclub_object_fx = {
 			"kind":"full", "value":value, "positions":[], "grade":4,
-			"started":elapsed, "duration":1.02,
+			"started":elapsed, "duration":1.02, "tile_id":tile_id,
 		}
 		_flash_feedback("槽位绷满 · 本局结束", RED)
-		_start_catalog_event("stitch_tray_full", Vector2(270, 759), RED, 4, "槽位绷满 · 本局结束", 1.02)
-	elif cleared_after_action:
+		_start_catalog_event("stitch_tray_full", Vector2(270, 759), RED, 4, "槽位绷满 · 本局结束", 1.02, {
+			"semantic":"tileclub_full", "tile_id":tile_id, "tray":state["tray"].duplicate(),
+		})
+		_log_event("tileclub_full", {"tray":state["tray"].duplicate(), "moves":state["moves"]})
+	elif cleared_layer:
 		tileclub_object_fx = {
-			"kind":"clear", "value":value, "positions":[arrival], "grade":4,
-			"started":elapsed, "duration":1.08,
+			"kind":"layer", "value":value, "positions":[arrival], "grade":3,
+			"started":elapsed, "duration":0.86, "tile_id":tile_id,
 		}
-		_flash_feedback("织毯完成 · 清盘", GOLD)
-		_start_catalog_event("stitch_clear", Vector2(270, 755), GOLD, 4, "织毯完成 · 清盘", 1.08)
+		_flash_feedback("上层清开 · 新方块露出", GOLD)
+		_start_catalog_event("stitch_layer_clear", tile_center, GOLD, 3, "上层清开", 0.86, {
+			"semantic":"tileclub_layer_clear", "tile_id":tile_id,
+			"cleared_layers":outcome["cleared_layers"].duplicate(),
+			"newly_exposed":outcome["newly_exposed"].duplicate(),
+		})
+		_log_event("tileclub_layer_clear", {"cleared_layers":outcome["cleared_layers"], "remaining_tiles":outcome["remaining_tiles"]})
 	elif tray_count >= 5:
 		var risk_grade := 3 if tray_count == 6 else 2
 		var risk_label := "只余一格 · 谨慎落片" if risk_grade == 3 else "槽位吃紧 · 余 2 格"
 		tileclub_object_fx = {
 			"kind":"risk", "value":value, "positions":[arrival], "grade":risk_grade,
-			"started":elapsed, "duration":0.78 if risk_grade == 3 else 0.66,
+			"started":elapsed, "duration":0.78 if risk_grade == 3 else 0.66, "tile_id":tile_id,
 		}
 		_flash_feedback(risk_label, RED if risk_grade == 3 else AMBER)
-		_start_catalog_event("stitch_risk", arrival, RED if risk_grade == 3 else AMBER, risk_grade, risk_label, 0.78 if risk_grade == 3 else 0.66)
+		_start_catalog_event("stitch_risk", arrival, RED if risk_grade == 3 else AMBER, risk_grade, risk_label, 0.78 if risk_grade == 3 else 0.66, {
+			"semantic":"tileclub_near_full", "tile_id":tile_id,
+			"tray_count":tray_count, "remaining_slots":outcome["remaining_slots"],
+		})
 	else:
 		tileclub_object_fx = {
 			"kind":"collect", "value":value, "positions":[arrival], "grade":1,
-			"started":elapsed, "duration":0.54,
+			"started":elapsed, "duration":0.54, "tile_id":tile_id,
 		}
-		_start_catalog_event("stitch_collect", tile_center, _tile_color(value), 1, "%s片入槽" % _tile_symbol(value), 0.54)
-	if tray_count >= 7:
-		state["status"] = "over"
+		_start_catalog_event("stitch_collect", tile_center, _tile_color(value), 1, "%s片入槽" % _tile_symbol(value), 0.54, {
+			"semantic":"tileclub_collect", "tile_id":tile_id, "value":value,
+			"newly_exposed":outcome["newly_exposed"].duplicate(),
+		})
+	if failed:
 		_capture("tileclub_tray_full")
-	elif cleared_after_action:
-		state["status"] = "won"
+	elif completed:
+		_build_game_buttons()
 		_capture("tileclub_win")
+	var exposed: Array = outcome.get("newly_exposed", [])
+	if not exposed.is_empty() and int(exposed[0]) in tileclub_model.selectable_ids():
+		tileclub_focus_id = int(exposed[0])
+	else:
+		_tileclub_focus_first()
+	queue_redraw()
 
 func _tileclub_tray_hint() -> void:
 	if game_id == "tileclub" and state.get("status") == "playing":
-		_flash_feedback("集齐三枚自动消除 · 七格满则结束", AMBER)
+		_flash_feedback("先移开上层 · 集齐三枚消除 · 七格满则结束", AMBER)
 		_log_event("tileclub_tray_hint", {})
 
-func _tileclub_cleared() -> bool:
-	for value in state["tiles"]:
-		if int(value) != 0:
-			return false
-	return true
 
-func _tileclub_tile_center(index: int) -> Vector2:
-	return Vector2(64 + (index % 7) * 64, 264 + (index / 7) * 64)
+func _tileclub_next_level() -> void:
+	if game_id != "tileclub" or str(state.get("status", "")) != "won":
+		return
+	if not tileclub_model.advance_level():
+		return
+	tileclub_level_index = tileclub_model.level_index
+	tileclub_last_outcome = {}
+	tileclub_object_fx = {}
+	tileclub_checkpoint_restored = false
+	_sync_tileclub_state()
+	_tileclub_focus_first()
+	_save_tileclub_checkpoint()
+	_build_game_buttons()
+	_flash_feedback("进入第 %d 关" % int(state["level_number"]), GREEN)
+	_log_event("tileclub_level_advanced", {"level_index":tileclub_level_index, "level_id":state["level_id"]})
+	queue_redraw()
+
+
+func _tileclub_cleared() -> bool:
+	return tileclub_model.active_tile_count() == 0
+
+
+func _tileclub_board_metrics() -> Dictionary:
+	var board_rect := Rect2(42, 226, 456, 430)
+	var bounds: Rect2 = tileclub_model.board_bounds()
+	var scale := minf(board_rect.size.x / maxf(0.001, bounds.size.x), board_rect.size.y / maxf(0.001, bounds.size.y))
+	scale = minf(scale, 108.0)
+	return {
+		"rect":board_rect,
+		"bounds":bounds,
+		"scale":scale,
+		"tile_size":Vector2(scale * 0.94, scale * 0.94),
+	}
+
+
+func _tileclub_tile_rect(tile_id: int) -> Rect2:
+	var tile: Dictionary = tileclub_model.tile_by_id(tile_id)
+	if tile.is_empty():
+		return Rect2()
+	var metrics := _tileclub_board_metrics()
+	var board_rect: Rect2 = metrics["rect"]
+	var bounds: Rect2 = metrics["bounds"]
+	var scale := float(metrics["scale"])
+	var center := board_rect.get_center() + (Vector2(float(tile["x"]), float(tile["y"])) - bounds.get_center()) * scale
+	var tile_size: Vector2 = metrics["tile_size"]
+	return Rect2(center - tile_size * 0.5, tile_size)
+
+
+func _tileclub_tile_center(tile_id: int) -> Vector2:
+	return _tileclub_tile_rect(tile_id).get_center()
+
+
+func _tileclub_tile_at(pos: Vector2) -> int:
+	var draw_order: Array[Dictionary] = tileclub_model.active_tiles_draw_order()
+	for index in range(draw_order.size() - 1, -1, -1):
+		var tile: Dictionary = draw_order[index]
+		var tile_id := int(tile["id"])
+		if _tileclub_tile_rect(tile_id).has_point(pos):
+			return tile_id
+	return -1
 
 func _draw_tileclub() -> void:
-	_draw_section_heading("玩具俱乐部", "三枚同图案自动消除", Color("ff9f68"))
-	var origin := Vector2(36, 236)
-	var cell := 64.0
-	var tiles: Array = state["tiles"]
-	for index in range(49):
-		var row := index / 7
-		var col := index % 7
-		var rect := Rect2(origin + Vector2(col * cell, row * cell), Vector2(56, 56))
-		var value := int(tiles[index])
-		if value == 0:
-			draw_circle(rect.get_center(), 2.5, Color("ffe5d6", 0.14))
-			draw_line(rect.get_center() - Vector2(4, 4), rect.get_center() + Vector2(4, 4), Color("ffe5d6", 0.07), 1.0)
-			if index == 48 and state["tray"].is_empty() and int(state["moves"]) == 0:
-				draw_arc(rect.get_center(), 18, 0, TAU, 24, Color(INK, 0.10), 1.0)
-		else:
-			_draw_fabric_patch(rect, value)
+	_draw_section_heading("玩具俱乐部", "第 %d 关 · 移开上层并收集三枚同图案" % int(state.get("level_number", 1)), Color("ff9f68"))
+	var metrics := _tileclub_board_metrics()
+	var board_rect: Rect2 = metrics["rect"]
+	_draw_panel(board_rect.grow(5), Color("2a1f38", 0.62), Color("ffb782", 0.20), 20, 1)
+	for guide in range(4):
+		var guide_y := board_rect.position.y + 48.0 + float(guide) * 96.0
+		draw_line(Vector2(board_rect.position.x + 16, guide_y), Vector2(board_rect.end.x - 16, guide_y), Color("ffe3c2", 0.035), 1.0)
+	var draw_order: Array[Dictionary] = tileclub_model.active_tiles_draw_order()
+	for tile in draw_order:
+		var tile_id := int(tile["id"])
+		var rect := _tileclub_tile_rect(tile_id)
+		var selectable := tileclub_model.is_selectable(tile_id)
+		var layer := int(tile["layer"])
+		if layer > 0:
+			draw_rect(Rect2(rect.position + Vector2(0, 4), rect.size), Color("0b0812", 0.24), true)
+		_draw_fabric_patch(rect, int(tile["value"]), 1.0 if selectable else 0.66)
+		if not selectable:
+			_draw_panel(rect.grow(-4), Color("1a1426", 0.14), Color("2b2138", 0.34), 9, 1)
+		if tile_id == tileclub_focus_id and selectable and state.get("status") == "playing":
+			draw_arc(rect.get_center(), minf(rect.size.x, rect.size.y) * 0.53, -PI * 0.82, PI * 0.16, 28, Color("fff2bc", 0.92), 3.0, true)
+			draw_circle(rect.position + Vector2(rect.size.x - 10, 10), 4.0, Color("fff8d8", 0.94))
+	_draw_text("剩余 %d 枚 · 可选 %d 枚" % [int(state.get("active_count", 0)), int(state.get("selectable_ids", []).size())], Vector2(44, 670), 12, Color("dccde8"))
 	var tray_count := int(state["tray"].size())
 	var risk_color := RED if tray_count >= 6 else (AMBER if tray_count >= 5 else MINT)
 	var object_age := elapsed - float(tileclub_object_fx.get("started", -10.0))
 	var object_duration := float(tileclub_object_fx.get("duration", 0.0))
 	var object_kind := str(tileclub_object_fx.get("kind", ""))
 	var risk_pulse := 0.0
-	if object_kind in ["risk", "full"] and object_age >= 0.0 and object_age < object_duration:
+	if not tileclub_reduced_effects and object_kind in ["risk", "full"] and object_age >= 0.0 and object_age < object_duration:
 		var object_t := clampf(object_age / object_duration, 0.0, 1.0)
 		risk_pulse = sin(object_t * PI * (3.0 if object_kind == "full" else 2.0)) * 0.5 + 0.5
 	_draw_status_badge("槽位 %d / 7" % tray_count, Vector2(36, 692), risk_color, tray_count < 5, 124)
@@ -7214,7 +7527,7 @@ func _draw_tileclub() -> void:
 	for i in range(7):
 		var slot := Rect2(39 + i * 67, 736, 54, 46)
 		var occupied := i < tray_count
-		var slot_kick := sin(object_age * 68.0 + i * 0.8) * risk_pulse * (2.2 if object_kind == "full" else 0.7)
+		var slot_kick := 0.0 if tileclub_reduced_effects else sin(object_age * 68.0 + i * 0.8) * risk_pulse * (2.2 if object_kind == "full" else 0.7)
 		slot.position.x += slot_kick
 		_draw_panel(slot, Color("100f20"), Color(risk_color, 0.72 + risk_pulse * 0.18) if occupied else Color(INK, 0.14), 8, 2)
 		if i < tray_count:
@@ -7222,7 +7535,7 @@ func _draw_tileclub() -> void:
 			var awaiting_arrival := tile_motion_progress < 1.0 and i == motion_target_index and tray_value == motion_value
 			if not awaiting_arrival:
 				_draw_fabric_patch(slot.grow(-4.0), tray_value, 1.0, true, risk_pulse * 0.45)
-	if object_kind == "full" and risk_pulse > 0.02:
+	if not tileclub_reduced_effects and object_kind == "full" and risk_pulse > 0.02:
 		var snap_color := Color("ff95ae", 0.70 * risk_pulse)
 		draw_line(Vector2(37, 718), Vector2(251, 727), snap_color, 2.4)
 		draw_line(Vector2(289, 727), Vector2(503, 718), snap_color, 2.4)
@@ -7266,8 +7579,10 @@ func _tileclub_gag_badge_region(value: int) -> Rect2:
 			return Rect2(326, 190, 127, 128)
 
 func _draw_tileclub_object_feedback() -> void:
+	if tileclub_reduced_effects:
+		return
 	var kind := str(tileclub_object_fx.get("kind", ""))
-	if kind not in ["match", "clear"]:
+	if kind not in ["match", "layer", "clear"]:
 		return
 	var age := elapsed - float(tileclub_object_fx.get("started", -10.0))
 	var duration := float(tileclub_object_fx.get("duration", 0.0))
@@ -7291,7 +7606,7 @@ func _draw_tileclub_object_feedback() -> void:
 		draw_line(source, center, Color(_tile_color(value), 0.30 * alpha), 2.0)
 	var seal_alpha := sin(clampf((t - 0.24) / 0.76, 0.0, 1.0) * PI)
 	if seal_alpha > 0.01:
-		var stitch_count := 18 if kind == "clear" else 12
+		var stitch_count := 18 if kind == "clear" else (15 if kind == "layer" else 12)
 		for stitch in range(stitch_count):
 			var angle := float(stitch) / float(stitch_count) * TAU + t * 0.32
 			var radius := 28.0 + gather * (25.0 if kind == "clear" else 12.0)

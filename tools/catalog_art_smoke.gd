@@ -157,14 +157,11 @@ func _test_mahjong_completion() -> void:
 
 
 func _test_tileclub_completion() -> void:
+	game._clear_tileclub_checkpoint()
 	game._open_game("tileclub")
-	var empty_tiles: Array = []
-	for _index in range(49):
-		empty_tiles.append(0)
-	game.state["tiles"] = empty_tiles
-	game.state["tiles"][0] = 1
-	game.state["tray"] = [1, 1]
-	game._tileclub_tap(Vector2(44, 244))
+	game._set_tileclub_reduced_effects(false)
+	for tile_id in game.tileclub_model.solution_for_level():
+		game._tileclub_collect_id(tile_id)
 	_expect_event("tileclub", "stitch_match", 4)
 
 

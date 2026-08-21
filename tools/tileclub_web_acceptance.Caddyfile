@@ -1,0 +1,25 @@
+{
+	admin off
+	auto_https off
+}
+
+http://127.0.0.1:18961 {
+	root * {$TILECLUB_WEB_ROOT}
+
+	@entrypoint path / /index.html
+	header @entrypoint Cache-Control "no-cache"
+
+	@fingerprinted path_regexp fingerprinted ^/index\.[0-9a-f]{12}\.(?:js|wasm|pck)$
+	header @fingerprinted Cache-Control "public, max-age=31536000, immutable"
+
+	@pack path *.pck
+	header @pack Content-Type "application/octet-stream"
+
+	header {
+		Cross-Origin-Opener-Policy "same-origin"
+		Cross-Origin-Embedder-Policy "require-corp"
+		X-Content-Type-Options "nosniff"
+	}
+
+	file_server
+}

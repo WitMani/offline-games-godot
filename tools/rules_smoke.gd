@@ -69,16 +69,27 @@ func _test_paint_completion_rule() -> void:
 
 func _test_tileclub_clearability() -> void:
 	game._open_game("tileclub")
-	var counts := {}
-	for value in game.state["tiles"]:
-		var number := int(value)
-		if number > 0:
+	if int(game.state["tray_capacity"]) != 7 or int(game.state["layer_count"]) < 2:
+		failures.append("tile_contract")
+	for level in range(game.tileclub_model.level_count()):
+		var model = game.TILECLUB_RULES.new()
+		model.reset(level)
+		var counts := {}
+		for tile in model.tiles:
+			var number := int(tile["value"])
 			counts[number] = int(counts.get(number, 0)) + 1
-	for number in counts:
-		if int(counts[number]) % 3 != 0:
-			failures.append("tile_count_%s" % number)
-	if int(game.state["tiles"].size()) != 49:
-		failures.append("tile_board_size")
+		for number in counts:
+			if int(counts[number]) % 3 != 0:
+				failures.append("tile_count_%d_%s" % [level, number])
+		if model.selectable_ids().is_empty():
+			failures.append("tile_selectable_%d" % level)
+		for tile_id in model.solution_for_level():
+			var outcome: Dictionary = model.collect(tile_id)
+			if not bool(outcome.get("changed", false)):
+				failures.append("tile_solution_%d_%d" % [level, tile_id])
+				break
+		if model.status != "won" or not model.tray.is_empty():
+			failures.append("tile_clear_%d" % level)
 
 func _test_tripeaks_lock_rule() -> void:
 	game._open_game("tripeaks")

@@ -1,0 +1,181 @@
+{
+  "schema_version": "offline-games-gag-ledger/v2",
+  "scope": ["tileclub"],
+  "revalidated_at": "2026-08-20T20:00:00Z",
+  "mechanics_gate_commit": "b566aaa",
+  "exact_public_baseline": "3e561fb3c55f3b0b813da2b9ee9468cd4d290bae",
+  "history": {
+    "immutable_prior_ledger": "docs/art-direction/tileclub-v2.gag-asset-ledger.json",
+    "decision": "Revalidate existing v1 masters and runtime derivatives; do not relabel them or generate replacements without a demonstrated role gap.",
+    "new_generation_in_v3": false
+  },
+  "gag_live_revalidation": {
+    "endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+    "transport": "MCP Streamable HTTP via direct Python client",
+    "protocol": "2024-11-05",
+    "server": "game-assets-generator",
+    "server_version": "1.29.0",
+    "tools_count": 21,
+    "health": {
+      "gpu_detected": false,
+      "primary_pytorch_installed": false,
+      "pure_api_available": true,
+      "enabled_providers": ["gemini", "doubao", "mock", "elevenlabs", "removebg", "fal", "openrouter", "tripo", "codex"],
+      "disabled_providers": ["openai", "stable_diffusion"]
+    },
+    "ephemeral_download_urls": "omitted"
+  },
+  "semantic_searches": [
+    {
+      "id": "live_visual_unscoped",
+      "query": "无文字 卡通手工布艺贴布方块 徽章 刺绣叶子 月亮 莓果 星星 花朵 贝壳 水晶 三消游戏素材",
+      "kind": "image",
+      "count": 12,
+      "candidates": [
+        ["generated_images__20260820_184012_FAL.ai.png", 0.5543801993173912, "select master"],
+        ["generated_images__20260820_184012_FAL.ai_nobg_20260820_184123.png", 0.5445200543568379, "select derivation lineage"],
+        ["generated_images__20260820_184811_FAL.ai.png", 0.42360169589473123, "select shell repair master"],
+        ["conquest-vfx-atlas-v2.png", 0.41895536869691263, "reject conquest VFX"],
+        ["conquest-vfx-atlas-chroma-v2.png", 0.41704844564346244, "reject conquest VFX"],
+        ["conquest-world-ui-atlas-chroma-v3.png", 0.41425288596279863, "reject unrelated UI"],
+        ["game-icon-and-territory-atlas-chroma-v1.png", 0.4126280641702698, "reject unrelated UI"],
+        ["conquest-world-ui-atlas-v3.png", 0.4071366216590551, "reject unrelated UI"],
+        ["reward-new-badge.png", 0.40328131463148015, "reject generic reward badge"],
+        ["card-ui-chrome-atlas-chroma-v1.png", 0.40194538501528065, "reject unrelated card UI"],
+        ["vfx-gold-sparkles.png", 0.39351357436198137, "reject generic sparkle"],
+        ["generated_images__20260820_183543_Gemini_nobg_20260820_183903_cropped.png", 0.3910580843226692, "reject unrelated Mahjong family"]
+      ]
+    },
+    {
+      "id": "live_visual_scoped",
+      "query": "front-facing square fabric applique badges leaf moon berry star flower seashell crystal no text",
+      "paths": ["/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/tile_games/gag_v1/tileclub"],
+      "kind": "image",
+      "count": 2,
+      "candidates": [
+        ["generated_images__20260820_184012_FAL.ai.png", 0.5063867456606483, "select atlas master"],
+        ["generated_images__20260820_184811_FAL.ai.png", 0.4486075708622951, "select shell repair master"]
+      ]
+    },
+    {
+      "id": "live_audio_scoped",
+      "query": "three soft felt patches pop needle thread zip wooden button click tiny reward bell no voice short game sound",
+      "paths": ["/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/tile_games/gag_v1/tileclub"],
+      "kind": "audio",
+      "count": 2,
+      "candidates": [
+        ["fabric_triple_stitch_02_master.wav", 0.5894841621786241, "reject for v3 replacement: not the historically selected and normalized variation; no demonstrated role gap"],
+        ["fabric_triple_stitch_01_master.wav", 0.5352457536593779, "select: prior reviewed variation, source and runtime hashes still exact"]
+      ]
+    },
+    {
+      "id": "live_reward_gap_check",
+      "query": "手工布艺俱乐部 三消清层 清盘奖励组件 无文字 透明背景 卡通游戏素材",
+      "kind": "image",
+      "count": 12,
+      "candidates": [
+        ["generated_images__20260820_184012_FAL.ai_nobg_20260820_184123.png", 0.45458938186647035, "reuse existing badge lineage"],
+        ["reward-new-badge.png", 0.43002200674030716, "reject generic reward badge"],
+        ["conquest-vfx-atlas-chroma-v2.png", 0.423739024983877, "reject conquest VFX"],
+        ["generated_images__20260820_184012_FAL.ai.png", 0.41931816137138844, "reuse existing badge lineage"],
+        ["conquest-vfx-atlas-v2.png", 0.418452827873127, "reject conquest VFX"],
+        ["20260109_012326_game_success_result_gemini.png", 0.41503912136655047, "reject generic result art"],
+        ["impact-arrow.png", 0.40622320871134054, "reject unrelated impact"],
+        ["card-ui-chrome-atlas-chroma-v1.png", 0.40476721850799074, "reject unrelated card UI"],
+        ["orchard_recipe_tray_runtime.png", 0.401705250954269, "reject 2048 Balls-specific tray"],
+        ["vfx-celebration-burst.png", 0.4002544009222334, "reject generic celebration"],
+        ["generated_images__20260820_183543_Gemini_nobg_20260820_183903_cropped.png", 0.39851287535913954, "reject unrelated Mahjong family"],
+        ["impact-base-bot.png", 0.39551788762136453, "reject unrelated impact"]
+      ],
+      "decision": "No character or reward-component gap. The stable badge hero family and code-native sampler plaque already cover ordinary play and completion, so no API generation was authorized."
+    }
+  ],
+  "assets": [
+    {
+      "asset_id": "gag-image-20260820-184012-fal",
+      "role": "six-cell fabric badge atlas",
+      "status": "selected_with_cell_rejections_revalidated",
+      "provider": "fal.ai",
+      "model": "fal-ai/flux-pro/v1.1",
+      "seed": null,
+      "prompt": "Production-ready 2D cartoon game sprite atlas on one square canvas: an exact clean 4-column by 2-row grid of seven isolated front-facing square fabric applique badges plus one deliberately empty final cell. Uniform badge size, uniform spacing, no overlap, no perspective. In reading order the seven badges show: simple green leaf, golden crescent moon, red berry cluster, yellow five-point star, coral five-petal flower, blue seashell, cyan faceted crystal. Every badge has a tactile layered felt body, darker cloth backing, chunky cream piping, visible corner stitches, soft contact shadow, woven fiber texture, bright edge highlight, warm handmade craft-club palette. Motifs are simple, bold and centered for readability at 48 pixels. No letters, no numbers, no words, no labels, no text, no logo, no UI, no characters, no hands, no extra objects. Plain neutral gray background with strong separation for later background removal.",
+      "source_master": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/tile_games/gag_v1/tileclub/generated_images__20260820_184012_FAL.ai.png",
+      "source_sha256": "c59cdd954a747b3a02ebb9976d9c743703411a0baabeab50994d565134870d59",
+      "derivation": {"tool": "remove_background", "provider": "removebg", "runtime_size": [500, 500]},
+      "selected_regions": {
+        "1_leaf": [50, 52, 126, 126],
+        "2_moon": [188, 52, 127, 126],
+        "3_berry": [50, 190, 126, 128],
+        "4_star": [188, 190, 127, 128],
+        "5_flower": [50, 328, 126, 126],
+        "7_crystal": [326, 328, 127, 127]
+      },
+      "rejected_regions": [
+        {"cell": "row0_col2", "reason": "duplicate moon"},
+        {"cell": "row1_col2", "reason": "abstract blue rosette did not read as shell"},
+        {"cell": "row2_col1", "reason": "duplicate flower"}
+      ],
+      "runtime_asset": "res://assets/art/catalog/tile_games/gag/tileclub_badge_atlas_gag_v1.png",
+      "runtime_sha256": "7c34fff62346dce7ff0b9df3a49e8fad90bd06793c7223d81824b151b64d3002",
+      "runtime_references": ["main.gd::_draw_fabric_patch values 1,2,3,4,5,7", "stable layered board", "ordered tray", "collection travel", "triple ghosts", "result badge"]
+    },
+    {
+      "asset_id": "gag-image-20260820-184811-fal",
+      "role": "shell badge repair",
+      "status": "selected_repair_revalidated",
+      "provider": "fal.ai",
+      "model": "fal-ai/flux-pro/v1.1",
+      "seed": null,
+      "prompt": "One isolated production-ready 2D cartoon fabric applique badge, straight front-facing square. Dark cocoa felt body, cream chunky piping, visible corner stitches, soft contact shadow, woven fiber texture and edge highlight. At the center is one unmistakable simple blue scallop seashell applique with radiating ribs and a rounded fan silhouette, stitched to the felt. Bold readable shape at 48 pixels, same warm handmade craft-club family as a leaf, moon, berry, star, flower and crystal badge. Exactly one badge only. No letters, no numbers, no words, no labels, no text, no logo, no UI, no characters, no hands, no extra objects. Plain neutral gray background with strong separation for later background removal.",
+      "source_master": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/tile_games/gag_v1/tileclub/generated_images__20260820_184811_FAL.ai.png",
+      "source_sha256": "cb4a3d56ec7554c8a77b8a3a1aa2eb9394f3f8a823ac2d99e9498c927aeecc89",
+      "derivations": [
+        {"tool": "remove_background", "provider": "removebg", "sha256": "132d3cab45cee4f33f59eb6724f05479c58082ca2f98fa05667ae7a6a847affd", "size": [500, 500]},
+        {"tool": "crop_image", "mode": "auto_trim", "padding": 8, "size": [378, 377]}
+      ],
+      "runtime_asset": "res://assets/art/catalog/tile_games/gag/tileclub_shell_badge_gag_v1.png",
+      "runtime_sha256": "08072a34d1170ecc0e6ccca9849436e98e881195d85b78495e923cbc5241da83",
+      "runtime_references": ["main.gd::_draw_fabric_patch value 6", "stable layered board", "ordered tray", "collection travel", "triple ghosts"]
+    },
+    {
+      "asset_id": "fabric_triple_stitch-v1",
+      "role": "ordinary triple and final matching-clear feedback",
+      "status": "selected_audio_revalidated",
+      "provider": "elevenlabs",
+      "model": "eleven_text_to_sound_v2",
+      "seed": null,
+      "prompt": "A short tactile mobile match-three game sound effect: three soft felt patches pop together, a quick needle-and-thread zip cinches them, then a cheerful wooden button click and tiny reward bell. Handmade craft-club tone, crisp and playful, fast attack, short decay, no voice, no speech, no music, no ambience.",
+      "selected_variation": 1,
+      "source_master": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/tile_games/gag_v1/tileclub/audio/sfx/fabric_triple_stitch/v1/fabric_triple_stitch_01_master.wav",
+      "source_path_note": "The live library now indexes a nested audio/sfx/.../v1 path; the earlier flat path remains only historical provenance.",
+      "source_sha256": "88d94c0fa0e8e2606a6d3d642ec3a17b550fb6f2d5abb25fd0a59bc27e330748",
+      "source_qa": {"duration_seconds": 0.411771, "sample_rate": 48000, "channels": 1, "measured_lufs": -17.05, "measured_true_peak_db": -1.72},
+      "derivation": "ffmpeg loudnorm I=-16:TP=-1.5:LRA=7; 48 kHz mono; libvorbis q5",
+      "runtime_asset": "res://assets/audio/catalog/tile_games/gag/fabric_triple_stitch_gag_v1.ogg",
+      "runtime_sha256": "66b4020ee32846cdfa86268b6de5136e47ded36823b1f9cb915d59296c29a8e3",
+      "runtime_reference": "main.gd::_catalog_event_sfx for stitch_match; action and art probes verify routing"
+    }
+  ],
+  "runtime_visibility": {
+    "status": "pass",
+    "signature": "stable_board_and_tray_badges",
+    "ordinary_opening_counts": [12, 18, 21],
+    "all_seven_motifs_visible_fixture": "seven_nests_fan",
+    "all_seven_motifs_opening_count": 21,
+    "first_visible_beat": "ordinary first playable frame before input",
+    "runtime_observability": "main.gd::_tileclub_presentation_state",
+    "evidence": [
+      "docs/audit/tileclub-v3/art/00-stable-seven-family.webp",
+      "docs/audit/tileclub-v3/art/00-stable-state.json",
+      "docs/audit/tileclub-v3/art/match-state.json",
+      "tools/tileclub_art_smoke.gd"
+    ]
+  },
+  "shipping_boundary": {
+    "source_masters_in_repository": 0,
+    "rejected_generations_in_repository": 0,
+    "only_runtime_derivatives_ship": true,
+    "generated_pixels_contain_gameplay_text": false,
+    "ephemeral_download_urls": "omitted"
+  }
+}

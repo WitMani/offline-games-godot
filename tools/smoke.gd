@@ -52,7 +52,10 @@ func _run() -> void:
 			"mahjong":
 				game._mahjong_tap(Vector2(44, 220))
 				game._mahjong_tap(Vector2(484, 332))
-			"tileclub": game._tileclub_tap(Vector2(36, 188))
+			"tileclub":
+				var selectable: Array = game.state.get("selectable_ids", [])
+				if not selectable.is_empty():
+					game._tileclub_tap(game._tileclub_tile_center(int(selectable[0])))
 			"amaze_go", "arrow_go", "amaze": game._amaze_step(Vector2i.RIGHT)
 		await process_frame
 		if not game.state.has("moves"):
