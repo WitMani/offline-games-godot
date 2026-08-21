@@ -31,7 +31,14 @@ func _expect_event(test_name: String, kind: String, minimum_grade: int) -> void:
 	if game.catalog_fx.is_empty():
 		failures.append("%s:no_event" % test_name)
 		return
-	var effect: Dictionary = game.catalog_fx.back()
+	var effect: Dictionary = {}
+	for index in range(game.catalog_fx.size() - 1, -1, -1):
+		var candidate: Dictionary = game.catalog_fx[index]
+		if str(candidate.get("kind", "")) == kind:
+			effect = candidate
+			break
+	if effect.is_empty():
+		effect = game.catalog_fx.back()
 	if str(effect.get("game_id", "")) != game.game_id:
 		failures.append("%s:wrong_game" % test_name)
 	if str(effect.get("kind", "")) != kind:
@@ -108,9 +115,31 @@ func _test_solitaire_grade() -> void:
 
 func _test_tripeaks_streak() -> void:
 	game._open_game("tripeaks")
-	game.state["current"] = 8
-	game.state["streak"] = 5
-	game._tripeaks_tap(game._tripeaks_card_center(5))
+	var active := {0:50, 3:36, 9:19, 18:31}
+	var used := {50:true, 36:true, 19:true, 31:true, 4:true, 40:true}
+	var tableau: Array = []
+	var removed: Array = []
+	for slot in range(28):
+		tableau.append(int(active.get(slot, -1)))
+		if not active.has(slot):
+			removed.append(slot)
+	var waste: Array = []
+	for card in range(52):
+		if not used.has(card):
+			waste.append(card)
+	waste.append(4)
+	var saved: Dictionary = game.tripeaks_model.snapshot()
+	saved["tableau"] = tableau
+	saved["removed"] = removed
+	saved["stock"] = [40]
+	saved["waste"] = waste
+	saved["score"] = removed.size() * 30
+	saved["moves"] = waste.size() - 1
+	saved["streak"] = 6
+	saved["status"] = "playing"
+	saved["remaining"] = active.size()
+	game._restore_tripeaks_snapshot(saved)
+	game._tripeaks_tap(game._tripeaks_card_center(18))
 	_expect_event("tripeaks", "card_streak", 4)
 
 

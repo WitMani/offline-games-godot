@@ -1,0 +1,30 @@
+{
+  "schema": "offline-games.replica-acceptance.v1",
+  "game_id": "tripeaks",
+  "candidate_commit": "bb4497df73ae33c2cbd5ada598c7793158b9cc8a",
+  "claim_boundary": "PARTIAL_EVIDENCE",
+  "surpass_claim": "NOT_CLAIMED",
+  "probes": {
+    "renderer_free_contract": "PASS_13_OF_13",
+    "runtime_mechanics": "PASS_9_OF_9",
+    "input_parity": "PASS_SHELL_AND_CHROME_MOUSE_TOUCH_KEYBOARD",
+    "strict_recovery": "PASS_MODEL_SHELL_AND_CHROME_RELOAD",
+    "fresh_gag_audit": "PASS_HOME_WSL_PURE_API_SEARCH_AND_HASH_REVIEW",
+    "stable_visual": "PASS_19_ORDINARY_GAG_BACK_INSTANCES",
+    "semantic_sequences": "PASS_9_EVENT_FAMILIES",
+    "continuous_peak": "PASS_42_FRAMES_30_FPS_1_4_SECONDS",
+    "reduced_effects": "PASS_IDENTICAL_STATE_ZERO_EFFECT_ZERO_SHAKE_ZERO_HAPTIC",
+    "font_and_symbol": "PASS_65_ASSERTIONS_AND_BROWSER_VISUAL",
+    "busy_performance": "PASS_COMPARATIVE_LLVMPipe_P95_14_209_MS",
+    "clean_web_pck": "PASS_SHA256_9DC9433387DD_FORBIDDEN_MATCHES_0",
+    "real_browser": "PASS_26_CHECKS_ZERO_RUNTIME_ERRORS",
+    "full_catalog_regression": "PASS_14_GAMES"
+  },
+  "evidence": {
+    "runtime_art": "docs/audit/tripeaks-v3/review.md",
+    "gates": "docs/audit/tripeaks-v3/gates.json",
+    "clean_export": "docs/audit/tripeaks-v3/candidate/clean-export.json",
+    "browser": "docs/audit/tripeaks-v3/candidate/web/web-acceptance.json"
+  },
+  "external_release": "NOT_RUN"
+}

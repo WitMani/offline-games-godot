@@ -82,6 +82,7 @@ const WATERMELON_RULES = preload("res://models/watermelon_physics_model.gd")
 const MEOWDOKU_RULES = preload("res://models/meowdoku_model.gd")
 const SUDOKU_RULES = preload("res://models/sudoku_model.gd")
 const SOLITAIRE_RULES = preload("res://models/solitaire_model.gd")
+const TRIPEAKS_RULES = preload("res://models/tripeaks_model.gd")
 const MERGE2248_PRESENTATION = preload("res://presentation/merge2248_presenter.gd")
 const MERGE2248_SAVE_PATH := "user://offline_games_merge2248_v4.json"
 const MERGE2048_CLASSIC_PRESENTATION = preload("res://presentation/merge2048_classic_presenter.gd")
@@ -206,6 +207,7 @@ var meowdoku_recovery_enabled := true
 var meowdoku_skip_recovery_once := false
 var sudoku_model = SUDOKU_RULES.new()
 var solitaire_model = SOLITAIRE_RULES.new()
+var tripeaks_model = TRIPEAKS_RULES.new()
 var merge2248_presenter = MERGE2248_PRESENTATION.new()
 var merge2048_classic_presenter = MERGE2048_CLASSIC_PRESENTATION.new()
 var catalog_art_director = CATALOG_ART_DIRECTION.new()
@@ -224,6 +226,11 @@ var arrow_go_route: Array[Vector2i] = []
 var arrow_go_facing := Vector2i.RIGHT
 var catalog_fx: Array[Dictionary] = []
 var catalog_fx_serial := 0
+var tripeaks_focus_slot := 18
+var tripeaks_recovered_from_snapshot := false
+var tripeaks_restart_requested := false
+var tripeaks_reduced_effects := false
+var tripeaks_haptic_emissions := 0
 var merge2248_drag_active := false
 var merge2248_pointer := Vector2.ZERO
 var merge2248_fx: Array[Dictionary] = []
@@ -351,6 +358,7 @@ func _ready() -> void:
 		action_executor.set_dimension_mode("2d")
 		action_executor.register_entity("Game", self, {})
 	_read_solitaire_effect_preference()
+	_read_tripeaks_effect_preference()
 	_setup_audio()
 	_build_home()
 	_play_sfx(SFX_CASE_OPEN, -11.0)
@@ -374,6 +382,7 @@ func _set_reduced_effects(value: bool) -> void:
 	sudoku_reduced_effects = value
 	snakes_reduced_effects = value
 	solitaire_reduced_effects = value
+	tripeaks_reduced_effects = value
 	haptics_enabled = not value
 	if reduced_effects:
 		catalog_fx.clear()
@@ -436,6 +445,10 @@ func _haptic(duration_ms: int) -> void:
 		if solitaire_reduced_effects:
 			return
 		solitaire_haptic_emissions += 1
+	if game_id == "tripeaks" and tripeaks_reduced_effects:
+		return
+	if game_id == "tripeaks":
+		tripeaks_haptic_emissions += 1
 	haptic_requests_sent += 1
 	if OS.has_feature("web"):
 		JavaScriptBridge.eval("if (navigator.vibrate) navigator.vibrate(%d);" % duration_ms)
@@ -451,6 +464,10 @@ func _haptic_pattern(pattern: Array[int]) -> void:
 		if solitaire_reduced_effects:
 			return
 		solitaire_haptic_emissions += 1
+	if game_id == "tripeaks" and tripeaks_reduced_effects:
+		return
+	if game_id == "tripeaks":
+		tripeaks_haptic_emissions += 1
 	haptic_requests_sent += 1
 	if OS.has_feature("web"):
 		JavaScriptBridge.eval("if (navigator.vibrate) navigator.vibrate(%s);" % JSON.stringify(pattern))
@@ -488,7 +505,7 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 	if game_id in ["merge2248", "snake_classic", "snake_io"]:
 		return
 	catalog_fx_serial += 1
-	var reduced := reduced_effects or _merge2048_effects_reduced() or (game_id == "solitaire" and solitaire_reduced_effects)
+	var reduced := reduced_effects or _merge2048_effects_reduced() or (game_id == "solitaire" and solitaire_reduced_effects) or (game_id == "tripeaks" and tripeaks_reduced_effects)
 	var effective_duration := duration
 	if reduced:
 		effective_duration = minf(duration, 0.24)
@@ -504,7 +521,7 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 		"seed": catalog_fx_serial,
 		"reduced": reduced,
 	}
-	if game_id in ["merge2048", "sudoku", "meowdoku", "solitaire", "mahjong", "tileclub", "amaze_go", "arrow_go"]:
+	if game_id in ["merge2048", "sudoku", "meowdoku", "solitaire", "tripeaks", "mahjong", "tileclub", "amaze_go", "arrow_go"]:
 		effect["font_role"] = "ui_cjk"
 	effect.merge(metadata, true)
 	if game_id == "solitaire":
@@ -516,6 +533,11 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 	var catalog_fx_cap := 6 if game_id in ["watermelon", "merge2048", "mahjong", "tileclub"] else 12
 	while catalog_fx.size() > catalog_fx_cap:
 		catalog_fx.pop_front()
+	# Reveal flips are visual children of one authoritative clear. They need
+	# their own object envelope, but must not multiply audio or haptics.
+	if bool(metadata.get("silent", false)):
+		queue_redraw()
+		return
 	var semantic := str(metadata.get("semantic", kind))
 	if game_id in ["sudoku", "meowdoku"]:
 		_play_logic_event_sfx(semantic, clampi(grade, 1, 4))
@@ -537,6 +559,13 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 				2: _haptic_pattern([12, 18, 19])
 				3: _haptic_pattern([16, 15, 27])
 				_: _haptic_pattern([18, 13, 24, 13, 36])
+	elif game_id == "tripeaks" and "reject" in kind:
+		var locked_reject := "locked" in kind
+		_play_sfx(SFX_SNAKE_REJECT, -15.5, 0.84 if locked_reject else 0.94)
+		if locked_reject:
+			_haptic_pattern([8, 22, 8])
+		else:
+			_haptic(10)
 	elif "error" in kind or "reject" in kind or "mismatch" in kind:
 		_play_sfx(SFX_SNAKE_REJECT, -16.0, 0.94)
 		_haptic(12)
@@ -584,7 +613,16 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 			event_volume = -15.0 + float(event_grade)
 			event_pitch = 0.88 + float(event_grade) * 0.025
 		_play_sfx(event_sfx, event_volume, event_pitch)
-		if event_grade == 1:
+		if game_id == "tripeaks":
+			match kind:
+				"card_draw": _haptic(5)
+				"card_clear": _haptic(8)
+				"card_streak": _haptic_pattern([9 + event_grade * 2, 16, 12 + event_grade * 5])
+				"peak_milestone": _haptic_pattern([14, 17, 23, 20, 30])
+				"tripeaks_win": _haptic_pattern([16, 15, 22, 15, 36])
+				"tripeaks_loss": _haptic_pattern([12, 24, 12])
+				_: _haptic(6)
+		elif event_grade == 1:
 			_haptic(8)
 		else:
 			_haptic_pattern([10 + event_grade * 4, 16, 18 + event_grade * 9])
@@ -593,8 +631,13 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 func _catalog_event_sfx(kind: String, grade: int) -> AudioStream:
 	if game_id == "solitaire" and kind in ["card_draw", "card_recycle", "card_move", "foundation_place", "solitaire_win"]:
 		return SFX_SOLITAIRE_CARD_SETTLE
-	if game_id == "tripeaks" and kind in ["card_streak", "peak_milestone", "tripeaks_win"]:
-		return SFX_TRIPEAKS_STREAK_PEAK
+	if game_id == "tripeaks":
+		if kind in ["card_clear", "card_streak", "peak_milestone", "tripeaks_win"]:
+			return SFX_TRIPEAKS_STREAK_PEAK
+		if kind == "tripeaks_loss":
+			return SFX_SNAKE_REJECT
+		if kind in ["card_draw", "card_reveal"]:
+			return SFX_SOLITAIRE_CARD_SETTLE
 	if game_id == "mahjong" and kind == "jade_pair":
 		return SFX_MAHJONG_GAG_PAIR
 	if game_id == "tileclub" and kind in ["stitch_match", "stitch_clear"]:
@@ -640,7 +683,7 @@ func _prune_catalog_fx() -> void:
 	catalog_fx = active
 
 func _catalog_shake_offset() -> Vector2:
-	if reduced_effects or (game_id == "sudoku" and sudoku_reduced_effects) or (game_id == "solitaire" and solitaire_reduced_effects):
+	if reduced_effects or (game_id == "sudoku" and sudoku_reduced_effects) or (game_id == "solitaire" and solitaire_reduced_effects) or (game_id == "tripeaks" and tripeaks_reduced_effects):
 		return Vector2.ZERO
 	for index in range(catalog_fx.size() - 1, -1, -1):
 		var effect: Dictionary = catalog_fx[index]
@@ -649,7 +692,7 @@ func _catalog_shake_offset() -> Vector2:
 	return Vector2.ZERO
 
 func _catalog_result_overlay_ready() -> bool:
-	if reduced_effects or (game_id == "sudoku" and sudoku_reduced_effects) or (game_id == "solitaire" and solitaire_reduced_effects):
+	if reduced_effects or (game_id == "sudoku" and sudoku_reduced_effects) or (game_id == "solitaire" and solitaire_reduced_effects) or (game_id == "tripeaks" and tripeaks_reduced_effects):
 		return true
 	# Let the authoritative board consequence and its local event read before a
 	# terminal modal covers the playfield. Rules already ended the game; this is
@@ -698,6 +741,10 @@ func _input(event: InputEvent) -> void:
 			return
 	if event is InputEventKey and event.pressed and not event.echo and screen == "game" and game_id == "solitaire":
 		if _solitaire_key_input(event.keycode):
+			get_viewport().set_input_as_handled()
+			return
+	if event is InputEventKey and event.pressed and not event.echo and screen == "game" and game_id == "tripeaks":
+		if _tripeaks_key_input(event.keycode):
 			get_viewport().set_input_as_handled()
 			return
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -984,10 +1031,14 @@ func _reset_current() -> void:
 	if game_id == "solitaire":
 		solitaire_restart_requested = true
 		_clear_solitaire_web_snapshot()
+	if game_id == "tripeaks":
+		tripeaks_restart_requested = true
+		_clear_tripeaks_snapshot()
 	_start_game_state(true)
 	sudoku_restart_requested = false
 	arena_restart_requested = false
 	solitaire_restart_requested = false
+	tripeaks_restart_requested = false
 	if game_id == "merge2048":
 		_build_game_buttons()
 	if game_id == "sudoku":
@@ -1003,6 +1054,9 @@ func _reset_current() -> void:
 		_persist_snakes_progress()
 	elif game_id == "solitaire":
 		_persist_solitaire_progress()
+		_flash_feedback("新牌局已发好", GREEN)
+	elif game_id == "tripeaks":
+		_persist_tripeaks_progress()
 		_flash_feedback("新牌局已发好", GREEN)
 	else:
 		_flash_feedback("新局开始", GREEN)
@@ -1236,7 +1290,7 @@ func _button_style(fill: Color, border: Color, radius: int, width: int) -> Style
 	return style
 
 func _handle_tap(pos: Vector2) -> void:
-	if screen != "game" or state.get("status", "playing") == "won":
+	if screen != "game" or state.get("status", "playing") in ["won", "lost", "over"]:
 		return
 	match game_id:
 		"watermelon":
@@ -1311,6 +1365,11 @@ func _save_snapshot(snapshot: Dictionary) -> void:
 			JavaScriptBridge.eval("window.localStorage.setItem('offline-games-solitaire-v3', %s);" % JSON.stringify(solitaire_payload))
 		else:
 			_clear_solitaire_web_snapshot()
+	if str(snapshot.get("game_id", "")) == "tripeaks":
+		if str(snapshot.get("status", "")) == "playing":
+			_store_tripeaks_snapshot(snapshot)
+		else:
+			_clear_tripeaks_snapshot()
 
 func _load_sudoku_web_snapshot() -> Dictionary:
 	if not OS.has_feature("web"):
@@ -1384,6 +1443,48 @@ func _persist_solitaire_progress() -> void:
 	snapshot["shell_tick"] = tick
 	_save_snapshot(snapshot)
 
+func _load_tripeaks_snapshot() -> Dictionary:
+	var raw := ""
+	if OS.has_feature("web"):
+		var web_raw: Variant = JavaScriptBridge.eval("window.localStorage.getItem('offline-games-tripeaks-v3') || '';" )
+		if web_raw is String:
+			raw = str(web_raw)
+	elif FileAccess.file_exists("user://offline_games_tripeaks_v3.json"):
+		var file := FileAccess.open("user://offline_games_tripeaks_v3.json", FileAccess.READ)
+		if file:
+			raw = file.get_as_text()
+	if raw.is_empty():
+		return {}
+	var parsed: Variant = JSON.parse_string(raw)
+	if parsed is Dictionary and str(parsed.get("game_id", "")) == "tripeaks" and str(parsed.get("schema", "")) == TRIPEAKS_RULES.SCHEMA:
+		return parsed
+	return {}
+
+func _store_tripeaks_snapshot(snapshot: Dictionary) -> void:
+	var payload := JSON.stringify(snapshot)
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("window.localStorage.setItem('offline-games-tripeaks-v3', %s);" % JSON.stringify(payload))
+	else:
+		var file := FileAccess.open("user://offline_games_tripeaks_v3.json", FileAccess.WRITE)
+		if file:
+			file.store_string(payload)
+
+func _clear_tripeaks_snapshot() -> void:
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("window.localStorage.removeItem('offline-games-tripeaks-v3');")
+	var path := ProjectSettings.globalize_path("user://offline_games_tripeaks_v3.json")
+	if FileAccess.file_exists(path):
+		DirAccess.remove_absolute(path)
+
+func _persist_tripeaks_progress() -> void:
+	if game_id != "tripeaks":
+		return
+	var snapshot := state.duplicate(true)
+	snapshot["game_id"] = game_id
+	snapshot["screen"] = screen
+	snapshot["shell_tick"] = tick
+	_save_snapshot(snapshot)
+
 func _load_snake_gb_web_recovery() -> Dictionary:
 	if not OS.has_feature("web"):
 		return {}
@@ -1416,6 +1517,22 @@ func _set_solitaire_reduced_effects(enabled: bool) -> void:
 	solitaire_reduced_effects = enabled
 	if game_id == "solitaire":
 		_sync_solitaire_state()
+		_publish_web_state()
+		queue_redraw()
+
+func _read_tripeaks_effect_preference() -> void:
+	if OS.has_feature("web"):
+		var reduced: Variant = JavaScriptBridge.eval("window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : 0", true)
+		tripeaks_reduced_effects = reduced_effects or int(reduced) == 1
+	else:
+		tripeaks_reduced_effects = reduced_effects
+
+func _set_tripeaks_reduced_effects(enabled: bool) -> void:
+	tripeaks_reduced_effects = enabled
+	if enabled:
+		catalog_fx = catalog_fx.filter(func(effect: Dictionary): return str(effect.get("game_id", "")) != "tripeaks")
+	if game_id == "tripeaks":
+		_sync_tripeaks_state()
 		_publish_web_state()
 		queue_redraw()
 
@@ -1724,7 +1841,7 @@ func _objective_status() -> String:
 		"snake_classic": return "长度 %d · 无尽模式" % int(state.get("score", 4))
 		"snake_io": return "位次 #%d · 体量 %.1f" % [max(1, int(state.get("rank", 1))), float(state.get("mass", 0.0))]
 		"solitaire": return "牌库 %d · 归位 %d/52" % [state.get("stock", []).size(), int(state.get("foundation_total", 0))]
-		"tripeaks": return "余牌 %d" % int(state.get("stock", 0))
+		"tripeaks": return "余牌 %d · 峰顶 %d/3" % [state.get("stock", []).size(), int(state.get("peak_count", 0))]
 		"mahjong": return "待配 %d" % (20 - int(state.get("removed", []).size()))
 		"tileclub": return "槽位 %d / 7" % int(state.get("tray", []).size())
 		"amaze_go", "arrow_go", "amaze": return "已探索 %d 格" % _painted_count()
@@ -1988,6 +2105,22 @@ func _card_object_reject_offset(object_index: int) -> Vector2:
 	var envelope := pow(1.0 - t, 2.0)
 	return Vector2(sin(t * PI * 11.0) * 7.0 * envelope, 2.5 * sin(t * PI) * envelope)
 
+func _tripeaks_reveal_effect(object_index: int) -> Dictionary:
+	if game_id != "tripeaks":
+		return {}
+	for index in range(catalog_fx.size() - 1, -1, -1):
+		var effect: Dictionary = catalog_fx[index]
+		var started := float(effect.get("started", elapsed))
+		var duration := float(effect.get("duration", 0.72))
+		if (
+			str(effect.get("game_id", "")) == "tripeaks"
+			and str(effect.get("kind", "")) == "card_reveal"
+			and int(effect.get("card_index", -1)) == object_index
+			and elapsed >= started and elapsed < started + duration
+		):
+			return effect
+	return {}
+
 func _draw_card_game_object_fx() -> void:
 	if game_id not in ["solitaire", "tripeaks"]:
 		return
@@ -1995,6 +2128,12 @@ func _draw_card_game_object_fx() -> void:
 		if str(effect.get("game_id", "")) != game_id or not effect.has("from") or not effect.has("to"):
 			continue
 		if game_id == "solitaire" and bool(effect.get("reduced_effects", false)):
+			continue
+		if game_id == "tripeaks" and tripeaks_reduced_effects:
+			continue
+		var started := float(effect.get("started", elapsed))
+		var duration := maxf(0.001, float(effect.get("duration", 0.72)))
+		if elapsed < started or elapsed >= started + duration:
 			continue
 		var kind := str(effect.get("kind", ""))
 		if "reject" in kind or "select" in kind:
@@ -2006,7 +2145,20 @@ func _draw_card_game_object_fx() -> void:
 		var position := from
 		var scale_value := Vector2.ONE
 		var rotation := 0.0
-		if t < 0.16:
+		var reveal := bool(effect.get("reveal", false))
+		if reveal:
+			position += Vector2(0, -sin(t * PI) * (5.0 + float(grade)))
+			if t < 0.16:
+				var reveal_press := sin(t / 0.16 * PI)
+				scale_value = Vector2(1.0 + reveal_press * 0.035, 1.0 - reveal_press * 0.055)
+			elif t < 0.74:
+				var reveal_flip := clampf((t - 0.16) / 0.58, 0.0, 1.0)
+				scale_value.x = maxf(0.08, abs(cos(reveal_flip * PI)))
+				rotation = sin(reveal_flip * PI) * 0.018
+			else:
+				var reveal_settle := clampf((t - 0.74) / 0.26, 0.0, 1.0)
+				scale_value = Vector2.ONE * (1.0 + sin(reveal_settle * PI) * 0.055)
+		elif t < 0.16:
 			var press := sin(t / 0.16 * PI)
 			position += Vector2(0, 3.5 * press)
 			scale_value = Vector2(1.0 + press * 0.05, 1.0 - press * 0.08)
@@ -2028,7 +2180,7 @@ func _draw_card_game_object_fx() -> void:
 		var suit := posmod(int(effect.get("suit", 0)), 4)
 		var accent: Color = effect.get("color", AMBER)
 		draw_set_transform(position, rotation, scale_value)
-		if bool(effect.get("back", false)) and t >= 0.48:
+		if (reveal or bool(effect.get("back_first", false))) and t < 0.45:
 			_draw_card_back(Rect2(-card_size * 0.5, card_size), accent)
 		else:
 			_draw_playing_card(Rect2(-card_size * 0.5, card_size), rank, accent, suit, 0.42 + float(grade) * 0.10)
@@ -6052,156 +6204,364 @@ func _draw_solitaire() -> void:
 	_draw_center("同花 A→K 归位 · 空列仅接 K · M 摸牌 · F 自动", Vector2(270, 778), 12, Color("f1dfb6"))
 
 func _init_tripeaks() -> void:
-	state["cards"] = [2, 5, 8, 3, 6, 9, 12, 4, 7, 10, 13, 1, 5, 8, 11]
-	state["removed"] = []
-	state["current"] = 7
-	state["stock"] = 12
-	state["score"] = 0
-	state["streak"] = 0
+	tripeaks_model.reset(abs("tripeaks_v3".hash()) + 17, true)
+	tripeaks_recovered_from_snapshot = false
+	if not tripeaks_restart_requested:
+		var saved := _load_tripeaks_snapshot()
+		if not saved.is_empty():
+			tripeaks_recovered_from_snapshot = tripeaks_model.restore(saved)
+			if not tripeaks_recovered_from_snapshot:
+				_clear_tripeaks_snapshot()
+	tripeaks_focus_slot = _tripeaks_choose_focus(270.0)
+	_sync_tripeaks_state()
+
+func _sync_tripeaks_state() -> void:
+	state = tripeaks_model.snapshot()
+	state["game_id"] = game_id
+	state["recovered"] = tripeaks_recovered_from_snapshot
+	state["focus_slot"] = tripeaks_focus_slot
+	state["reduced_effects"] = tripeaks_reduced_effects
+	state["haptic_emissions"] = tripeaks_haptic_emissions
+	state["peak_count"] = tripeaks_model.cleared_peak_count()
+	state["exposed_slots"] = tripeaks_model.exposed_slots()
+	state["legal_slots"] = tripeaks_model.legal_slots()
+
+func _restore_tripeaks_snapshot(saved: Dictionary) -> bool:
+	if not tripeaks_model.restore(saved):
+		return false
+	tripeaks_recovered_from_snapshot = true
+	tripeaks_focus_slot = _tripeaks_choose_focus(270.0)
+	_sync_tripeaks_state()
+	queue_redraw()
+	return true
 
 func _tripeaks_next() -> void:
 	if game_id != "tripeaks" or state.get("status") != "playing":
 		return
-	if int(state["stock"]) > 0:
-		state["stock"] = int(state["stock"]) - 1
-		state["current"] = 1 + ((int(state["current"]) + 4) % 13)
-		state["moves"] = int(state["moves"]) + 1
-		state["streak"] = 0
-		_flash_feedback("翻开 %s" % _card_rank(int(state["current"])), VIOLET)
-		_start_catalog_event("card_draw", Vector2(76, 748), VIOLET, 1, "暮色翻牌", 0.72, {
-			"from": Vector2(157, 748), "to": Vector2(76, 748),
-			"rank": int(state["current"]), "suit": int(state["current"]) % 4,
-			"card_size": Vector2(58, 78), "flip": true,
-		})
-		_log_event("tripeaks_stock", {"current":state["current"], "stock":state["stock"]})
-	else:
-		state["status"] = "over"
-		_flash_feedback("牌库已空", RED)
-		_start_catalog_event("card_reject_empty_stock", Vector2(157, 748), RED, 2, "牌库已空", 0.72, {"card_index": -2})
+	tripeaks_focus_slot = -2
+	var result: Dictionary = tripeaks_model.draw_stock()
+	_sync_tripeaks_state()
+	_tripeaks_emit_result(result, _tripeaks_stock_rect().get_center())
 
 func _tripeaks_tap(pos: Vector2) -> void:
 	if game_id != "tripeaks" or state.get("status") != "playing":
 		return
-	var cards: Array = state["cards"]
-	var removed: Array = state["removed"]
-	for i in range(cards.size()):
-		var center := _tripeaks_card_center(i)
-		var cx := center.x
-		var cy := center.y
-		if pos.distance_to(Vector2(cx, cy)) < 34.0 and not i in removed:
-			var locked := i < 5 and not (i + 5) in removed
-			if locked:
-				_flash_feedback("先清除压住它的牌", RED)
-				_start_catalog_event("card_reject_locked", center, RED, 1, "", 0.62, {
-					"card_index": i, "rank": int(cards[i]), "suit": i % 4,
-				})
-				return
-			var value := int(cards[i])
-			var current := int(state["current"])
-			if abs(value - current) == 1 or value == 1 and current == 13 or value == 13 and current == 1:
-				removed.append(i)
-				state["streak"] = int(state.get("streak", 0)) + 1
-				state["current"] = value
-				state["score"] = int(state["score"]) + 30
-				state["moves"] = int(state["moves"]) + 1
-				var streak := int(state["streak"])
-				var streak_grade := clampi(1 + streak / 2, 1, 4)
-				var won := removed.size() == cards.size()
-				var event_kind := "tripeaks_win" if won else "card_streak"
-				var event_label := "三峰全清" if won else "连牌 ×%d" % streak
-				var event_color := GOLD if won or streak_grade >= 3 else MINT
-				var event_position := Vector2(270, 372) if won else center.lerp(Vector2(270, center.y), 0.28 if streak_grade >= 3 else 0.0)
-				_flash_feedback("%s · +30" % event_label, event_color)
-				_start_catalog_event(event_kind, event_position, event_color, 4 if won else streak_grade, event_label, 1.24 if won else 0.70 + streak_grade * 0.09, {
-					"from": center, "to": Vector2(76, 748),
-					"rank": value, "suit": i % 4, "card_index": i,
-					"card_size": Vector2(58, 78), "streak": streak,
-				})
-				if removed.size() in [5, 10] and not won:
-					_start_catalog_event("peak_milestone", Vector2(270, 340), GOLD, 3, "峰顶点亮", 0.96, {
-						"cleared": removed.size(), "card_index": i,
-					})
-				if won:
-					state["status"] = "won"
-					_capture("tripeaks_win")
-				_log_event("tripeaks_clear", {"card":value, "cleared":removed.size()})
-			else:
-				state["streak"] = 0
-				_flash_feedback("点数不相邻", RED)
-				_start_catalog_event("card_reject_rank", center, RED, 1, "", 0.62, {
-					"card_index": i, "rank": value, "suit": i % 4, "current": current,
-				})
-				_log_event("tripeaks_invalid", {"card":value, "current":current})
+	if _tripeaks_stock_rect().grow(7.0).has_point(pos):
+		_tripeaks_next()
+		return
+	for slot in range(TRIPEAKS_RULES.TABLEAU_COUNT - 1, -1, -1):
+		if int(tripeaks_model.tableau[slot]) >= 0 and _tripeaks_card_rect(slot).grow(3.0).has_point(pos):
+			tripeaks_focus_slot = slot
+			_tripeaks_activate_slot(slot)
 			return
 
+func _tripeaks_activate_slot(slot: int) -> void:
+	if game_id != "tripeaks" or state.get("status") != "playing":
+		return
+	var origin := _tripeaks_card_center(slot)
+	var preferred_x := origin.x
+	var result: Dictionary = tripeaks_model.clear_tableau(slot)
+	if bool(result.get("changed", false)) and int(tripeaks_model.tableau[slot]) < 0:
+		tripeaks_focus_slot = _tripeaks_choose_focus(preferred_x)
+	_sync_tripeaks_state()
+	_tripeaks_emit_result(result, origin, slot)
+
+func _tripeaks_emit_result(result: Dictionary, origin: Vector2, object_index := -1) -> void:
+	if not bool(result.get("changed", false)):
+		_tripeaks_reject(str(result.get("reason", "invalid_move")), origin, object_index)
+		return
+	var kind := str(result.get("kind", ""))
+	var action := str(result.get("action", kind))
+	var card := int(result.get("card", tripeaks_model.waste_card()))
+	var rank := tripeaks_model.card_rank(card)
+	var suit := tripeaks_model.card_suit(card)
+	var streak_value := int(result.get("streak", tripeaks_model.streak))
+	var grade := clampi(1 + maxi(0, streak_value - 1) / 2, 1, 4)
+	var event_kind := "card_draw"
+	var label := "翻开牌库"
+	var color := VIOLET
+	var duration := 0.68
+	var destination := _tripeaks_waste_rect().get_center()
+	if action == "clear":
+		event_kind = "card_clear" if streak_value <= 1 else "card_streak"
+		label = "相邻收牌" if streak_value <= 1 else "连牌上升"
+		color = GOLD if grade >= 3 else MINT
+		duration = 0.70 + float(grade) * 0.09
+		if bool(result.get("peak_cleared", false)):
+			event_kind = "peak_milestone"
+			grade = maxi(3, grade)
+			label = "峰顶点亮 %d/3" % int(result.get("peak_count", 0))
+			color = GOLD
+			duration = 1.02
+	if kind == "win":
+		event_kind = "tripeaks_win"
+		label = "三峰全清"
+		color = GOLD
+		grade = 4
+		duration = 1.36
+	elif kind == "loss":
+		event_kind = "tripeaks_loss"
+		label = "牌库耗尽 · 本局结束"
+		color = RED
+		grade = 3
+		duration = 0.98
+	var event_position := destination if action in ["clear", "draw"] else origin
+	var peak_index := int(result.get("peak_index", -1))
+	if event_kind == "peak_milestone" and peak_index >= 0:
+		event_position = _tripeaks_card_center(peak_index)
+	elif event_kind == "tripeaks_win":
+		event_position = Vector2(270, 468)
+	elif event_kind == "tripeaks_loss":
+		event_position = Vector2(270, 548)
+	if tripeaks_reduced_effects or kind in ["win", "loss"]:
+		_flash_feedback(label, color)
+	if not tripeaks_reduced_effects:
+		var metadata := {
+			"card_index":object_index, "streak":streak_value,
+			"revealed":result.get("revealed", []),
+			"peak_count":int(result.get("peak_count", tripeaks_model.cleared_peak_count())),
+			"peak_index":peak_index, "final_peak":bool(result.get("final_peak", false)),
+			"label_position":Vector2(270, 638),
+			"semantic":event_kind,
+		}
+		if card >= 0 and action in ["clear", "draw"]:
+			metadata.merge({
+				"from":origin, "to":destination, "rank":rank, "suit":suit,
+				"card_size":Vector2(54, 76) if action == "draw" else Vector2(44, 62),
+				"flip":action == "draw", "back_first":action == "draw",
+			}, true)
+		_start_catalog_event(event_kind, event_position, color, grade, label, duration, metadata)
+		if action == "clear":
+			_tripeaks_emit_reveal_events(result.get("revealed", []), grade, duration)
+	state["haptic_emissions"] = tripeaks_haptic_emissions
+	_log_event("tripeaks_%s" % kind, result)
+	if kind == "win":
+		_capture("tripeaks_win")
+	elif kind == "loss":
+		_capture("tripeaks_loss")
+	_persist_tripeaks_progress()
+
+func _tripeaks_emit_reveal_events(revealed: Array, parent_grade: int, parent_duration: float) -> void:
+	if tripeaks_reduced_effects or revealed.is_empty():
+		return
+	var reveal_grade := 3 if revealed.size() > 1 else clampi(maxi(2, parent_grade), 2, 3)
+	for reveal_index in range(revealed.size()):
+		var slot := int(revealed[reveal_index])
+		if slot < 0 or slot >= TRIPEAKS_RULES.TABLEAU_COUNT:
+			continue
+		var card := int(tripeaks_model.tableau[slot])
+		if card < 0:
+			continue
+		var center := _tripeaks_card_center(slot)
+		_start_catalog_event("card_reveal", center, Color("d7b8ff"), reveal_grade, "", 0.76, {
+			"from":center, "to":center, "rank":tripeaks_model.card_rank(card),
+			"suit":tripeaks_model.card_suit(card), "card_index":slot,
+			"card_size":Vector2(44, 62), "reveal":true, "silent":true,
+			"started":elapsed + minf(parent_duration * 0.40, 0.34) + float(reveal_index) * 0.045,
+			"semantic":"reveal_exposed_card", "reveal_group_size":revealed.size(),
+		})
+
+func _tripeaks_reject(reason: String, position: Vector2, object_index := -1) -> void:
+	var labels := {
+		"locked":"先清除压住它的两张牌", "rank_not_adjacent":"点数需与当前牌相邻",
+		"already_removed":"这张牌已经收走", "slot_out_of_range":"没有这张牌",
+		"stock_empty":"牌库已空，仍有可收牌", "game_finished":"牌局已经结束",
+	}
+	var label := str(labels.get(reason, "这一步不符合牌桌规则"))
+	_flash_feedback(label, RED)
+	if not tripeaks_reduced_effects:
+		_start_catalog_event("card_reject_%s" % reason, position, RED, 1, "", 0.56, {
+			"card_index":object_index, "reason":reason, "semantic":"reject_%s" % reason,
+		})
+	state["haptic_emissions"] = tripeaks_haptic_emissions
+	_log_event("tripeaks_reject", {"reason":reason, "object":object_index})
+
+func _tripeaks_key_input(keycode: Key) -> bool:
+	if keycode == KEY_M:
+		_tripeaks_next()
+		return true
+	if keycode in [KEY_ENTER, KEY_SPACE]:
+		if tripeaks_focus_slot == -2:
+			_tripeaks_next()
+		else:
+			_tripeaks_activate_slot(tripeaks_focus_slot)
+		return true
+	var direction := Vector2i.ZERO
+	if keycode in [KEY_LEFT, KEY_A]:
+		direction = Vector2i.LEFT
+	elif keycode in [KEY_RIGHT, KEY_D]:
+		direction = Vector2i.RIGHT
+	elif keycode in [KEY_UP, KEY_W]:
+		direction = Vector2i.UP
+	elif keycode in [KEY_DOWN, KEY_S]:
+		direction = Vector2i.DOWN
+	else:
+		return false
+	_tripeaks_move_focus(direction)
+	return true
+
+func _tripeaks_move_focus(direction: Vector2i) -> void:
+	if tripeaks_focus_slot == -2:
+		if direction.y < 0 or direction.x != 0:
+			tripeaks_focus_slot = _tripeaks_choose_focus(_tripeaks_stock_rect().get_center().x)
+		_sync_tripeaks_state()
+		queue_redraw()
+		return
+	var row := _tripeaks_slot_row(tripeaks_focus_slot)
+	if direction.x != 0:
+		var same_row := _tripeaks_active_row_slots(row)
+		if not same_row.is_empty():
+			var current_index := same_row.find(tripeaks_focus_slot)
+			tripeaks_focus_slot = int(same_row[posmod(current_index + direction.x, same_row.size())])
+	elif direction.y > 0 and row == 3:
+		tripeaks_focus_slot = -2
+	elif direction.y != 0:
+		var target_row := row + direction.y
+		while target_row >= 0 and target_row <= 3:
+			var candidates := _tripeaks_active_row_slots(target_row)
+			if not candidates.is_empty():
+				var current_x := _tripeaks_card_center(tripeaks_focus_slot).x
+				tripeaks_focus_slot = _tripeaks_nearest_slot(candidates, current_x)
+				break
+			target_row += direction.y
+	_sync_tripeaks_state()
+	queue_redraw()
+
+func _tripeaks_choose_focus(preferred_x: float) -> int:
+	var exposed := tripeaks_model.exposed_slots()
+	if not exposed.is_empty():
+		return _tripeaks_nearest_slot(exposed, preferred_x)
+	var active: Array = []
+	for slot in range(TRIPEAKS_RULES.TABLEAU_COUNT):
+		if int(tripeaks_model.tableau[slot]) >= 0:
+			active.append(slot)
+	return _tripeaks_nearest_slot(active, preferred_x) if not active.is_empty() else -2
+
+func _tripeaks_nearest_slot(candidates: Array, preferred_x: float) -> int:
+	var best := int(candidates[0])
+	var best_distance := absf(_tripeaks_card_center(best).x - preferred_x)
+	for candidate in candidates:
+		var distance := absf(_tripeaks_card_center(int(candidate)).x - preferred_x)
+		if distance < best_distance:
+			best = int(candidate)
+			best_distance = distance
+	return best
+
+func _tripeaks_slot_row(slot: int) -> int:
+	if slot < 3:
+		return 0
+	if slot < 9:
+		return 1
+	if slot < 18:
+		return 2
+	return 3
+
+func _tripeaks_active_row_slots(row: int) -> Array:
+	var starts := [0, 3, 9, 18]
+	var ends := [3, 9, 18, 28]
+	var result: Array = []
+	for slot in range(int(starts[row]), int(ends[row])):
+		if int(tripeaks_model.tableau[slot]) >= 0:
+			result.append(slot)
+	return result
+
 func _draw_tripeaks() -> void:
-	_draw_section_heading("三座暮色牌峰", "相邻点数可收入牌堆", VIOLET)
+	_draw_section_heading("月影三峰牌桌", "只收未被压住的相邻点数", VIOLET)
 	var streak := int(state.get("streak", 0))
-	_draw_panel(Rect2(22, 223, 496, 435), Color("160f31", 0.72), Color("c6a4f0", 0.24), 15, 1)
+	_draw_panel(Rect2(22, 223, 496, 432), Color("160f31", 0.78), Color("c6a4f0", 0.28), 15, 1)
+	# The moon is a quiet board landmark; playable information remains entirely
+	# on the cards. A dark overlap creates a crescent without another asset role.
+	draw_circle(Vector2(270, 292), 54, Color("ecdafa", 0.075))
+	draw_circle(Vector2(289, 276), 52, Color("160f31", 0.84))
 	for peak in range(3):
-		var peak_center_x := 108.0 + float(peak) * 162.0
+		var peak_center_x := 122.5 + float(peak) * 147.0
 		var ridge_color := Color("a987d5", 0.13 + float(peak) * 0.018)
 		draw_colored_polygon(PackedVector2Array([
-			Vector2(peak_center_x - 114, 642), Vector2(peak_center_x, 236), Vector2(peak_center_x + 114, 642),
+			Vector2(peak_center_x - 94, 628), Vector2(peak_center_x, 238), Vector2(peak_center_x + 94, 628),
 		]), ridge_color)
-		draw_line(Vector2(peak_center_x - 114, 642), Vector2(peak_center_x, 236), Color("e8d1ff", 0.18), 2.0, true)
-		draw_line(Vector2(peak_center_x, 236), Vector2(peak_center_x + 114, 642), Color("e8d1ff", 0.10), 2.0, true)
-	var cards: Array = state["cards"]
-	var removed: Array = state["removed"]
-	for i in range(cards.size()):
-		var center := _tripeaks_card_center(i)
-		var available := not i in removed
-		var locked := i < 5 and not (i + 5) in removed
-		var rect := Rect2(center - Vector2(29, 39), Vector2(58, 78))
-		if not available:
+		draw_line(Vector2(peak_center_x - 94, 628), Vector2(peak_center_x, 238), Color("e8d1ff", 0.18), 2.0, true)
+		draw_line(Vector2(peak_center_x, 238), Vector2(peak_center_x + 94, 628), Color("e8d1ff", 0.10), 2.0, true)
+	var tableau: Array = state.get("tableau", [])
+	for slot in range(mini(tableau.size(), TRIPEAKS_RULES.TABLEAU_COUNT)):
+		var center := _tripeaks_card_center(slot)
+		var card := int(tableau[slot])
+		var locked := not tripeaks_model.is_exposed(slot)
+		var rect := _tripeaks_card_rect(slot)
+		if card < 0:
 			_draw_panel(rect, Color("bfa8df", 0.025), Color("d9c2f2", 0.16), 7, 1)
-			draw_circle(center, 4.0, Color("f5de98", 0.34))
-			for ray in range(4):
-				var direction := Vector2.RIGHT.rotated(float(ray) * PI * 0.5)
-				draw_line(center + direction * 7.0, center + direction * 12.0, Color("f5de98", 0.22), 1.3, true)
 			continue
-		var reject_offset := _card_object_reject_offset(i)
+		var reject_offset := _card_object_reject_offset(slot)
 		rect.position += reject_offset
 		center += reject_offset
-		if locked and available:
+		if locked:
 			_draw_card_back(rect, VIOLET)
-			var band_y := center.y + 8.0
-			draw_line(Vector2(rect.position.x + 6, band_y), Vector2(rect.end.x - 6, band_y), Color("d9c477", 0.64), 2.0, true)
-			draw_circle(Vector2(center.x, band_y), 7.0, Color("2b1b42"))
-			draw_arc(Vector2(center.x, band_y - 5), 5.0, PI, TAU, 12, Color("e8d28a", 0.76), 1.6, true)
 		else:
-			draw_circle(center + Vector2(0, 5), 38.0, Color("f3d17a", 0.055))
-			_draw_playing_card(rect, cards[i], Color("d2adff"), i % 4, 0.18)
-			draw_line(Vector2(rect.position.x + 10, rect.end.y + 5), Vector2(rect.end.x - 10, rect.end.y + 5), Color("f2d37a", 0.62), 2.2, true)
-	_draw_panel(Rect2(30, 684, 480, 118), Color("17102f", 0.96), Color("d4b7f4", 0.42), 13, 1)
-	_draw_text("当前牌", Vector2(47, 705), 11, Color("efe3ff"))
-	_draw_playing_card(Rect2(47, 712, 58, 78), int(state["current"]), VIOLET, int(state["current"]) % 4, 0.34)
-	_draw_text("牌库", Vector2(133, 705), 11, Color("efe3ff"))
-	if int(state["stock"]) > 0:
-		_draw_card_back(Rect2(130, 715, 54, 72), VIOLET)
+			var reveal_effect := _tripeaks_reveal_effect(slot)
+			if not reveal_effect.is_empty() and _card_event_progress(reveal_effect) < 0.45:
+				_draw_card_back(rect, VIOLET)
+			else:
+				_draw_playing_card(rect, tripeaks_model.card_rank(card), Color("d2adff"), tripeaks_model.card_suit(card), 0.18)
+			draw_line(Vector2(rect.position.x + 7, rect.end.y + 3), Vector2(rect.end.x - 7, rect.end.y + 3), Color("f2d37a", 0.60), 1.8, true)
+		if tripeaks_focus_slot == slot:
+			draw_rect(rect.grow(3), Color("fff0a8", 0.82), false, 2.0)
+	# A cleared top slot exposes its summit lamp in the exact card footprint.
+	# The three persistent lamps make milestone state visible after the burst.
+	for peak in range(3):
+		if peak < tableau.size() and int(tableau[peak]) < 0:
+			var lamp_center := _tripeaks_card_center(peak)
+			draw_circle(lamp_center, 17.0, Color("f1c764", 0.10))
+			draw_arc(lamp_center, 13.0, -PI * 0.86, PI * 0.12, 22, Color("f6d77c", 0.84), 2.4, true)
+			draw_colored_polygon(PackedVector2Array([
+				lamp_center + Vector2(-11, 9), lamp_center + Vector2(0, -9), lamp_center + Vector2(11, 9),
+			]), Color("f0c55e", 0.72))
+			draw_circle(lamp_center + Vector2(0, 4), 3.2, Color("fff4bd", 0.94))
+	_draw_panel(Rect2(30, 668, 480, 134), Color("17102f", 0.97), Color("d4b7f4", 0.46), 13, 1)
+	_draw_text("当前牌", Vector2(47, 686), 11, Color("efe3ff"))
+	var waste_card := tripeaks_model.waste_card()
+	_draw_playing_card(_tripeaks_waste_rect(), tripeaks_model.card_rank(waste_card), VIOLET, tripeaks_model.card_suit(waste_card), 0.34)
+	_draw_text("牌库", Vector2(133, 686), 11, Color("efe3ff"))
+	var stock: Array = state.get("stock", [])
+	if not stock.is_empty():
+		_draw_card_back(_tripeaks_stock_rect(), VIOLET)
 	else:
-		_draw_panel(Rect2(130, 715, 54, 72), Color("f7edff", 0.025), Color("f7edff", 0.18), 7, 1)
-	_draw_status_badge(str(state["stock"]), Vector2(188, 733), VIOLET, int(state["stock"]) > 0, 56)
-	_draw_text("点击相邻点数", Vector2(262, 728), 13, Color("f0e6fb"))
-	_draw_text("A 与 K 也相接", Vector2(262, 751), 12, Color("c9b8dd"))
+		_draw_panel(_tripeaks_stock_rect(), Color("f7edff", 0.025), Color("f7edff", 0.18), 7, 1)
+	_draw_panel(Rect2(188, 719, 56, 30), Color(VIOLET, 0.13), Color(VIOLET, 0.66), 8, 1)
+	_draw_center_font(NUMBER_FONT, str(stock.size()), Vector2(216, 734), 13, VIOLET)
+	_draw_text("点击亮面的相邻点数", Vector2(262, 712), 13, Color("f0e6fb"))
+	_draw_text("首尾点数相接 · 按键翻牌", Vector2(262, 737), 12, Color("c9b8dd"))
 	var streak_grade := clampi(1 + streak / 2, 1, 4) if streak > 0 else 0
-	_draw_text("连牌", Vector2(398, 705), 11, Color("efe3ff"))
+	_draw_text("连牌", Vector2(398, 686), 11, Color("efe3ff"))
 	for pip in range(4):
 		var lit := pip < streak_grade
-		var pip_center := Vector2(405 + pip * 23, 774)
+		var pip_center := Vector2(405 + pip * 23, 760)
 		draw_colored_polygon(PackedVector2Array([
 			pip_center + Vector2(-8, 5), pip_center + Vector2(0, -8), pip_center + Vector2(8, 5),
 		]), Color("f2cb69", 0.86) if lit else Color("b899cf", 0.18))
 	if streak > 0:
-		_draw_center_font(NUMBER_FONT, "×%d" % streak, Vector2(445, 738), 14, GOLD)
+		_draw_center_font(NUMBER_FONT, "×%d" % streak, Vector2(445, 724), 14, GOLD)
+	if tripeaks_focus_slot == -2:
+		draw_rect(_tripeaks_stock_rect().grow(3), Color("fff0a8", 0.82), false, 2.0)
 
 func _tripeaks_card_center(index: int) -> Vector2:
-	var centers := [
-		Vector2(108, 254), Vector2(270, 254), Vector2(432, 254), Vector2(189, 316), Vector2(351, 316),
-		Vector2(72, 382), Vector2(171, 382), Vector2(270, 382), Vector2(369, 382), Vector2(468, 382),
-		Vector2(72, 466), Vector2(171, 466), Vector2(270, 466), Vector2(369, 466), Vector2(468, 466)
-	]
-	return centers[clampi(index, 0, centers.size() - 1)]
+	index = clampi(index, 0, TRIPEAKS_RULES.TABLEAU_COUNT - 1)
+	if index < 3:
+		return Vector2(122.5 + float(index) * 147.0, 262.0)
+	if index < 9:
+		var pair := int((index - 3) / 2)
+		var within := (index - 3) % 2
+		return Vector2(98.0 + float(pair) * 147.0 + float(within) * 49.0, 332.0)
+	if index < 18:
+		return Vector2(73.5 + float(index - 9) * 49.0, 402.0)
+	return Vector2(49.0 + float(index - 18) * 49.0, 472.0)
+
+func _tripeaks_card_rect(index: int) -> Rect2:
+	return Rect2(_tripeaks_card_center(index) - Vector2(22, 31), Vector2(44, 62))
+
+func _tripeaks_waste_rect() -> Rect2:
+	return Rect2(47, 694, 58, 82)
+
+func _tripeaks_stock_rect() -> Rect2:
+	return Rect2(130, 697, 54, 76)
 
 # -----------------------------------------------------------------------------
 # Mahjong matching / Tile Club

@@ -82,6 +82,23 @@ func shake_offset(effect: Dictionary, now: float) -> Vector2:
 		return Vector2.ZERO
 	var age := now - float(effect.get("started", now))
 	var grade := clampi(int(effect.get("grade", 1)), 1, 4)
+	if str(effect.get("game_id", "")) == "tripeaks":
+		var kind := str(effect.get("kind", ""))
+		# Paper-card intent stays local. Only semantic success/failure impact may
+		# move the board, and never before the impact phase.
+		if grade < 2 or "reject" in kind or kind in ["card_draw", "card_reveal"]:
+			return Vector2.ZERO
+		var impact_start := float(effect.get("duration", 0.72)) * 0.36
+		age -= impact_start
+		if age < 0.0:
+			return Vector2.ZERO
+		var tripeaks_duration := 0.08 + float(grade) * 0.035
+		if age >= tripeaks_duration:
+			return Vector2.ZERO
+		var tripeaks_envelope := pow(1.0 - age / tripeaks_duration, 2.1)
+		var tripeaks_amplitude: float = [0.0, 0.7, 1.8, 3.1][grade - 1]
+		var tripeaks_phase := float(effect.get("seed", 0)) * 0.41
+		return Vector2(sin(age * 88.0 + tripeaks_phase), sin(age * 121.0 + tripeaks_phase * 1.6)) * tripeaks_amplitude * tripeaks_envelope
 	if grade < 2 or age < 0.0:
 		return Vector2.ZERO
 	var duration := 0.12 + float(grade) * 0.045
@@ -113,14 +130,17 @@ func draw_event_fx(canvas: CanvasItem, effect: Dictionary, now: float, label_fon
 		# particle travel, or layered high-amplitude flashes.
 		canvas.draw_arc(position, 23.0 + t * 8.0, 0, TAU, 28, Color(color.lightened(0.22), 0.46 * fade), 2.0, true)
 	elif rejected and game_id not in ["meowdoku", "sudoku"]:
-		_draw_reject_event(canvas, position, color, grade, t, fade)
+		if game_id == "tripeaks":
+			_draw_tripeaks_reject_event(canvas, effect, position, t, fade)
+		else:
+			_draw_reject_event(canvas, position, color, grade, t, fade)
 	else:
 		match game_id:
 			"merge2048": _draw_merge_event(canvas, position, color, grade, t, peak, fade)
 			"watermelon": _draw_fruit_event(canvas, position, color, grade, t, peak, fade)
 			"meowdoku": _draw_paw_event(canvas, position, color, kind, grade, t, fade)
 			"sudoku": _draw_logic_event(canvas, position, color, kind, grade, t, fade)
-			"solitaire", "tripeaks": _draw_card_event(canvas, game_id, kind, position, color, grade, t, peak, fade, symbol_font)
+			"solitaire", "tripeaks": _draw_card_event(canvas, game_id, kind, position, color, grade, t, peak, fade, symbol_font, effect)
 			"mahjong": _draw_jade_event(canvas, position, color, grade, t, fade)
 			"tileclub": _draw_stitch_event(canvas, position, color, grade, t, fade)
 			"amaze_go": _draw_compass_event(canvas, position, color, grade, t, fade)
@@ -158,6 +178,32 @@ func _draw_reject_event(canvas: CanvasItem, p: Vector2, _color: Color, grade: in
 	_draw_zigzag(canvas, p + Vector2(-28, -kick), p + Vector2(28, kick), red, 5.0 + grade, 3.2)
 	_draw_zigzag(canvas, p + Vector2(-28, kick), p + Vector2(28, -kick), Color("ffd2d9", fade * 0.70), 4.0 + grade, 2.2)
 	canvas.draw_arc(p, 18.0 + t * 25.0, -PI * 0.82, PI * 0.20, 22, Color("ff8799", fade * 0.42), 2.0, true)
+
+
+func _draw_tripeaks_reject_event(canvas: CanvasItem, effect: Dictionary, p: Vector2, t: float, fade: float) -> void:
+	var reason := str(effect.get("reason", ""))
+	var card_rect := Rect2(p - Vector2(21, 29), Vector2(42, 58))
+	_draw_rounded_box(canvas, card_rect, 6.0, Color("3b1633", 0.30 * fade))
+	canvas.draw_arc(p, 25.0 + t * 7.0, -PI * 0.84, PI * 0.16, 22, Color("ff8298", 0.38 * fade), 1.8, true)
+	if reason == "locked":
+		# Crossing paper straps repeat the actual blocker relationship; the lock
+		# stays inside the attempted card instead of becoming a global warning.
+		var tighten := 3.0 * sin(clampf(t / 0.36, 0.0, 1.0) * PI)
+		canvas.draw_line(card_rect.position + Vector2(6 + tighten, 9), card_rect.end - Vector2(6 + tighten, 9), Color("f0c664", 0.88 * fade), 3.4, true)
+		canvas.draw_line(Vector2(card_rect.end.x - 6 - tighten, card_rect.position.y + 9), Vector2(card_rect.position.x + 6 + tighten, card_rect.end.y - 9), Color("f0c664", 0.72 * fade), 3.0, true)
+		canvas.draw_arc(p + Vector2(0, -2), 7.0, PI, TAU, 14, Color("ffd988", 0.92 * fade), 2.4, true)
+		_draw_rounded_box(canvas, Rect2(p + Vector2(-8, -1), Vector2(16, 13)), 3.0, Color("d85870", 0.90 * fade))
+		canvas.draw_circle(p + Vector2(0, 5), 1.8, Color("fff1c5", fade))
+	else:
+		# A rank rejection uses a paper-edge bracket and local zigzag; it never
+		# resembles the crossing blocker straps above.
+		for side_value in [-1.0, 1.0]:
+			var side := float(side_value)
+			var x: float = p.x + side * (18.0 + t * 5.0)
+			canvas.draw_line(Vector2(x, p.y - 18), Vector2(x, p.y + 18), Color("ffd0d8", 0.76 * fade), 2.2, true)
+			canvas.draw_line(Vector2(x, p.y - 18), Vector2(x - side * 7.0, p.y - 18), Color("ffd0d8", 0.76 * fade), 2.2, true)
+			canvas.draw_line(Vector2(x, p.y + 18), Vector2(x - side * 7.0, p.y + 18), Color("ffd0d8", 0.76 * fade), 2.2, true)
+		_draw_zigzag(canvas, p + Vector2(-14, 0), p + Vector2(14, 0), Color("ff657d", fade), 4.0, 3.0)
 
 
 func _draw_fruit_event(canvas: CanvasItem, p: Vector2, color: Color, grade: int, t: float, peak: float, fade: float) -> void:
@@ -201,7 +247,7 @@ func _draw_logic_event(canvas: CanvasItem, p: Vector2, color: Color, kind: Strin
 	canvas.draw_line(p - Vector2(0, radius * 0.72), p + Vector2(0, radius * 0.72), Color(color, 0.32 * fade), 1.5, true)
 
 
-func _draw_card_event(canvas: CanvasItem, game_id: String, kind: String, p: Vector2, color: Color, grade: int, t: float, peak: float, fade: float, symbol_font: Font) -> void:
+func _draw_card_event(canvas: CanvasItem, game_id: String, kind: String, p: Vector2, color: Color, grade: int, t: float, peak: float, fade: float, symbol_font: Font, effect: Dictionary) -> void:
 	var suits := ["♥", "♠", "♦", "♣"]
 	if game_id == "solitaire":
 		var foundation_event := "foundation" in kind or "win" in kind
@@ -229,6 +275,9 @@ func _draw_card_event(canvas: CanvasItem, game_id: String, kind: String, p: Vect
 					var leaf_center := stem_start.lerp(stem_end, leaf_t)
 					_draw_leaf(canvas, leaf_center, 5.0 + peak * 1.5, Color("8bc99b", fade), -0.8 * side)
 		return
+	if game_id == "tripeaks":
+		_draw_tripeaks_card_event(canvas, effect, kind, p, color, grade, t, peak, fade, symbol_font)
+		return
 	var climb := 18.0 + t * (26.0 + float(grade) * 7.0)
 	var ridge := PackedVector2Array([
 		p + Vector2(-42.0, 16.0),
@@ -251,6 +300,59 @@ func _draw_card_event(canvas: CanvasItem, game_id: String, kind: String, p: Vect
 			p + Vector2(5, crown_y + 7), p + Vector2(14, crown_y),
 			p + Vector2(17, crown_y + 10),
 		]), Color("f7cf70", (0.60 + peak * 0.22) * fade))
+
+
+func _draw_tripeaks_card_event(canvas: CanvasItem, effect: Dictionary, kind: String, p: Vector2, color: Color, grade: int, t: float, peak: float, fade: float, symbol_font: Font) -> void:
+	var suits := ["♥", "♠", "♦", "♣"]
+	if kind == "card_draw":
+		var draw_radius := 19.0 + t * 17.0
+		canvas.draw_arc(p, draw_radius, -PI * 0.92, PI * 0.18, 24, Color("d8b9fa", 0.62 * fade), 2.2, true)
+		canvas.draw_line(p + Vector2(-25, 18), p + Vector2(lerpf(-25.0, 21.0, t), 18), Color("f6d77c", 0.54 * fade), 2.0, true)
+		return
+	if kind == "card_reveal":
+		var edge_width := maxf(1.5, 20.0 * abs(cos(t * PI)))
+		canvas.draw_line(p + Vector2(-edge_width, 31), p + Vector2(edge_width, 31), Color("f5d985", 0.68 * fade), 2.0, true)
+		canvas.draw_arc(p, 17.0 + t * 12.0, -PI * 0.90, PI * 0.08, 20, Color("d9bcfb", 0.40 * fade), 1.8, true)
+		return
+	if kind == "tripeaks_loss":
+		var contraction := lerpf(44.0, 20.0, clampf(t / 0.58, 0.0, 1.0))
+		var dusk := Color("ff7188", 0.72 * fade)
+		canvas.draw_polyline(PackedVector2Array([
+			p + Vector2(-contraction, 13), p + Vector2(-contraction * 0.50, -10), p,
+			p + Vector2(contraction * 0.50, -10), p + Vector2(contraction, 13),
+		]), dusk, 2.7, true)
+		canvas.draw_line(p + Vector2(-21, 25), p + Vector2(21, 25), Color("ffd0d7", 0.68 * fade), 3.0, true)
+		canvas.draw_circle(p, 8.0 + peak * 4.0, Color("7f263f", 0.46 * fade))
+		return
+
+	var milestone := kind == "peak_milestone"
+	var won := kind == "tripeaks_win"
+	var ridge_half_width := 34.0 + float(grade) * 4.0
+	var ridge_height := 18.0 + t * (17.0 + float(grade) * 5.0)
+	var route := PackedVector2Array([
+		p + Vector2(-ridge_half_width, 17),
+		p + Vector2(-ridge_half_width * 0.52, -ridge_height * 0.55),
+		p,
+		p + Vector2(ridge_half_width * 0.52, -ridge_height * 0.55),
+		p + Vector2(ridge_half_width, 17),
+	])
+	canvas.draw_polyline(route, Color(color.lightened(0.20), 0.68 * fade), 2.2 + float(grade) * 0.38, true)
+	if milestone or won:
+		var moon_radius := 17.0 + peak * (4.0 + float(grade))
+		canvas.draw_circle(p + Vector2(0, -42), moon_radius, Color("fff1b3", 0.22 * fade))
+		canvas.draw_circle(p + Vector2(7, -47), moon_radius * 0.88, Color("35204f", 0.72 * fade))
+		var active_peak := int(effect.get("peak_index", -1))
+		for summit in range(3):
+			var summit_x := p.x + (float(summit) - 1.0) * 28.0
+			var lit := won or summit == active_peak
+			canvas.draw_circle(Vector2(summit_x, p.y + 8), 4.2 + peak * 2.4, Color("fff0a5", (0.90 if lit else 0.24) * fade))
+	var suit_count := mini(1 + grade, 5)
+	for index in range(suit_count):
+		var spread := (float(index) - float(suit_count - 1) * 0.5) * 17.0
+		var q := p + Vector2(spread, -13.0 - t * (20.0 + float(index % 2) * 7.0) - peak * 4.0)
+		canvas.draw_string(symbol_font, q, suits[index % suits.size()], HORIZONTAL_ALIGNMENT_CENTER, 15.0, 9 + grade, Color(color.lightened(0.24), fade))
+	if won:
+		canvas.draw_arc(p, 55.0 + t * 18.0, -PI * 0.92, PI * 0.10, 30, Color("f7d36f", 0.56 * fade), 3.2, true)
 
 
 func _draw_jade_event(canvas: CanvasItem, p: Vector2, color: Color, grade: int, t: float, fade: float) -> void:

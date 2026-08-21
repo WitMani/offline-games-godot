@@ -1,0 +1,44 @@
+{
+  "schema": "offline-games.replica-stage0.v1",
+  "game_id": "tripeaks",
+  "research_date": "2026-08-20",
+  "exact_baseline": "3e561fb3c55f3b0b813da2b9ee9468cd4d290bae",
+  "target": {
+    "title": "Solitaire Farm: TriPeaks",
+    "android_package": "pfreecell.pyramid.klondike.solitaire.tripeaks.solitaire",
+    "android_version": "1.0.53",
+    "developer": "Forever Software",
+    "listing_updated": "2026-08-02",
+    "internal_level_resource_id": null,
+    "package_sha256": null,
+    "evidence_status": "PARTIAL_EVIDENCE"
+  },
+  "claims": {
+    "identity_and_listing_version": "verified",
+    "offline_and_classic_family_marketing": "verified_bounded",
+    "reproducible_target_gameplay": false,
+    "target_rules_frozen": false,
+    "ace_king_wrap_target_fact": false,
+    "surpass_claim": "NOT_CLAIMED"
+  },
+  "baseline": {
+    "imported_resources": 94,
+    "tripeaks_presentation_assertions": 62,
+    "catalog_art_assertions": 10,
+    "shared_rules_cases": 6,
+    "font_assertions": 65,
+    "home_routes": 14,
+    "catalog_games": 14,
+    "shutdown_warning_debt": "inherited Godot ObjectDB/resource-in-use warnings",
+    "mechanics_gap": "15-rank decorative board with noncanonical blockers and synthetic stock"
+  },
+  "gates": {
+    "identity": "PARTIAL_EVIDENCE",
+    "baseline_regression": "PASS_BOUNDED",
+    "mechanics": "FAIL",
+    "gag": "CLOSED",
+    "presentation": "BLOCKED",
+    "web_delivery": "NOT_STARTED",
+    "production_authorized": false
+  }
+}

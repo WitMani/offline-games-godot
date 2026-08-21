@@ -1,0 +1,65 @@
+{
+  "schema": "offline-games.mechanics-gate.v1",
+  "game_id": "tripeaks",
+  "model_commit": "35d129e",
+  "shell_commit": "a516b82",
+  "claim_scope": "local_clean_room_contract_only",
+  "target_version_fidelity": "PARTIAL_EVIDENCE",
+  "renderer_free": {
+    "command": "/home/ubuntu/stage/godot --headless --path . --script res://tools/tripeaks_v3_contract_smoke.gd",
+    "cases": 13,
+    "result": "PASS",
+    "coverage": [
+      "52_unique_card_identity",
+      "seeded_deal",
+      "three_peak_blocker_topology",
+      "real_stock_waste",
+      "adjacency_and_explicit_wrap",
+      "locked_rank_removed_range_atomicity",
+      "reveal",
+      "score_and_streak",
+      "win_and_loss",
+      "terminal_freeze",
+      "restart",
+      "strict_json_recovery"
+    ]
+  },
+  "runtime": {
+    "command": "/home/ubuntu/stage/godot --headless --path . --script res://tools/tripeaks_v3_runtime_smoke.gd",
+    "cases": 9,
+    "result": "PASS",
+    "coverage": [
+      "complete_shell_state",
+      "mouse_touch_keyboard_stock_parity",
+      "mouse_touch_keyboard_clear_parity",
+      "locked_reject_atomic_parity",
+      "restore_binding",
+      "corrupt_restore_atomicity",
+      "explicit_restart",
+      "win_freeze",
+      "loss_freeze"
+    ]
+  },
+  "regressions": {
+    "tripeaks_presentation_assertions": 166,
+    "shared_rules_cases": 6,
+    "catalog_art_cases": 10,
+    "font_assertions": 65,
+    "cover_assets": 14,
+    "home_routes": 14,
+    "catalog_games": 14,
+    "result": "PASS_WITH_INHERITED_TEARDOWN_WARNINGS"
+  },
+  "gates": {
+    "mechanics": "PASS_LOCAL",
+    "gag": "PASS_FRESH_PURE_API_AUDIT",
+    "presentation": "PASS_INTERNAL",
+    "browser": "PASS_LOCAL_CHROME",
+    "web_delivery": "PASS_CLEAN_FINGERPRINTED_LOCAL",
+    "production_authorized": false
+  },
+  "browser_evidence": "docs/audit/tripeaks-v3/candidate/web/web-acceptance.json",
+  "clean_export_evidence": "docs/audit/tripeaks-v3/candidate/clean-export.json",
+  "runtime_commit": "bb4497df73ae33c2cbd5ada598c7793158b9cc8a",
+  "pck_sha256": "9dc9433387ddc94b8d645add512bfaa93ae41c98fe5a209eb8ea5c9557eda3d9"
+}
