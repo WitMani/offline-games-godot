@@ -247,11 +247,12 @@ func _test_reduced_effects_authority() -> void:
 
 
 func _test_shared_path_games_isolation() -> void:
+	game._arrow_go_clear_recovery()
 	game._open_game("arrow_go")
 	game.has_transitioned = false
 	_expect(not game.state.has("gag_visible_roles"), "arrow_go_no_amaze_gag_roles")
 	var arrow_before: Dictionary = game.state.duplicate(true)
-	game._amaze_step(Vector2i.RIGHT)
+	game._arrow_go_attempt("b", "sibling_isolation")
 	_expect(game.state != arrow_before, "arrow_go_still_moves")
 	game._clear_amaze_checkpoint()
 	game.amaze_level_index = 0

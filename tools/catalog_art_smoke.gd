@@ -11,6 +11,7 @@ func _init() -> void:
 func _run() -> void:
 	game = load("res://main.tscn").instantiate()
 	game.amaze_go_recovery_enabled = false
+	game.meowdoku_recovery_enabled = false
 	root.add_child(game)
 	await process_frame
 	_test_merge2048_peak()

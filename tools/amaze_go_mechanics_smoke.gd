@@ -185,10 +185,11 @@ func _test_recovery() -> void:
 
 
 func _test_sibling_isolation() -> void:
+	game._arrow_go_clear_recovery()
 	game._open_game("arrow_go")
-	_expect(int(game.state.get("size", 0)) == 9 and game.state.has("arrows"), "arrow_go_legacy_state")
+	_expect(str(game.state.get("schema", "")) == "arrow-go-state/v3" and game.state.has("arrows"), "arrow_go_faithful_state")
 	var arrow_before: Dictionary = game.state.duplicate(true)
-	game._amaze_step(Vector2i.RIGHT)
+	game._arrow_go_attempt("b", "sibling_isolation")
 	_expect(game.state != arrow_before, "arrow_go_still_moves")
 	_expect(game.amaze_go_model.removed_ids.size() == 2, "arrow_go_did_not_touch_amaze_go_model")
 	game._clear_amaze_checkpoint()
