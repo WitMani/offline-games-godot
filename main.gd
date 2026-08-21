@@ -71,6 +71,7 @@ const SNAKE_RULES = preload("res://snake_model.gd")
 const SNAKE_GB_RULES = preload("res://models/snake_gb_model.gd")
 const SNAKES_ARENA_RULES = preload("res://models/snakes_arena_model.gd")
 const MERGE2248_RULES = preload("res://models/merge2248_model.gd")
+const MERGE2048_RULES = preload("res://models/merge2048_model.gd")
 const WATERMELON_RULES = preload("res://models/watermelon_physics_model.gd")
 const MERGE2248_PRESENTATION = preload("res://presentation/merge2248_presenter.gd")
 const MERGE2248_SAVE_PATH := "user://offline_games_merge2248_v4.json"
@@ -109,6 +110,8 @@ const SFX_AMAZE_GO_GAG_RATCHET: AudioStream = preload("res://assets/audio/catalo
 const SFX_AMAZE_GO_GAG_SEAL: AudioStream = preload("res://assets/audio/catalog/path_games/gag/amaze_go_destination_seal_gag_v1.ogg")
 const SFX_ARROW_GO_GAG_KITE_STEP: AudioStream = preload("res://assets/audio/catalog/path_games/gag/arrow_go_kite_step_gag_v1.ogg")
 const SFX_ARROW_GO_GAG_HARBOR_DOCK: AudioStream = preload("res://assets/audio/catalog/path_games/gag/arrow_go_harbor_dock_gag_v1.ogg")
+const MERGE2048_SAVE_PATH := "user://merge2048_classic.json"
+const MERGE2048_SWIPE_THRESHOLD := 10.0
 
 var catalog: Array = [
 	{"id":"merge2248", "title":"2248", "subtitle":"数字连线", "group":"数字", "accent":Color("ffbf2f"), "desc":"八方向连接数字，延续你的最高配方"},
@@ -176,6 +179,7 @@ var snake_model = SNAKE_RULES.new()
 var snake_gb_model = SNAKE_GB_RULES.new()
 var snakes_arena_model = SNAKES_ARENA_RULES.new()
 var merge2248_model = MERGE2248_RULES.new()
+var merge2048_model = MERGE2048_RULES.new()
 var watermelon_model = WATERMELON_RULES.new()
 var merge2248_presenter = MERGE2248_PRESENTATION.new()
 var merge2048_classic_presenter = MERGE2048_CLASSIC_PRESENTATION.new()
@@ -209,6 +213,11 @@ var merge2248_save_path := MERGE2248_SAVE_PATH
 var merge2248_reduced_effects_override: Variant = null
 var merge2248_reduced_effects := false
 var merge2048_motion: Dictionary = {}
+var merge2048_persistence_enabled := true
+var merge2048_save_path := MERGE2048_SAVE_PATH
+var merge2048_seed_override := -1
+var merge2048_force_new_run := false
+var reduced_effects_enabled := false
 var snake_ghosts: Array[Dictionary] = []
 var snake_pixels: Array[Dictionary] = []
 var snake_fx_kind := ""
@@ -273,6 +282,16 @@ var arena_eat_value := 0.0
 func _ready() -> void:
 	set_process(true)
 	set_process_input(true)
+	# Automated probes must not inherit a developer's real active run. A probe
+	# can opt into persistence by assigning an exact, isolated save path before
+	# the node enters the tree.
+	if merge2048_save_path == MERGE2048_SAVE_PATH and _merge2048_tool_runtime():
+		merge2048_persistence_enabled = false
+	if OS.has_feature("web"):
+		# The numeric bridge is stable in Godot Web; JavaScript Boolean values can
+		# otherwise arrive as an unexpected Variant type in some export templates.
+		var reduced_preference: Variant = JavaScriptBridge.eval("window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : 0", true)
+		reduced_effects_enabled = int(reduced_preference) == 1
 	var cjk_font := UI_FONT as FontFile
 	if cjk_font:
 		cjk_font.fallbacks = [LATIN_FONT, SYMBOL_FONT]
@@ -345,13 +364,15 @@ func _play_sfx(stream: AudioStream, volume_db := -7.0, pitch := 1.0) -> void:
 	player.play()
 
 func _haptic(duration_ms: int) -> void:
+	if _merge2048_effects_reduced():
+		return
 	if OS.has_feature("web"):
 		JavaScriptBridge.eval("if (navigator.vibrate) navigator.vibrate(%d);" % duration_ms)
 	else:
 		Input.vibrate_handheld(duration_ms)
 
 func _haptic_pattern(pattern: Array[int]) -> void:
-	if pattern.is_empty():
+	if _merge2048_effects_reduced() or pattern.is_empty():
 		return
 	if OS.has_feature("web"):
 		JavaScriptBridge.eval("if (navigator.vibrate) navigator.vibrate(%s);" % JSON.stringify(pattern))
@@ -364,8 +385,8 @@ func _haptic_pattern(pattern: Array[int]) -> void:
 func _impact(position: Vector2, color: Color, strength := 1.0) -> void:
 	impact_position = position
 	impact_color = color
-	impact_strength = strength
-	impact_until = elapsed + 0.34
+	impact_strength = minf(strength, 0.28) if _merge2048_effects_reduced() else strength
+	impact_until = elapsed + (0.12 if _merge2048_effects_reduced() else 0.34)
 	queue_redraw()
 
 func _start_motion(kind: String, from: Vector2, to: Vector2, color: Color, label := "", duration := 0.34, visual_value := 0) -> void:
@@ -383,6 +404,7 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 	if game_id in ["merge2248", "snake_classic", "snake_io"]:
 		return
 	catalog_fx_serial += 1
+	var reduced := _merge2048_effects_reduced()
 	var effect := {
 		"game_id": game_id,
 		"kind": kind,
@@ -391,10 +413,11 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 		"grade": clampi(grade, 1, 4),
 		"label": label,
 		"started": elapsed,
-		"duration": duration,
+		"duration": minf(duration, 0.34) if reduced else duration,
 		"seed": catalog_fx_serial,
+		"reduced": reduced,
 	}
-	if game_id in ["sudoku", "meowdoku", "mahjong", "tileclub", "amaze_go", "arrow_go"]:
+	if game_id in ["merge2048", "sudoku", "meowdoku", "mahjong", "tileclub", "amaze_go", "arrow_go"]:
 		effect["font_role"] = "ui_cjk"
 	effect.merge(metadata, true)
 	catalog_fx.append(effect)
@@ -590,13 +613,13 @@ func _input(event: InputEvent) -> void:
 			return
 		if screen != "game":
 			return
-		if event.keycode in [KEY_UP, KEY_W]:
+		if event.keycode in [KEY_UP, KEY_W] or (game_id == "merge2048" and event.keycode == KEY_K):
 			_direction_input(Vector2i.UP)
-		elif event.keycode in [KEY_DOWN, KEY_S]:
+		elif event.keycode in [KEY_DOWN, KEY_S] or (game_id == "merge2048" and event.keycode == KEY_J):
 			_direction_input(Vector2i.DOWN)
-		elif event.keycode in [KEY_LEFT, KEY_A]:
+		elif event.keycode in [KEY_LEFT, KEY_A] or (game_id == "merge2048" and event.keycode == KEY_H):
 			_direction_input(Vector2i.LEFT)
-		elif event.keycode in [KEY_RIGHT, KEY_D]:
+		elif event.keycode in [KEY_RIGHT, KEY_D] or (game_id == "merge2048" and event.keycode == KEY_L):
 			_direction_input(Vector2i.RIGHT)
 		elif event.keycode >= KEY_1 and event.keycode <= KEY_9:
 			_sudoku_place(event.keycode - KEY_0)
@@ -621,7 +644,7 @@ func _gui_input(event: InputEvent) -> void:
 				_snakes_arena_end_pointer(event.position)
 			elif game_id == "watermelon" and _watermelon_board_rect().has_point(pointer_down):
 				_watermelon_drop_at(event.position.x)
-			elif pointer_down.x >= 0.0 and swipe_delta.length() > 42.0 and game_id == "merge2048":
+			elif pointer_down.x >= 0.0 and swipe_delta.length() > MERGE2048_SWIPE_THRESHOLD and game_id == "merge2048":
 				if abs(swipe_delta.x) > abs(swipe_delta.y):
 					_merge_move(Vector2i.RIGHT if swipe_delta.x > 0 else Vector2i.LEFT)
 				else:
@@ -655,6 +678,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			_snakes_arena_end_pointer(event.position)
 		elif game_id == "watermelon" and _watermelon_board_rect().has_point(pointer_down):
 			_watermelon_drop_at(event.position.x)
+		elif game_id == "merge2048" and pointer_down.x >= 0.0:
+			var swipe_delta: Vector2 = event.position - pointer_down
+			if swipe_delta.length() > MERGE2048_SWIPE_THRESHOLD:
+				if abs(swipe_delta.x) > abs(swipe_delta.y):
+					_merge_move(Vector2i.RIGHT if swipe_delta.x > 0 else Vector2i.LEFT)
+				else:
+					_merge_move(Vector2i.DOWN if swipe_delta.y > 0 else Vector2i.UP)
+			pointer_down = Vector2(-1, -1)
 		else:
 			_handle_tap(event.position)
 	elif event is InputEventScreenDrag:
@@ -716,10 +747,13 @@ func _build_game_buttons() -> void:
 			_add_button("难度 · %s" % _merge2248_mode_label(), Rect2(16, 878, 96, 44), Callable(self, "_merge2248_cycle_mode"), Color("23585a"), 12)
 			_add_button("撤销", Rect2(444, 878, 80, 44), Callable(self, "_merge2248_undo"), Color("23585a"), 13)
 		"merge2048":
-			_add_button("左", Rect2(170, 826, 58, 52), Callable(self, "_merge_move").bind(Vector2i.LEFT), SURFACE_2, 16)
-			_add_button("下", Rect2(241, 878, 58, 52), Callable(self, "_merge_move").bind(Vector2i.DOWN), SURFACE_2, 16)
-			_add_button("上", Rect2(241, 826, 58, 52), Callable(self, "_merge_move").bind(Vector2i.UP), SURFACE_2, 16)
-			_add_button("右", Rect2(312, 826, 58, 52), Callable(self, "_merge_move").bind(Vector2i.RIGHT), SURFACE_2, 16)
+			if state.get("status", "playing") == "won":
+				_add_button("继续挑战", Rect2(184, 826, 172, 56), Callable(self, "_merge2048_continue"), GOLD, 16)
+			else:
+				_add_button("左", Rect2(170, 826, 58, 52), Callable(self, "_merge_move").bind(Vector2i.LEFT), SURFACE_2, 16)
+				_add_button("下", Rect2(241, 878, 58, 52), Callable(self, "_merge_move").bind(Vector2i.DOWN), SURFACE_2, 16)
+				_add_button("上", Rect2(241, 826, 58, 52), Callable(self, "_merge_move").bind(Vector2i.UP), SURFACE_2, 16)
+				_add_button("右", Rect2(312, 826, 58, 52), Callable(self, "_merge_move").bind(Vector2i.RIGHT), SURFACE_2, 16)
 		"watermelon":
 			_add_button("拖动瞄准 · 松手投放", Rect2(158, 878, 224, 52), Callable(self, "_water_drop_hint"), SURFACE_2, 14)
 		"sudoku", "meowdoku":
@@ -750,7 +784,11 @@ func _reset_current() -> void:
 		return
 	catalog_fx.clear()
 	rng.seed = abs(game_id.hash()) + 17
+	if game_id == "merge2048":
+		merge2048_force_new_run = true
 	_start_game_state(true)
+	if game_id == "merge2048":
+		_build_game_buttons()
 	_log_event("game_reset", {"game_id":game_id})
 	_capture("reset_%s" % game_id)
 	if game_id == "snake_classic":
@@ -1312,7 +1350,7 @@ func _draw_score_panel() -> void:
 func _objective_status() -> String:
 	match game_id:
 		"merge2248": return "历史 %s · %s" % [str(state.get("all_time_label", "0")), _merge2248_mode_label()]
-		"merge2048": return "目标 2048"
+		"merge2048": return "最佳 %d · 目标 2048" % int(state.get("best", 0))
 		"watermelon": return "目标 %d" % int(state.get("target_value", 256))
 		"snake_classic": return "长度 %d / %d" % [int(state.get("score", 4)), int(state.get("target_length", 120))]
 		"snake_io": return "位次 #%d · 体量 %.1f" % [max(1, int(state.get("rank", 1))), float(state.get("mass", 0.0))]
@@ -1332,6 +1370,19 @@ func _draw_section_heading(title: String, detail: String, accent: Color) -> void
 	draw_line(Vector2(30, 216), Vector2(510, 216), Color(accent, 0.34), 2.0)
 
 func _draw_result_overlay(won: bool) -> void:
+	if game_id == "merge2048" and won:
+		draw_rect(Rect2(0, 112, 540, 848), Color("21150e", 0.72))
+		_draw_panel(Rect2(54, 344, 432, 246), Color("0f0804", 0.34), Color.TRANSPARENT, 18, 0)
+		_draw_panel(Rect2(48, 338, 444, 246), Color("f1d7a5"), Color("d99b43", 0.94), 16, 3)
+		for shaving in range(9):
+			var angle := float(shaving) * TAU / 9.0
+			var shaving_center := Vector2(270, 386) + Vector2.from_angle(angle) * 42.0
+			draw_arc(shaving_center, 7.0, angle, angle + PI * 0.72, 10, Color("9b592c", 0.68), 2.0)
+		_draw_center_font(TILE_NUMBER_FONT, "2048", Vector2(270, 404), 38, Color("5a2f1c"))
+		_draw_center_font(DISPLAY_FONT, "经典目标达成", Vector2(270, 458), 27, Color("4b2b1d"))
+		_draw_center_font(UI_FONT, "得分 %d · 最佳 %d" % [int(state.get("score", 0)), int(state.get("best", 0))], Vector2(270, 500), 16, Color("5c3a29"))
+		_draw_center_font(UI_FONT, "可以继续合并，冲击更高数字", Vector2(270, 542), 13, Color("6a4935"))
+		return
 	if game_id in ["sudoku", "meowdoku"]:
 		var meow := game_id == "meowdoku"
 		var paper := Color("fff1f7") if meow else Color("faf3e4")
@@ -2154,204 +2205,227 @@ func _draw_merge2248_fx(juice_transform: Transform2D = Transform2D.IDENTITY) -> 
 
 func _init_merge() -> void:
 	merge2048_motion.clear()
-	var board := _new_grid(4, 4, 0)
-	board[1][1] = 2
-	board[2][2] = 2
-	board[1][2] = 4
-	board[2][1] = 4
-	state["board"] = board
-	# This route is classic 2048 only. Number Connect / 2248 owns the separate
-	# renderer-independent model above and must never inherit a score target.
-	state["target"] = 2048
-	state["score"] = 0
-	_spawn_merge_tile()
-	_spawn_merge_tile()
+	var progress := _merge2048_read_progress()
+	var preserved_best := maxi(merge2048_model.best, int(progress.get("best", 0)))
+	var restored := false
+	if not merge2048_force_new_run and merge2048_persistence_enabled:
+		var active: Variant = progress.get("active")
+		if active is Dictionary:
+			var candidate: Dictionary = active.duplicate(true)
+			candidate["best"] = maxi(preserved_best, int(candidate.get("best", 0)))
+			restored = merge2048_model.restore(candidate)
+	if not restored:
+		merge2048_model.reset(_merge2048_new_seed(), preserved_best)
+	merge2048_force_new_run = false
+	_sync_merge2048_state()
+	_merge2048_save_progress()
 
-func _spawn_merge_tile() -> Dictionary:
-	var empty: Array[Vector2i] = []
-	var board: Array = state["board"]
-	for y in range(4):
-		for x in range(4):
-			if int(board[y][x]) == 0:
-				empty.append(Vector2i(x, y))
-	if empty.is_empty():
+func _sync_merge2048_state() -> void:
+	state["merge2048"] = merge2048_model.snapshot()
+	state["board"] = state.merge2048.board
+	state["score"] = state.merge2048.score
+	state["best"] = state.merge2048.best
+	state["moves"] = state.merge2048.moves
+	state["status"] = state.merge2048.status
+	state["target"] = merge2048_model.TARGET
+	state["can_continue"] = merge2048_model.won and not merge2048_model.keep_playing and not merge2048_model.over
+	state["reduced_effects"] = reduced_effects_enabled
+
+func _merge2048_load_fixture(
+	fixture_board: Array,
+	fixture_score := 0,
+	fixture_moves := 0,
+	fixture_won := false,
+	fixture_keep_playing := false,
+	fixture_over := false,
+	fixture_best := -1
+) -> bool:
+	var accepted := merge2048_model.load_fixture(
+		fixture_board,
+		fixture_score,
+		fixture_moves,
+		fixture_won,
+		fixture_keep_playing,
+		fixture_over,
+		fixture_best
+	)
+	if accepted:
+		_sync_merge2048_state()
+	return accepted
+
+func _merge2048_continue() -> void:
+	if not merge2048_model.continue_after_win():
+		return
+	_sync_merge2048_state()
+	_merge2048_save_progress()
+	merge2048_motion.clear()
+	_build_game_buttons()
+	_flash_feedback("继续冲击更高数字", GOLD)
+	_log_event("merge_continue", {"score":merge2048_model.score, "best":merge2048_model.best})
+	queue_redraw()
+
+func _merge2048_new_seed() -> int:
+	if merge2048_seed_override >= 0:
+		return merge2048_seed_override
+	var mixed := int(Time.get_unix_time_from_system() * 1000000.0) ^ Time.get_ticks_usec() ^ hash(Time.get_datetime_string_from_system())
+	return absi(mixed)
+
+func _merge2048_read_progress() -> Dictionary:
+	if not merge2048_persistence_enabled or not FileAccess.file_exists(merge2048_save_path):
 		return {}
-	var p: Vector2i = empty[rng.randi_range(0, empty.size() - 1)]
-	var value := 4 if rng.randf() > 0.86 else 2
-	board[p.y][p.x] = value
-	return {"position":p, "value":value}
+	var file := FileAccess.open(merge2048_save_path, FileAccess.READ)
+	if file == null:
+		return {}
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	if not parsed is Dictionary or int(parsed.get("schema", 0)) != 1:
+		return {}
+	return parsed
+
+func _merge2048_save_progress() -> void:
+	if not merge2048_persistence_enabled:
+		return
+	var payload := {
+		"schema":1,
+		"best":merge2048_model.best,
+		"active":null if merge2048_model.over else merge2048_model.snapshot(),
+	}
+	var file := FileAccess.open(merge2048_save_path, FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify(payload))
+
+func _merge2048_tool_runtime() -> bool:
+	for argument in OS.get_cmdline_args():
+		if str(argument).begins_with("res://tools/"):
+			return true
+	return false
+
+func _merge2048_effects_reduced() -> bool:
+	return game_id == "merge2048" and reduced_effects_enabled
 
 func _slide_line(line: Array) -> Dictionary:
-	var compact: Array = []
-	for source_index in range(line.size()):
-		var value := int(line[source_index])
-		if int(value) > 0:
-			compact.append({"value":value, "sources":[source_index]})
-	var merged: Array = []
-	var gained := 0
-	var i := 0
-	while i < compact.size():
-		var current: Dictionary = compact[i]
-		if i + 1 < compact.size() and int(current["value"]) == int(compact[i + 1]["value"]):
-			var value: int = int(current["value"]) * 2
-			var sources: Array = current["sources"].duplicate()
-			sources.append_array(compact[i + 1]["sources"])
-			merged.append({"value":value, "sources":sources})
-			gained += value
-			i += 2
-		else:
-			merged.append(current)
-			i += 1
-	var result_line: Array = []
-	var moves: Array[Dictionary] = []
-	for destination_index in range(merged.size()):
-		var group: Dictionary = merged[destination_index]
-		var result_value := int(group["value"])
-		result_line.append(result_value)
-		var sources: Array = group["sources"]
-		for source_index in sources:
-			moves.append({
-				"from_index":int(source_index),
-				"to_index":destination_index,
-				"source_value":int(line[int(source_index)]),
-				"result_value":result_value,
-				"merged":sources.size() > 1,
-			})
-	while result_line.size() < line.size():
-		result_line.append(0)
-	return {"line":result_line, "gained":gained, "changed":result_line != line, "moves":moves}
+	return merge2048_model.resolve_line(line)
 
 func _merge_move(direction: Vector2i) -> void:
-	if state.get("status", "playing") != "playing":
-		return
-	var board: Array = state["board"]
-	var board_before: Array = board.duplicate(true)
-	var changed := false
-	var gained := 0
-	var motion_moves: Array[Dictionary] = []
-	for index in range(4):
-		var line: Array = []
-		if direction == Vector2i.LEFT or direction == Vector2i.RIGHT:
-			line = board[index].duplicate()
-		else:
-			for y in range(4):
-				line.append(board[y][index])
-		if direction == Vector2i.RIGHT or direction == Vector2i.DOWN:
-			line.reverse()
-		var outcome: Dictionary = _slide_line(line)
-		var result_line: Array = outcome["line"]
-		for line_move in outcome["moves"]:
-			var from_index := int(line_move["from_index"])
-			var to_index := int(line_move["to_index"])
-			if direction == Vector2i.RIGHT or direction == Vector2i.DOWN:
-				from_index = 3 - from_index
-				to_index = 3 - to_index
-			var from := Vector2i(from_index, index) if direction.x != 0 else Vector2i(index, from_index)
-			var to := Vector2i(to_index, index) if direction.x != 0 else Vector2i(index, to_index)
-			if from != to or bool(line_move["merged"]):
-				motion_moves.append({
-					"from":from,
-					"to":to,
-					"source_value":int(line_move["source_value"]),
-					"result_value":int(line_move["result_value"]),
-					"merged":bool(line_move["merged"]),
-				})
-		if direction == Vector2i.RIGHT or direction == Vector2i.DOWN:
-			result_line.reverse()
-		if direction == Vector2i.LEFT or direction == Vector2i.RIGHT:
-			board[index] = result_line
-		else:
-			for y in range(4):
-				board[y][index] = result_line[y]
-		changed = changed or bool(outcome["changed"])
-		gained += int(outcome["gained"])
-	if not changed:
-		if game_id == "merge2048":
+	var outcome: Dictionary = merge2048_model.move(direction)
+	if not bool(outcome.changed):
+		if merge2048_model.status() == "playing":
 			var reject_position := Vector2(270, 454) + Vector2(direction) * 116.0
 			_flash_feedback("这一侧已经锁住", RED)
 			# The persistent top toast carries the copy; keep the local rejection
 			# mark text-free so it cannot cover live tile values on a full board.
 			_start_catalog_event("merge_reject", reject_position, RED, 1, "", 0.58, {"semantic":"wood_reject", "direction":direction})
-			_log_event("merge_rejected", {"direction":str(direction), "score":state["score"]})
+			_log_event("merge_rejected", {"direction":str(direction), "score":merge2048_model.score})
 		return
-	var board_after_slide: Array = board.duplicate(true)
-	state["moves"] = int(state["moves"]) + 1
-	state["score"] = int(state["score"]) + gained
-	var spawn := _spawn_merge_tile()
-	_flash_feedback("合成 +%d" % gained if gained > 0 else "木牌滑动归位", GOLD if gained > 0 else CYAN)
-	var impact_position := _merge_impact_position(board_before, board_after_slide, direction, gained)
+	var board_before: Array = outcome.board_before
+	var board_after_slide: Array = outcome.board_after_slide
+	var gained := int(outcome.gained)
+	var spawn: Dictionary = outcome.spawn
+	var motion_moves: Array = outcome.moves
+	var merge_results: Array = outcome.merges
+	_sync_merge2048_state()
+	_merge2048_save_progress()
+	var primary_merge := _merge2048_primary_merge(merge_results)
+	var peak_value := int(primary_merge.get("result_value", 0))
+	var merge_count := merge_results.size()
+	var impact_cell := _merge2048_semantic_impact_cell(motion_moves, primary_merge)
+	var impact_position := Vector2(42, 236) + Vector2(impact_cell.x + 0.5, impact_cell.y + 0.5) * 109.0
 	var merge_color := GOLD if gained > 0 else CYAN
-	var merge_grade := 1
-	if gained >= 8: merge_grade = 2
-	if gained >= 32: merge_grade = 3
-	if gained >= 128: merge_grade = 4
-	var reached_target := _merge_has_target()
-	if reached_target:
-		merge_grade = 4
-	var impact_cell := Vector2i(
-		clampi(int(floor((impact_position.x - 42.0) / 109.0)), 0, 3),
-		clampi(int(floor((impact_position.y - 236.0) / 109.0)), 0, 3)
-	)
-	if game_id == "merge2048":
-		merge2048_motion = {
-			"started":elapsed,
-			"duration":0.62 + float(merge_grade) * 0.04,
-			"moves":motion_moves,
-			"spawn":spawn,
-			"grade":merge_grade,
-			"impact_cell":impact_cell,
-			"direction":direction,
-			"board_before":board_before,
-			"board_after_slide":board_after_slide,
-		}
-	_impact(impact_position, merge_color, 0.7 if gained == 0 else 1.0)
+	var reached_target := bool(outcome.won_now)
+	var merge_grade := _merge2048_feedback_grade(peak_value, reached_target)
+	if merge_count > 1:
+		_flash_feedback("连合 %d 次 · +%d" % [merge_count, gained], GOLD)
+	elif merge_count == 1:
+		_flash_feedback("合成 %d · +%d" % [peak_value, gained], GOLD)
+	else:
+		_flash_feedback("木牌滑动归位", CYAN)
+	merge2048_motion = {
+		"started":elapsed,
+		"duration":0.16 if _merge2048_effects_reduced() else 0.62 + float(merge_grade) * 0.04,
+		"moves":motion_moves,
+		"merges":merge_results,
+		"spawn":spawn,
+		"grade":merge_grade,
+		"peak_value":peak_value,
+		"merge_count":merge_count,
+		"impact_cell":impact_cell,
+		"direction":direction,
+		"board_before":board_before,
+		"board_after_slide":board_after_slide,
+		"reduced":_merge2048_effects_reduced(),
+	}
+	var impact_scale: float = [0.48, 0.76, 1.08, 1.38][merge_grade - 1]
+	_impact(impact_position, merge_color, impact_scale if gained > 0 else 0.42)
 	var semantic := "wood_slide" if gained == 0 else ("wood_masterpiece" if merge_grade == 4 else ("wood_milestone" if merge_grade == 3 else "wood_merge"))
-	var label := "木牌归位" if gained == 0 else ("大师雕版 · +%d" % gained if merge_grade == 4 else ("金纹连携 · +%d" % gained if merge_grade == 3 else "木作合成 · +%d" % gained))
-	_start_catalog_event("merge", impact_position, merge_color, merge_grade, label, 0.66 + merge_grade * 0.07, {"semantic":semantic, "gained":gained, "direction":direction})
-	_log_event("merge_move", {"direction":str(direction), "gained":gained, "score":state["score"], "grade":merge_grade, "semantic":semantic, "motion_count":motion_moves.size()})
+	var label := "木牌归位"
+	if gained > 0:
+		label = "大师雕版 · %d" % peak_value if merge_grade == 4 else ("金纹里程碑 · %d" % peak_value if merge_grade == 3 else "木作合成 · %d" % peak_value)
+		if merge_count > 1:
+			label += " · %d 连合" % merge_count
+	_start_catalog_event("merge", impact_position, merge_color, merge_grade, label, 0.66 + merge_grade * 0.07, {
+		"semantic":semantic,
+		"gained":gained,
+		"peak_value":peak_value,
+		"merge_count":merge_count,
+		"impact_cell":impact_cell,
+		"direction":direction,
+	})
+	_log_event("merge_move", {
+		"direction":str(direction),
+		"gained":gained,
+		"peak_value":peak_value,
+		"merge_count":merge_count,
+		"impact_cell":impact_cell,
+		"score":state["score"],
+		"grade":merge_grade,
+		"semantic":semantic,
+		"motion_count":motion_moves.size(),
+	})
 	if reached_target:
-		state["status"] = "won"
 		_capture("win_%s" % game_id)
-	elif not _merge_has_moves():
-		state["status"] = "over"
+		_build_game_buttons()
+	elif bool(outcome.over_now):
 		_capture("game_over_%s" % game_id)
 
-func _merge_impact_position(before: Array, after: Array, direction: Vector2i, gained: int) -> Vector2:
-	var best := Vector2i(1, 1)
-	var best_weight := -1.0
-	for y in range(4):
-		for x in range(4):
-			var value := int(after[y][x])
-			if value <= 0 or value == int(before[y][x]):
-				continue
-			var edge_bias := float((3 - x) if direction == Vector2i.LEFT else x) if direction.x != 0 else float((3 - y) if direction == Vector2i.UP else y)
-			var weight := float(value) * (3.0 if gained > 0 and value <= gained else 1.0) + edge_bias
-			if weight > best_weight:
-				best_weight = weight
-				best = Vector2i(x, y)
-	return Vector2(42, 236) + Vector2(best.x + 0.5, best.y + 0.5) * 109.0
+func _merge2048_primary_merge(merge_results: Array) -> Dictionary:
+	var primary := {}
+	for merge_result in merge_results:
+		if primary.is_empty() or int(merge_result.get("result_value", 0)) > int(primary.get("result_value", 0)):
+			primary = merge_result
+	return primary
+
+func _merge2048_semantic_impact_cell(motion_moves: Array, primary_merge: Dictionary) -> Vector2i:
+	if not primary_merge.is_empty():
+		return primary_merge.get("to", Vector2i(1, 1))
+	var destination := Vector2i(1, 1)
+	var longest_travel := -1
+	for move in motion_moves:
+		var source: Vector2i = move.get("from", destination)
+		var target: Vector2i = move.get("to", source)
+		var travel := absi(target.x - source.x) + absi(target.y - source.y)
+		if travel > longest_travel:
+			longest_travel = travel
+			destination = target
+	return destination
+
+func _merge2048_feedback_grade(peak_value: int, reached_target: bool) -> int:
+	if reached_target or peak_value >= 128:
+		return 4
+	if peak_value >= 32:
+		return 3
+	if peak_value >= 8:
+		return 2
+	return 1
 
 func _merge_has_target() -> bool:
-	for row in state["board"]:
-		for value in row:
-			if int(value) >= _merge_target_tile():
-				return true
-	return false
+	if game_id == "merge2248":
+		return int(state.get("score", 0)) >= 2248
+	return merge2048_model.won
 
 func _merge_target_tile() -> int:
 	return 2048
 
 func _merge_has_moves() -> bool:
-	var board: Array = state["board"]
-	for y in range(4):
-		for x in range(4):
-			if int(board[y][x]) == 0:
-				return true
-			if x < 3 and board[y][x] == board[y][x + 1]:
-				return true
-			if y < 3 and board[y][x] == board[y + 1][x]:
-				return true
-	return false
+	return merge2048_model.has_moves()
 
 func _draw_merge() -> void:
 	var board: Array = state["board"]

@@ -57,7 +57,7 @@ func _exercise(id: String) -> void:
 			game._merge2248_release()
 			game.merge2248_drag_active = false
 		"merge2048":
-			game.state["board"] = [[2, 2, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
+			game._merge2048_load_fixture([[2, 2, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]])
 			game._merge_move(Vector2i.LEFT)
 		"watermelon": game._handle_tap(Vector2(260, 380))
 		"meowdoku", "sudoku":

@@ -63,15 +63,16 @@ func _test_line_resolution_metadata() -> void:
 	_expect(moves.size() == 3, "line_motion_count")
 	_expect(int(moves[0]["from_index"]) == 0 and int(moves[0]["to_index"]) == 0, "line_motion_first")
 	_expect(int(moves[1]["from_index"]) == 2 and int(moves[1]["to_index"]) == 0, "line_motion_merge")
+	var merges: Array = outcome["merges"]
+	_expect(merges.size() == 1 and int(merges[0]["result_value"]) == 4, "line_merge_semantics")
 	var double_pair: Dictionary = game._slide_line([2, 2, 4, 4])
 	_expect(double_pair["line"] == [4, 8, 0, 0] and int(double_pair["gained"]) == 12, "line_no_double_merge")
+	_expect(double_pair["merges"].size() == 2, "line_parallel_merge_semantics")
 
 
 func _test_slide_motion() -> void:
 	game._open_game("merge2048")
-	game.state["board"] = [[2, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
-	game.state["moves"] = 0
-	game.state["score"] = 0
+	game._merge2048_load_fixture([[2, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]])
 	game._merge_move(Vector2i.RIGHT)
 	_expect(int(game.state["moves"]) == 1 and int(game.state["score"]) == 0, "slide_state")
 	_expect(not game.merge2048_motion.is_empty(), "slide_motion_missing")
@@ -85,10 +86,10 @@ func _test_slide_motion() -> void:
 
 func _test_rejection_invariant() -> void:
 	game._open_game("merge2048")
-	game.state["board"] = [
+	game._merge2048_load_fixture([
 		[2, 4, 8, 16], [32, 64, 128, 256],
 		[4, 8, 16, 32], [64, 128, 256, 512],
-	]
+	])
 	var before: Dictionary = game.state.duplicate(true)
 	game._merge_move(Vector2i.LEFT)
 	_expect(game.state == before, "reject_mutated_state")
@@ -105,7 +106,7 @@ func _test_feedback_grades() -> void:
 	]:
 		game._open_game("merge2048")
 		var value := int(sample["value"])
-		game.state["board"] = [[value, value, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
+		game._merge2048_load_fixture([[value, value, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]])
 		game._merge_move(Vector2i.LEFT)
 		var effect: Dictionary = game.catalog_fx.back()
 		_expect(int(effect.get("grade")) == int(sample["grade"]), "grade_%d" % value)
@@ -115,7 +116,7 @@ func _test_feedback_grades() -> void:
 
 func _test_target_promotion() -> void:
 	game._open_game("merge2048")
-	game.state["board"] = [[1024, 1024, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
+	game._merge2048_load_fixture([[1024, 1024, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]])
 	game._merge_move(Vector2i.LEFT)
 	_expect(str(game.state["status"]) == "won", "target_status")
 	var effect: Dictionary = game.catalog_fx.back()

@@ -1,0 +1,111 @@
+{
+  "schema": "offline-games.replica-stage0-gap.v2",
+  "game_id": "merge2048",
+  "target_manifest": "docs/replica/merge2048/target-manifest.md",
+  "reference_commit": "478b6ec346e3787f589e4af751378d06ded4cbbc",
+  "replica_starting_commit": "3e561fb3c55f3b0b813da2b9ee9468cd4d290bae",
+  "baseline": {
+    "source_worktree_clean": true,
+    "isolated_worktree_clean": true,
+    "engine": "Godot 4.6.stable.official.89cea1439",
+    "full_import": "pass",
+    "merge2048_presentation_smoke": "pass with Godot exit-time resource leak warnings",
+    "catalog_smoke": "pass with Godot exit-time resource leak warnings"
+  },
+  "stage": "internal-candidate-audited",
+  "production_authorized": true,
+  "current_art_may_be_retained_but_not_approved": true,
+  "mismatches": [
+    {
+      "id": "entry-tile-count",
+      "reference": "two random starting tiles on an otherwise empty board",
+      "current": "four fixed center tiles plus two random tiles, six total",
+      "verdict": "fail"
+    },
+    {
+      "id": "spawn-distribution",
+      "reference": "90 percent value 2, 10 percent value 4",
+      "current": "approximately 86 percent value 2, 14 percent value 4",
+      "verdict": "fail"
+    },
+    {
+      "id": "win-continuation",
+      "reference": "2048 pauses with an explicit keep-playing action",
+      "current": "status becomes won and subsequent direction input is rejected",
+      "verdict": "fail"
+    },
+    {
+      "id": "run-and-best-recovery",
+      "reference": "active run and best score persist; game-over clears only active run",
+      "current": "a generic observability snapshot is written but never restored; best is absent",
+      "verdict": "fail"
+    },
+    {
+      "id": "fresh-restart-randomness",
+      "reference": "new sessions consume the runtime random source",
+      "current": "every open and restart resets the same game-id-derived seed",
+      "verdict": "fail"
+    },
+    {
+      "id": "touch-release-routing",
+      "reference": "dominant-axis single-touch swipe emits direction",
+      "current": "mouse drag emits direction but touch release falls through to tap handling",
+      "verdict": "fail"
+    },
+    {
+      "id": "input-parity",
+      "reference": "arrows, WASD, HJKL, swipe, restart and continue actions",
+      "current": "arrows/WASD/buttons/mouse swipe/restart exist; HJKL, touch swipe and continue are missing",
+      "verdict": "partial"
+    },
+    {
+      "id": "model-boundary",
+      "reference": "not an original requirement",
+      "current": "rules live in the launcher script and have no independent deterministic fidelity probe",
+      "verdict": "architecture-gap"
+    }
+  ],
+  "already_consistent_but_underprobed": [
+    "4x4 board",
+    "four-direction compression",
+    "one-merge-per-tile ordering for ordinary fixtures",
+    "merged-value scoring",
+    "one spawn only after a changed move",
+    "no spawn after an ineffective move",
+    "no-empty-or-adjacent-match loss predicate",
+    "arrow/WASD/button direction routes",
+    "visible GAG wood tile family on live cells"
+  ],
+  "required_mechanics_slice": [
+    "independent deterministic model with two-tile reset",
+    "90/10 spawn distribution with injectable seed",
+    "four-direction ordered single-merge probes",
+    "legal/no-op spawn and score probes",
+    "win pause and explicit keep-playing transition",
+    "active-run and best-score serialization/recovery",
+    "fresh production seed with deterministic fixture seam",
+    "keyboard, button, mouse/touch swipe, restart, loss and recovery integration probes"
+  ],
+  "gag_gate": {
+    "status": "pass-internal",
+    "existing_assets": "retained after fresh production endpoint health, three semantic searches, visual review, source/runtime hash verification, and runtime visibility audit",
+    "verified_production_endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+    "known_server": "game-assets-generator 1.29.0",
+    "required_next_action": "none internally; matched user/reference review remains outside this gate"
+  },
+  "mechanics_gate": {
+    "renderer_free_model": "pass: 3062 assertions",
+    "runtime_input_and_state": "pass: 61 assertions",
+    "persistence_and_recovery": "pass: 7 assertions",
+    "presentation_regression": "pass: 7 checks",
+    "catalog_smoke": "pass: 14 games",
+    "2048_balls_boundary": "pass: 34 model plus 30 integration assertions",
+    "known_warning": "Godot reports existing exit-time ObjectDB/resource retention in scene-based smoke tools"
+  },
+  "runtime_gate": {
+    "visual_sequence": "pass: stable, intent, travel, impact, settle, grade boundaries, rejection, target/continue, reduced effects, and 0.817 second continuous peak",
+    "performance": "pass: normal busy p95 25.486 ms / max 31.312 ms against EC2 regression budget 35/80 ms",
+    "clean_web": "pass: fingerprinted PCK 4775ed4e1307, compressed empty-cache transfer, semantic ready, pointer swipe, exact reload recovery, restart, reduced mode, and zero browser/runtime errors; byte-reproducible PCK NOT_CLAIMED"
+  },
+  "claim_target": "mechanics aligned to pinned source probes; internally verified art and expressive strengthening; surpasses-original NOT_CLAIMED"
+}

@@ -1,0 +1,84 @@
+# Reusable local Web-export audit server. It deliberately mirrors the release
+# contract needed by Godot Web builds: cross-origin isolation, revalidating
+# HTML, immutable fingerprinted assets, byte ranges, and precompressed runtime
+# sidecars. Point OFFLINE_GAMES_WEB_ROOT at a clean exported bundle and, when
+# the default is occupied, set OFFLINE_GAMES_WEB_AUDIT_PORT; this is not a
+# deployment configuration.
+{
+	auto_https off
+}
+
+:{$OFFLINE_GAMES_WEB_AUDIT_PORT:18765} {
+	root * {$OFFLINE_GAMES_WEB_ROOT:/tmp/offline-games-web}
+	encode zstd gzip
+
+	header {
+		Cross-Origin-Opener-Policy "same-origin"
+		Cross-Origin-Embedder-Policy "require-corp"
+		X-Content-Type-Options "nosniff"
+	}
+
+	@html path / /index.html
+	header @html Cache-Control "no-cache"
+
+	@fingerprinted path_regexp fingerprint ^/index\.[0-9a-f]{12}\.(?:js|wasm|pck|worker\.js|audio\.worklet\.js|audio\.position\.worklet\.js)$
+	header @fingerprinted Cache-Control "public, max-age=31536000, immutable"
+
+	@wasm_zstd {
+		path *.wasm
+		header Accept-Encoding *zstd*
+	}
+	route @wasm_zstd {
+		rewrite * {http.request.uri.path}.zst
+		header {
+			Content-Encoding "zstd"
+			Content-Type "application/wasm"
+			Vary "Accept-Encoding"
+		}
+		file_server
+	}
+	@wasm_gzip {
+		path *.wasm
+		header Accept-Encoding *gzip*
+	}
+	route @wasm_gzip {
+		rewrite * {http.request.uri.path}.gz
+		header {
+			Content-Encoding "gzip"
+			Content-Type "application/wasm"
+			Vary "Accept-Encoding"
+		}
+		file_server
+	}
+
+	@pck_zstd {
+		path *.pck
+		header Accept-Encoding *zstd*
+	}
+	route @pck_zstd {
+		rewrite * {http.request.uri.path}.zst
+		header {
+			Content-Encoding "zstd"
+			Content-Type "application/octet-stream"
+			Vary "Accept-Encoding"
+		}
+		file_server
+	}
+	@pck_gzip {
+		path *.pck
+		header Accept-Encoding *gzip*
+	}
+	route @pck_gzip {
+		rewrite * {http.request.uri.path}.gz
+		header {
+			Content-Encoding "gzip"
+			Content-Type "application/octet-stream"
+			Vary "Accept-Encoding"
+		}
+		file_server
+	}
+
+	file_server {
+		precompressed zstd gzip
+	}
+}

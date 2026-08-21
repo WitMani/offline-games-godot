@@ -67,6 +67,15 @@ func draw_board(
 	if not active:
 		_draw_stable_board(canvas, board, origin, tile_size, number_font)
 		return
+	if bool(motion.get("reduced", false)):
+		# Preserve the final authoritative board and material hierarchy while
+		# replacing travel, rebound, and burst with a single quiet result marker.
+		_draw_stable_board(canvas, board, origin, tile_size, number_font)
+		var reduced_impact: Vector2i = motion.get("impact_cell", Vector2i(1, 1))
+		var reduced_center := _cell_rect(origin, tile_size, reduced_impact).get_center()
+		var reduced_grade := clampi(int(motion.get("grade", 1)), 1, 4)
+		canvas.draw_arc(reduced_center, 38.0 + reduced_grade * 2.0, 0, TAU, 32, Color("f4c56d", 0.42), 2.0, true)
+		return
 
 	var timeline := clampf(age / duration, 0.0, 1.0)
 	var destinations := {}

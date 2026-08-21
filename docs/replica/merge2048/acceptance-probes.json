@@ -1,0 +1,117 @@
+{
+  "schema": "offline-games.replica-acceptance-probes.v1",
+  "game_id": "merge2048",
+  "runtime": "Godot 4.6.stable.official.89cea1439",
+  "probes": [
+    {
+      "id": "M2048-MODEL-OPENING",
+      "setup": "seeds 1 through 1000, renderer-free model reset",
+      "action": "start a fresh run",
+      "expected_state": "4x4 board, exactly two occupied cells, values limited to 2 or 4",
+      "expected_feedback": "not applicable at model boundary",
+      "tolerance": "zero state mismatches",
+      "evidence_capture": "tools/merge2048_model_smoke.gd",
+      "result": "pass"
+    },
+    {
+      "id": "M2048-MODEL-RANDOM",
+      "setup": "2000 opening spawns across deterministic seeds",
+      "action": "count 4-valued tiles",
+      "expected_state": "empirical 4 ratio represents the source 10 percent branch",
+      "expected_feedback": "not applicable at model boundary",
+      "tolerance": "0.075 through 0.125",
+      "evidence_capture": "tools/merge2048_model_smoke.gd",
+      "result": "pass"
+    },
+    {
+      "id": "M2048-MODEL-MERGE-ORDER",
+      "setup": "five adversarial lines including 2,2,2,2 and 2,2,4,4",
+      "action": "resolve toward the leading edge",
+      "expected_state": "each source tile merges at most once and score equals created values",
+      "expected_feedback": "motion mappings preserve authoritative source/destination groups",
+      "tolerance": "exact line, score, and mapping equality",
+      "evidence_capture": "tools/merge2048_model_smoke.gd",
+      "result": "pass"
+    },
+    {
+      "id": "M2048-MODEL-DIRECTIONS",
+      "setup": "mirrored horizontal and vertical pair fixtures",
+      "action": "move left, right, up, and down",
+      "expected_state": "pairs resolve against the selected destination edge",
+      "expected_feedback": "direction and source-to-destination payload match the state change",
+      "tolerance": "exact board-after-slide equality",
+      "evidence_capture": "tools/merge2048_model_smoke.gd",
+      "result": "pass"
+    },
+    {
+      "id": "M2048-MODEL-LEGAL-NOOP",
+      "setup": "one movable fixture and one locked fixture",
+      "action": "attempt a legal move, then an ineffective direction",
+      "expected_state": "legal move increments once and spawns once; no-op changes nothing and spawns nothing",
+      "expected_feedback": "legal motion payload versus semantic rejection owned by integration layer",
+      "tolerance": "exact snapshot equality for no-op",
+      "evidence_capture": "tools/merge2048_model_smoke.gd; tools/merge2048_integration_smoke.gd",
+      "result": "pass"
+    },
+    {
+      "id": "M2048-MODEL-WIN-CONTINUE",
+      "setup": "1024,1024 leading pair, then 2048,2048 after continue",
+      "action": "merge to 2048, attempt movement while paused, continue, merge beyond target",
+      "expected_state": "won pause is inert until explicit continue; 4096 remains playable",
+      "expected_feedback": "win overlay and CJK continue control appear, then direction controls return",
+      "tolerance": "exact status and button-state equality",
+      "evidence_capture": "tools/merge2048_model_smoke.gd; tools/merge2048_integration_smoke.gd",
+      "result": "pass"
+    },
+    {
+      "id": "M2048-MODEL-LOSS",
+      "setup": "one-empty-cell fixture whose legal compression and spawn exhaust all moves",
+      "action": "move left",
+      "expected_state": "spawn completes, then status becomes over and further input is inert",
+      "expected_feedback": "terminal state is observable after authoritative result",
+      "tolerance": "no empty cell or equal orthogonal pair",
+      "evidence_capture": "tools/merge2048_model_smoke.gd; tools/merge2048_persistence_smoke.gd",
+      "result": "pass"
+    },
+    {
+      "id": "M2048-INTEGRATION-INPUT",
+      "setup": "single movable tile fixtures in live main scene",
+      "action": "arrows, WASD, HJKL, direction buttons, mouse swipe, and touch swipe",
+      "expected_state": "all adapters invoke the same cardinal model transition",
+      "expected_feedback": "motion payload direction equals adapter direction",
+      "tolerance": "strict swipe displacement >10 logical pixels; dominant axis wins",
+      "evidence_capture": "tools/merge2048_integration_smoke.gd",
+      "result": "pass"
+    },
+    {
+      "id": "M2048-INTEGRATION-SWIPE",
+      "setup": "mouse and touch gestures at, below, and above the pinned 10 logical-pixel boundary",
+      "action": "release a dominant-axis gesture through the shared swipe adapter",
+      "expected_state": "10 pixels is inert; strictly greater displacement emits exactly one cardinal move",
+      "expected_feedback": "accepted gestures use the same authoritative motion payload as keyboard input",
+      "tolerance": "exact boundary and move-count equality",
+      "evidence_capture": "tools/merge2048_integration_smoke.gd",
+      "result": "pass"
+    },
+    {
+      "id": "M2048-PERSISTENCE",
+      "setup": "isolated user save path and deterministic seed",
+      "action": "save active run, recreate scene, lose, recreate scene, restart",
+      "expected_state": "active run and RNG resume exactly; loss clears active run; best survives loss and restart",
+      "expected_feedback": "recovered board is immediately rendered; restart begins with two tiles",
+      "tolerance": "exact serialized snapshot and RNG continuity",
+      "evidence_capture": "tools/merge2048_persistence_smoke.gd",
+      "result": "pass"
+    },
+    {
+      "id": "M2048-RUNTIME-ART-V4",
+      "setup": "deterministic stable, slide, merge-grade, locked, 2048-target, continue, and reduced-effects fixtures",
+      "action": "capture the complete semantic event sequence, run the busy trace, export from the runtime commit, and exercise a fresh browser with a real pointer swipe",
+      "expected_state": "feedback uses authoritative merge records and exact impact cells without changing board rules, input, persistence, target pause, or continue",
+      "expected_feedback": "GAG plaques remain visible in stable play; intensity separates routine through masterpiece; reduced mode keeps the final board while suppressing shake and haptics",
+      "tolerance": "all runtime, font, performance, package, transfer, and browser checks in gates.json pass",
+      "evidence_capture": "docs/audit/merge2048-fidelity-v4/candidate and docs/audit/merge2048-fidelity-v4/gates.json",
+      "result": "pass-internal"
+    }
+  ]
+}

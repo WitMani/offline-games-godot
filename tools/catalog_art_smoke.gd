@@ -44,7 +44,7 @@ func _expect_event(test_name: String, kind: String, minimum_grade: int) -> void:
 
 func _test_merge2048_peak() -> void:
 	game._open_game("merge2048")
-	game.state["board"] = [[64, 64, 64, 64], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
+	game._merge2048_load_fixture([[64, 64, 64, 64], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]])
 	game._merge_move(Vector2i.LEFT)
 	_expect_event("merge2048", "merge", 4)
 

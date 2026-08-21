@@ -1,0 +1,139 @@
+{
+  "schema": "offline-games.replica-claim-ledger.v1",
+  "game_id": "merge2048",
+  "target_version": "gabrielecirulli/2048@478b6ec346e3787f589e4af751378d06ded4cbbc",
+  "claims": [
+    {
+      "id": "m2048-grid-opening",
+      "game_id": "merge2048",
+      "target_version": "478b6ec346e3787f589e4af751378d06ded4cbbc",
+      "claim": "A fresh run has a 4x4 grid and exactly two random 2-or-4 tiles.",
+      "type": "fact",
+      "evidence": "private js/game_manager.js addStartTiles/addRandomTile; SHA-256 b02baa6b75f8c8cad8606e680b6f73b7c843c61e3a643ee48410022499a649f0",
+      "confidence": "high",
+      "implementation_consequence": "replace six-tile preset with model reset spawning two tiles",
+      "acceptance_probe": "M2048-MODEL-OPENING",
+      "status": "verified"
+    },
+    {
+      "id": "m2048-spawn-probability",
+      "game_id": "merge2048",
+      "target_version": "478b6ec346e3787f589e4af751378d06ded4cbbc",
+      "claim": "Each spawn is value 2 with probability 0.9 and value 4 otherwise.",
+      "type": "measurement",
+      "evidence": "private js/game_manager.js literal threshold 0.9 at pinned SHA",
+      "confidence": "high",
+      "implementation_consequence": "use <0.9 threshold and seeded statistical probe",
+      "acceptance_probe": "M2048-MODEL-RANDOM",
+      "status": "verified"
+    },
+    {
+      "id": "m2048-traversal",
+      "game_id": "merge2048",
+      "target_version": "478b6ec346e3787f589e4af751378d06ded4cbbc",
+      "claim": "Every cardinal move traverses from the destination edge and resolves all four lines in that direction.",
+      "type": "fact",
+      "evidence": "private js/game_manager.js getVector/buildTraversals/move at pinned SHA",
+      "confidence": "high",
+      "implementation_consequence": "model owns direction-to-line coordinates",
+      "acceptance_probe": "M2048-MODEL-DIRECTIONS",
+      "status": "verified"
+    },
+    {
+      "id": "m2048-single-merge",
+      "game_id": "merge2048",
+      "target_version": "478b6ec346e3787f589e4af751378d06ded4cbbc",
+      "claim": "A tile may participate in at most one merge during one move.",
+      "type": "fact",
+      "evidence": "private js/game_manager.js prepareTiles and mergedFrom guard at pinned SHA",
+      "confidence": "high",
+      "implementation_consequence": "resolve compacted equal pairs once from the movement edge",
+      "acceptance_probe": "M2048-MODEL-MERGE-ORDER",
+      "status": "verified"
+    },
+    {
+      "id": "m2048-noop-spawn",
+      "game_id": "merge2048",
+      "target_version": "478b6ec346e3787f589e4af751378d06ded4cbbc",
+      "claim": "Only a state-changing move increments play state and spawns exactly one tile; a no-op does neither.",
+      "type": "fact",
+      "evidence": "private js/game_manager.js moved guard and addRandomTile at pinned SHA",
+      "confidence": "high",
+      "implementation_consequence": "gate spawn/move counter/feedback on model changed result",
+      "acceptance_probe": "M2048-MODEL-LEGAL-NOOP",
+      "status": "verified"
+    },
+    {
+      "id": "m2048-win-continue",
+      "game_id": "merge2048",
+      "target_version": "478b6ec346e3787f589e4af751378d06ded4cbbc",
+      "claim": "Creating 2048 pauses input until explicit keep-playing, then the same run can create values beyond 2048.",
+      "type": "fact",
+      "evidence": "private js/game_manager.js won/keepPlaying/isGameTerminated and index.html keep-playing control",
+      "confidence": "high",
+      "implementation_consequence": "separate won flag from terminal over and expose continue control",
+      "acceptance_probe": "M2048-MODEL-WIN-CONTINUE",
+      "status": "verified"
+    },
+    {
+      "id": "m2048-loss",
+      "game_id": "merge2048",
+      "target_version": "478b6ec346e3787f589e4af751378d06ded4cbbc",
+      "claim": "Loss follows a legal move and spawn when no cell is empty and no orthogonal equal pair remains.",
+      "type": "fact",
+      "evidence": "private js/game_manager.js movesAvailable/tileMatchesAvailable at pinned SHA",
+      "confidence": "high",
+      "implementation_consequence": "model evaluates loss only after changed move/spawn",
+      "acceptance_probe": "M2048-MODEL-LOSS",
+      "status": "verified"
+    },
+    {
+      "id": "m2048-persistence",
+      "game_id": "merge2048",
+      "target_version": "478b6ec346e3787f589e4af751378d06ded4cbbc",
+      "claim": "Non-lost run state and best score persist; restart clears the run but keeps best; game-over clears active run.",
+      "type": "fact",
+      "evidence": "private js/game_manager.js setup/actuate/serialize and js/local_storage_manager.js at pinned SHAs",
+      "confidence": "high",
+      "implementation_consequence": "versioned validated snapshot plus per-game best storage",
+      "acceptance_probe": "M2048-PERSISTENCE",
+      "status": "verified"
+    },
+    {
+      "id": "m2048-input-parity",
+      "game_id": "merge2048",
+      "target_version": "478b6ec346e3787f589e4af751378d06ded4cbbc",
+      "claim": "Arrows, WASD, HJKL and dominant-axis touch swipe map to cardinal directions; R/new-game/retry restart and keep-playing is explicit.",
+      "type": "fact",
+      "evidence": "private js/keyboard_input_manager.js map and touch handlers at pinned SHA",
+      "confidence": "high",
+      "implementation_consequence": "share a single direction adapter across keyboard, buttons, mouse and touch; add HJKL/continue",
+      "acceptance_probe": "M2048-INTEGRATION-INPUT",
+      "status": "verified"
+    },
+    {
+      "id": "m2048-touch-threshold",
+      "game_id": "merge2048",
+      "target_version": "478b6ec346e3787f589e4af751378d06ded4cbbc",
+	  "claim": "A swipe emits a direction only when logical displacement is strictly greater than 10 pixels.",
+	  "type": "measurement",
+	  "evidence": "private js/keyboard_input_manager.js threshold and runtime mouse/touch boundary probes",
+      "confidence": "high",
+	  "implementation_consequence": "share the measured strict threshold across mouse and touch adapters",
+      "acceptance_probe": "M2048-INTEGRATION-SWIPE",
+      "status": "verified"
+    },
+    {
+      "id": "m2048-enhanced-art",
+      "game_id": "merge2048",
+      "target_version": "478b6ec346e3787f589e4af751378d06ded4cbbc",
+      "claim": "Retain the independently produced wood-workshop direction and strengthen feedback only after mechanics pass.",
+      "type": "decision",
+      "evidence": "docs/art-direction/merge2048-v2.md, merge2048-v2.asset-ledger.json fresh GAG runtime audit, and docs/audit/merge2048-fidelity-v4/candidate",
+      "confidence": "high",
+      "implementation_consequence": "grade and impact use authoritative merge records; stable GAG plaques remain visible on every live tile; reduced-effects preserves the final board without shake or haptics",
+      "acceptance_probe": "M2048-RUNTIME-ART-V4",
+      "status": "verified-internal"
+    }
+  ]
+}

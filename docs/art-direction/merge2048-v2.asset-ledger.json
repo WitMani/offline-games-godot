@@ -26,6 +26,61 @@
     ],
     "decision": "No existing candidate met the locked pillars. Fresh coherent-family generation was authorized after semantic search and visual inspection."
   },
+  "gag_runtime_audit_v4": {
+    "audited_at": "2026-08-20T21:37:27Z",
+    "endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+    "server": "DESKTOP-7LNJHMK",
+    "transport": "Streamable HTTP MCP over Tailscale HTTPS",
+    "health": {
+      "status": "pass",
+      "main_service_gpu": "not detected",
+      "main_service_pytorch": "not installed; pure API mode available",
+      "enabled_providers": ["gemini", "elevenlabs", "removebg", "fal", "openrouter", "tripo", "codex"]
+    },
+    "semantic_searches": [
+      {
+        "query": "cozy premium cartoon 2048 blank wooden number tile plaque material family birch amber blue purple workshop, no text",
+        "kinds": ["image"],
+        "top_candidates": [
+          {"path": "offline_games/2048balls/v3/orchard_recipe_tray_runtime.png", "score": 0.4384779755},
+          {"path": "offline_games/2048balls/v3/orchard_recipe_tray_transparent.png", "score": 0.4257338318},
+          {"path": "characters/hero_44919.png", "score": 0.4152661585},
+          {"path": "ui_and_icons/kenney_blue_body_squircle.png", "score": 0.3956818683}
+        ],
+        "decision": "rejected: results are an orchard recipe tray, unrelated characters, or generic UI squircles; none forms a coherent blank wood-plaque family for the approved workshop pillars"
+      },
+      {
+        "query": "hollow ring of warm wood shavings and crafted splinters, cartoon puzzle merge impact burst, transparent center, no text",
+        "kinds": ["image"],
+        "top_candidates": [
+          {"path": "vfx/impact-arrow.png", "score": 0.4321948092},
+          {"path": "ui_and_icons/ring_2.png", "score": 0.4263195982},
+          {"path": "offline_games/merge2248/gag-v3/merge_burst_runtime_source.png", "score": 0.4238752733},
+          {"path": "vfx/vfx-energy-ring.png", "score": 0.4125721431}
+        ],
+        "decision": "rejected: arrow, generic rings, candy burst, and energy ring do not carry the authored wood-shaving material identity"
+      },
+      {
+        "query": "short polished wooden tile slide, warm lacquered wood merge clack, concise puzzle milestone sparkle, no voice",
+        "kinds": ["audio"],
+        "top_candidates": [
+          {"path": "audio/music_20260330_002207_peaceful_ambient_exploration_m_loop.mp3", "score": 0.6483282472},
+          {"path": "audio/music_20260330_002207_peaceful_ambient_exploration_m.wav", "score": 0.6380747560},
+          {"path": "audio/garden_boss_bgm.mp3", "score": 0.6325052056},
+          {"path": "audio/warning.wav", "score": 0.6315964722}
+        ],
+        "decision": "rejected: the results are music or warning cues and do not satisfy the slide, merge-clack, or concise milestone roles"
+      }
+    ],
+    "reuse_decision": "No new generation: the previously generated GAG family remains coherent, role-complete, and more compatible than every fresh retrieval. Runtime and HOME-WSL archive masters were re-opened and hash-verified; retrieval candidates are not relabeled as the reused assets.",
+    "archive_hashes": {
+      "tile_family_master": "c3d36213618dc3a38538be3b2fc4435c16d6662986c5e62934104ebf69dfb711",
+      "wood_burst_master": "f14501b189e18ae98c541820451e8189779783f0c48c3f56d79abef608478bf7",
+      "tile_slide_master": "dedf5416757fb8d88ba0574cca319395b9626e7229fe285dbe62d1313b8d217d",
+      "tile_merge_master": "84fa2f41442ad097c5df003c64cc7ea0cc973ac97a405d150c9a1c34f936240b",
+      "tile_milestone_master": "819b7f77bcd05cd787b3357c9b9281dda944366c8d4db405ab84c2b50fd4719e"
+    }
+  },
   "source_masters": [
     {
       "id": "gag-merge2048-tile-family-20260820-183538",
@@ -53,7 +108,8 @@
       "id": "gag-merge2048-slide-v1",
       "archive_path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/merge2048/v2/sfx/wood_tile_slide/v1/wood_tile_slide_01.ogg",
       "provider": "elevenlabs",
-      "digest": "ff826846be054c125c1390884dace7c7b3a1b0d6137943e4a335b4917dcbd539",
+      "digest": "dedf5416757fb8d88ba0574cca319395b9626e7229fe285dbe62d1313b8d217d",
+      "historical_generation_digest_reported": "ff826846be054c125c1390884dace7c7b3a1b0d6137943e4a335b4917dcbd539",
       "duration_seconds": 0.536729,
       "measured_lufs": -16.99,
       "measured_true_peak_db": -3.49,
@@ -63,7 +119,8 @@
       "id": "gag-merge2048-merge-v1",
       "archive_path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/merge2048/v2/sfx/wood_tile_merge/v1/wood_tile_merge_01.ogg",
       "provider": "elevenlabs",
-      "digest": "0ac7f13f3e987c99a139c665cc6bf2df7e19e24027d09bac6b7ff2e0e810872d",
+      "digest": "84fa2f41442ad097c5df003c64cc7ea0cc973ac97a405d150c9a1c34f936240b",
+      "historical_generation_digest_reported": "0ac7f13f3e987c99a139c665cc6bf2df7e19e24027d09bac6b7ff2e0e810872d",
       "duration_seconds": 0.227708,
       "measured_lufs": null,
       "measured_true_peak_db": -1.07,
@@ -73,7 +130,8 @@
       "id": "gag-merge2048-milestone-v1",
       "archive_path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/merge2048/v2/sfx/wood_tile_milestone/v1/wood_tile_milestone_01.ogg",
       "provider": "elevenlabs",
-      "digest": "4ab935e1a3d3c580ca1e6d85dec9f6299275d05ec61607c4e3e20884424747e7",
+      "digest": "819b7f77bcd05cd787b3357c9b9281dda944366c8d4db405ab84c2b50fd4719e",
+      "historical_generation_digest_reported": "4ab935e1a3d3c580ca1e6d85dec9f6299275d05ec61607c4e3e20884424747e7",
       "duration_seconds": 1.0815,
       "measured_lufs": -17.85,
       "measured_true_peak_db": -2.38,

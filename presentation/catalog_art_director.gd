@@ -78,6 +78,8 @@ func draw_environment(canvas: CanvasItem, game_id: String, view_size: Vector2, e
 
 
 func shake_offset(effect: Dictionary, now: float) -> Vector2:
+	if bool(effect.get("reduced", false)):
+		return Vector2.ZERO
 	var age := now - float(effect.get("started", now))
 	var grade := clampi(int(effect.get("grade", 1)), 1, 4)
 	if grade < 2 or age < 0.0:
@@ -106,7 +108,11 @@ func draw_event_fx(canvas: CanvasItem, effect: Dictionary, now: float, label_fon
 	var kind := str(effect.get("kind", "event"))
 
 	var rejected := "error" in kind or "reject" in kind or "mismatch" in kind
-	if rejected and game_id not in ["meowdoku", "sudoku"]:
+	if bool(effect.get("reduced", false)) and game_id == "merge2048":
+		# A short semantic ring retains acknowledgment without screen shake,
+		# particle travel, or layered high-amplitude flashes.
+		canvas.draw_arc(position, 23.0 + t * 8.0, 0, TAU, 28, Color(color.lightened(0.22), 0.46 * fade), 2.0, true)
+	elif rejected and game_id not in ["meowdoku", "sudoku"]:
 		_draw_reject_event(canvas, position, color, grade, t, fade)
 	else:
 		match game_id:

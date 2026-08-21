@@ -46,7 +46,7 @@ func _save_frame(stem: String) -> void:
 func _trigger_peak(id: String) -> void:
 	match id:
 		"merge2048":
-			game.state["board"] = [[64, 64, 64, 64], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
+			game._merge2048_load_fixture([[64, 64, 64, 64], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]])
 			game._merge_move(Vector2i.LEFT)
 		"watermelon":
 			for position in [Vector2(240, 600), Vector2(270, 600), Vector2(240, 600), Vector2(270, 600)]:

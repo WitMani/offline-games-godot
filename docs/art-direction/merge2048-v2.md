@@ -4,12 +4,12 @@
 
 ```text
 Game / slice: classic 2048 board, live tiles, and graded move feedback
-Starting commit: dae205d
+Starting commit: 3e561fb
 Runtime / viewport: Godot 4.6 Web, 540 × 960 portrait
 Direction status: production candidate under the catalog cartoon-art skill
 Mechanics invariant: four-direction compression, one-merge-per-pair ordering,
 random 2/4 spawn, scoring, 2048 victory, no-move loss, restart, and input routing
-remain authoritative in main.gd
+remain authoritative in models/merge2048_model.gd
 ```
 
 The prior pass already had an illustrated workshop background, but the pieces
@@ -23,7 +23,7 @@ uses a GAG wood-shaving burst at the exact authoritative merge destination.
 |---|---|---|
 | A tile worth keeping | values progress through coherent birch, amber lacquer, blue enamel, and purple masterwork materials | stable family frame `00` contains all four tiers with live numbers |
 | The board remembers direction | rule output includes source-to-destination mappings; intent, compression, travel, impact, and settle follow those mappings | routine sequence `10`–`13` |
-| Mastery makes shavings fly | grade 2 adds a firm pop, grade 3 adds reward audio and promoted motion, grade 4 reveals the GAG wood-shaving crown with the strongest bounded shake | grade captures `20`, `30`, and `40`–`43` |
+| Mastery makes shavings fly | feedback grade follows the strongest authoritative result tile, while simultaneous merges remain separate combo metadata; grade 3+ reveals the GAG wood-shaving crown | grade captures `20`, `30`, and `40`–`43` |
 
 Reject: another background-only pass; sci-fi rune VFX in a hand-crafted wood
 workshop; generated numbers baked into textures; maximal shake on every move;
@@ -59,14 +59,16 @@ quiet on routine moves, concise and rewarding on difficult merges.
 |---|---|---|---|
 | Blocked direction | local text-free zigzag toward the attempted edge; persistent toast carries the explanation | reject click and short separated haptic; no state mutation | full board and move count remain unchanged |
 | Legal slide, grade 1 | source plaques compress, travel, then settle; new plaque pops in late | GAG wooden slide, 6 ms haptic, no camera shake | authoritative destination and spawn remain visible |
-| Merge worth 8+, grade 2 | result plaque gets a stronger non-uniform pop and ring | GAG slide + warm wood clack, three-beat haptic, small bounded shake | result value is the focal tile |
-| Merge worth 32+, grade 3 | promoted rebound and gold callout | clack + GAG milestone layer, promoted haptic and shake | higher material is readable after the envelope |
-| Merge worth 128+ or target, grade 4 | GAG wood-shaving crown blooms behind the exact result, then clears | layered reward, five-beat haptic, strongest bounded shake | board is fully legible again before control continues |
+| Strongest result 8–16, grade 2 | result plaque gets a stronger non-uniform pop and ring | GAG slide + warm wood clack, three-beat haptic, small bounded shake | result value is the focal tile |
+| Strongest result 32–64, grade 3 | promoted rebound and gold callout | clack + GAG milestone layer, promoted haptic and shake | higher material is readable after the envelope |
+| Strongest result 128+ or target, grade 4 | GAG wood-shaving crown blooms behind the exact result, then clears | layered reward, five-beat haptic, strongest bounded shake | board is fully legible again before control continues |
+| Reduced-effects preference | the final board appears immediately with one quiet result ring | haptics and shake are suppressed; the envelope is shortened | rules, score, spawn, labels, and material hierarchy remain identical |
 
-`_slide_line()` remains the rule resolver. It now also returns presentation-only
-source mappings derived during that same authoritative calculation. The
-presenter consumes those mappings and never mutates board, score, moves, spawn,
-or terminal status.
+`Merge2048Model` remains the renderer-free rule owner. Its move result exposes
+source mappings and explicit merge records (`sources`, `to`, `source_value`,
+`result_value`). The presenter grades and locates feedback from those records,
+never from aggregate score gain or changed pixels, and never mutates board,
+score, moves, spawn, or terminal status.
 
 ## GAG production record
 
@@ -79,8 +81,14 @@ GAG's fal.ai API path. GAG then handled manual crops, Remove.bg, auto-trim, and
 archive provenance. Three sound families were generated through GAG's
 ElevenLabs API path. No local GPU model was required.
 
-Full providers, prompts or prompt summaries, source and derivative hashes,
-archive paths, search rejections, and runtime references are recorded in
+The v4 audit reconnected to the same HOME-WSL HTTP MCP in pure-API mode and ran
+three fresh semantic searches for the plaque family, hollow wood impact, and
+short wood audio roles. The returned orchard props, generic rings, energy VFX,
+music, and warnings were rejected. The prior fal.ai/Remove.bg and ElevenLabs
+family was retained only after its remote masters, local derivatives, runtime
+references, dimensions, and hashes were rechecked; no new generation was
+needed. Full providers, prompts or prompt summaries, source and derivative
+hashes, archive paths, search rejections, and runtime references are recorded in
 [`merge2048-v2.asset-ledger.json`](merge2048-v2.asset-ledger.json).
 
 ## Runtime evidence and gates
