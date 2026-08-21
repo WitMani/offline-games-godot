@@ -89,10 +89,5 @@ func _trigger_peak(id: String) -> void:
 				game.state["arrows"][grid_size - 1][grid_size - 2] = [1, 0]
 			game._amaze_step(Vector2i.RIGHT)
 		"amaze":
-			var grid_size := int(game.state["size"])
-			for y in range(grid_size):
-				for x in range(grid_size):
-					game.state["painted"][y][x] = true
-			game.state["painted"][0][1] = false
-			game.state["player"] = [0, 0]
+			game._amaze_step(Vector2i.UP)
 			game._amaze_step(Vector2i.RIGHT)

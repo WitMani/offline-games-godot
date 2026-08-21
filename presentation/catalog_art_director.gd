@@ -69,16 +69,25 @@ func draw_environment(canvas: CanvasItem, game_id: String, view_size: Vector2, e
 				canvas.draw_circle(p, 2.4, Color("d3a45b", 0.17))
 			canvas.draw_circle(Vector2(470, 820), 110, Color("c66c77", 0.035))
 		"amaze":
-			canvas.draw_rect(Rect2(0, 112, view_size.x, view_size.y - 112), Color("143229"))
-			for blob in range(16):
-				var palette := [Color("4de1a4"), Color("ff8b78"), Color("f6c667"), Color("79a7ff"), Color("d897ff")]
-				var p := Vector2(fposmod(float(blob * 97), 580.0) - 20.0, 210.0 + fposmod(float(blob * 151), 690.0))
-				canvas.draw_circle(p, 18.0 + float(blob % 4) * 7.0, Color(palette[blob % palette.size()], 0.045))
-			canvas.draw_line(Vector2(24, 850), Vector2(516, 850), Color("f8eed2", 0.12), 5.0)
+			canvas.draw_rect(Rect2(0, 112, view_size.x, view_size.y - 112), Color("28192d"))
+			# Quiet code-native workshop edges frame the interactive canvas. The
+			# generated hero remains the signature asset; these props never pretend
+			# to be traversable cells or bake gameplay into a background plate.
+			canvas.draw_circle(Vector2(-34, 290), 118, Color("ff739e", 0.10))
+			canvas.draw_circle(Vector2(-34, 290), 82, Color("ffb26f", 0.08))
+			canvas.draw_circle(Vector2(574, 788), 142, Color("4ed8cf", 0.075))
+			for groove in range(12):
+				var y := 182.0 + float(groove) * 58.0
+				canvas.draw_line(Vector2(18, y), Vector2(522, y + 11.0), Color("fff0df", 0.022 + float(groove % 3) * 0.006), 1.0)
+			for dab in range(13):
+				var palette := [Color("ff739e"), Color("ff9b75"), Color("f2c85b"), Color("4ed8cf")]
+				var p := Vector2(18.0 + fposmod(float(dab * 193), 504.0), 184.0 + fposmod(float(dab * 127), 666.0))
+				canvas.draw_circle(p, 2.0 + float(dab % 3), Color(palette[dab % palette.size()], 0.13))
+			canvas.draw_line(Vector2(24, 850), Vector2(516, 850), Color("fff0df", 0.15), 5.0)
 
 
 func shake_offset(effect: Dictionary, now: float) -> Vector2:
-	if bool(effect.get("reduced", false)):
+	if bool(effect.get("reduced", false)) or bool(effect.get("reduced_effects", false)):
 		return Vector2.ZERO
 	var age := now - float(effect.get("started", now))
 	var grade := clampi(int(effect.get("grade", 1)), 1, 4)
@@ -123,6 +132,16 @@ func draw_event_fx(canvas: CanvasItem, effect: Dictionary, now: float, label_fon
 	var grade := clampi(int(effect.get("grade", 1)), 1, 4)
 	var game_id := str(effect.get("game_id", ""))
 	var kind := str(effect.get("kind", "event"))
+	if bool(effect.get("reduced_effects", false)):
+		# Reduced-effects keeps the semantic anchor and readable CJK label, but
+		# replaces particles, repeated rings and shake with one quiet local outline.
+		var reduced_fade := 1.0 - _ease_out_cubic(clampf((t - 0.50) / 0.50, 0.0, 1.0))
+		canvas.draw_arc(position, 15.0 + t * 7.0, 0, TAU, 24, Color(color, 0.54 * reduced_fade), 2.0, true)
+		var reduced_label := str(effect.get("label", ""))
+		if not reduced_label.is_empty():
+			var reduced_label_position: Vector2 = effect.get("label_position", position + Vector2(0, -46))
+			_draw_event_label(canvas, reduced_label_position, reduced_label, color, reduced_fade, label_font, 11)
+		return
 
 	var rejected := "error" in kind or "reject" in kind or "mismatch" in kind
 	if bool(effect.get("reduced", false)) and game_id == "merge2048":
@@ -398,12 +417,29 @@ func _draw_arrow_event(canvas: CanvasItem, p: Vector2, color: Color, grade: int,
 
 
 func _draw_paint_event(canvas: CanvasItem, p: Vector2, color: Color, grade: int, t: float, fade: float) -> void:
-	var count := 7 + grade * 3
+	# A paint response grows from a local stamp into bristles and wet droplets;
+	# routine rolls stay compact so near-complete and terminal beats keep contrast.
+	var press := sin(clampf(t / 0.34, 0.0, 1.0) * PI)
+	var ring_t := clampf((t - 0.16) / 0.76, 0.0, 1.0)
+	canvas.draw_circle(p + Vector2(1.5, 2.5), 10.0 + press * (5.0 + grade * 1.5), Color("451329", 0.34 * fade))
+	canvas.draw_circle(p, 9.0 + press * (5.0 + grade * 1.7), Color(color, 0.30 * fade))
+	canvas.draw_arc(p, 14.0 + ring_t * (22.0 + grade * 7.0), 0, TAU, 34, Color(color.lightened(0.25), 0.64 * fade), 2.2 + float(grade) * 0.35, true)
+	for bristle in range(4 + grade * 2):
+		var angle := float(bristle) / float(4 + grade * 2) * TAU + 0.18
+		var direction := Vector2(cos(angle), sin(angle))
+		var inner := p + direction * (13.0 + ring_t * 8.0)
+		var outer := p + direction * (18.0 + ring_t * (12.0 + grade * 3.0))
+		canvas.draw_line(inner, outer, Color(color.lightened(0.16), 0.74 * fade), 2.0 + float(grade) * 0.22, true)
+	var count := 3 + grade * 3
 	for index in range(count):
-		var angle := float(index) / count * TAU + float(index % 2) * 0.2
-		var q := p + Vector2(cos(angle), sin(angle)) * (10.0 + t * (23.0 + grade * 5.0 + index % 3 * 5.0))
-		canvas.draw_circle(q, 2.8 + float(index % 3), Color(color.lightened(float(index % 2) * 0.14), fade))
-	canvas.draw_circle(p, 11.0 + grade * 2.0, Color(color, 0.18 * fade))
+		var angle := float(index) / float(count) * TAU + float(index % 2) * 0.21
+		var distance := 13.0 + ring_t * (18.0 + float(index % 3) * 5.0 + grade * 3.0)
+		var q := p + Vector2(cos(angle), sin(angle)) * distance + Vector2(0, ring_t * ring_t * 7.0)
+		canvas.draw_circle(q, 2.1 + float(index % 3) * 0.8 + float(grade) * 0.28, Color(color.lightened(float(index % 2) * 0.14), fade))
+	if grade >= 3:
+		for sparkle in range(grade):
+			var angle := -PI * 0.75 + float(sparkle) / float(maxi(1, grade - 1)) * PI * 1.5
+			_draw_diamond(canvas, p + Vector2(cos(angle), sin(angle)) * (28.0 + ring_t * 26.0), 3.0 + press * 2.0, Color("fff1c7", 0.88 * fade))
 
 
 func _draw_event_label(canvas: CanvasItem, center: Vector2, label: String, color: Color, alpha: float, font: Font, font_size: int) -> void:

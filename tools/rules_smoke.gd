@@ -51,21 +51,18 @@ func _test_maze_wall_rule() -> void:
 		failures.append("maze_wall_missing")
 
 func _test_paint_completion_rule() -> void:
+	game._clear_amaze_checkpoint()
 	game._open_game("amaze")
-	var size_grid := int(game.state["size"])
-	game.state["player"] = [size_grid - 2, size_grid - 1]
-	game._amaze_step(Vector2i.RIGHT)
+	game._amaze_step(Vector2i.UP)
 	if game.state["status"] != "playing":
 		failures.append("paint_early_win")
-	for y in range(size_grid):
-		for x in range(size_grid):
-			game.state["painted"][y][x] = true
-	game.state["status"] = "playing"
-	game.state["player"] = [0, 0]
-	game.state["painted"][0][1] = false
 	game._amaze_step(Vector2i.RIGHT)
 	if game.state["status"] != "won":
 		failures.append("paint_full_win")
+	if int(game.state.get("painted_count", 0)) != int(game.state.get("walkable_count", -1)):
+		failures.append("paint_walkable_completion")
+	if int(game.state.get("painted_count", 0)) >= int(game.state.get("width", 0)) * int(game.state.get("height", 0)):
+		failures.append("paint_voids_counted")
 
 func _test_tileclub_clearability() -> void:
 	game._open_game("tileclub")

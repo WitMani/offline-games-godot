@@ -73,6 +73,7 @@ const ARROW_GO_GAG_WIND_PLATE_TEXTURE: Texture2D = preload("res://assets/art/cat
 const ARROW_GO_GAG_COURIER_RIGHT_TEXTURE: Texture2D = preload("res://assets/art/catalog/path_games/gag/arrow_go_courier_right_gag_v1.png")
 const ARROW_GO_GAG_COURIER_DOWN_TEXTURE: Texture2D = preload("res://assets/art/catalog/path_games/gag/arrow_go_courier_down_gag_v1.png")
 const ARROW_GO_GAG_HARBOR_TEXTURE: Texture2D = preload("res://assets/art/catalog/path_games/gag/arrow_go_harbor_gag_v1.png")
+const AMAZE_GAG_PAINT_POD_TEXTURE: Texture2D = preload("res://assets/art/catalog/path_games/gag/amaze_paint_pod_gag_v2.png")
 const SNAKE_RULES = preload("res://snake_model.gd")
 const SNAKE_GB_RULES = preload("res://models/snake_gb_model.gd")
 const SNAKES_ARENA_RULES = preload("res://models/snakes_arena_model.gd")
@@ -87,6 +88,9 @@ const MAHJONG_RULES = preload("res://models/mahjong_solitaire_model.gd")
 const TILECLUB_RULES = preload("res://models/tileclub_model.gd")
 const TILECLUB_CHECKPOINT_PATH := "user://offline_games_tileclub_checkpoint_v3.json"
 const TILECLUB_WEB_STORAGE_KEY := "offline-games.tileclub.checkpoint.v3"
+const AMAZE_RULES = preload("res://models/amaze_model.gd")
+const AMAZE_CHECKPOINT_PATH := "user://offline_games_amaze_checkpoint_v3.json"
+const AMAZE_WEB_STORAGE_KEY := "offline-games.amaze.checkpoint.v3"
 const MERGE2248_PRESENTATION = preload("res://presentation/merge2248_presenter.gd")
 const MERGE2248_SAVE_PATH := "user://offline_games_merge2248_v4.json"
 const MERGE2048_CLASSIC_PRESENTATION = preload("res://presentation/merge2048_classic_presenter.gd")
@@ -131,6 +135,7 @@ const SFX_ARROW_GO_GAG_KITE_STEP: AudioStream = preload("res://assets/audio/cata
 const SFX_ARROW_GO_GAG_HARBOR_DOCK: AudioStream = preload("res://assets/audio/catalog/path_games/gag/arrow_go_harbor_dock_gag_v1.ogg")
 const MERGE2048_SAVE_PATH := "user://merge2048_classic.json"
 const MERGE2048_SWIPE_THRESHOLD := 10.0
+const SFX_AMAZE_GAG_WET_ROLL: AudioStream = preload("res://assets/audio/catalog/path_games/gag/amaze_wet_corridor_roll_gag_v2.ogg")
 
 var catalog: Array = [
 	{"id":"merge2248", "title":"2248", "subtitle":"数字连线", "group":"数字", "accent":Color("ffbf2f"), "desc":"八方向连接数字，延续你的最高配方"},
@@ -146,7 +151,7 @@ var catalog: Array = [
 	{"id":"tileclub", "title":"Tile Club", "subtitle":"三消方块", "group":"消除", "accent":Color("ff9f68"), "desc":"收集三枚同色方块，管理七格槽位"},
 	{"id":"amaze_go", "title":"Amaze GO", "subtitle":"箭头迷宫", "group":"路径", "accent":Color("74a8ff"), "desc":"沿着路径走到终点，不能走回头路"},
 	{"id":"arrow_go", "title":"Arrow GO", "subtitle":"方向解谜", "group":"路径", "accent":Color("b69cff"), "desc":"读懂方向提示，找到最短路线"},
-	{"id":"amaze", "title":"Amaze", "subtitle":"涂色迷宫", "group":"路径", "accent":Color("4de1a4"), "desc":"走遍迷宫，把每一步都变成颜色"}
+	{"id":"amaze", "title":"Amaze", "subtitle":"涂色迷宫", "group":"路径", "accent":Color("ff739e"), "desc":"走遍迷宫，把每一步都变成颜色"}
 ]
 
 var logger: Node
@@ -200,6 +205,9 @@ var home_entered_at := 0.0
 var sfx_players: Array[AudioStreamPlayer] = []
 var sfx_cursor := 0
 var haptic_dispatch_count := 0
+var haptic_emitted_count := 0
+var haptic_suppressed_count := 0
+var haptic_last_payload: Variant = null
 var snake_model = SNAKE_RULES.new()
 var snake_gb_model = SNAKE_GB_RULES.new()
 var snakes_arena_model = SNAKES_ARENA_RULES.new()
@@ -223,6 +231,11 @@ var tileclub_reduced_effects := false
 var tileclub_haptic_emitted_count := 0
 var tileclub_haptic_suppressed_count := 0
 var tileclub_haptic_last_payload: Variant = null
+var amaze_model = AMAZE_RULES.new()
+var amaze_level_index := 0
+var amaze_last_outcome: Dictionary = {}
+var amaze_checkpoint_restored := false
+var amaze_object_fx: Dictionary = {}
 var merge2248_presenter = MERGE2248_PRESENTATION.new()
 var merge2048_classic_presenter = MERGE2048_CLASSIC_PRESENTATION.new()
 var catalog_art_director = CATALOG_ART_DIRECTION.new()
@@ -407,8 +420,15 @@ func _set_reduced_effects(value: bool) -> void:
 	if game_id == "mahjong":
 		state["reduced_effects"] = value
 	haptics_enabled = not value
-	if reduced_effects:
-		catalog_fx.clear()
+	if value:
+		motion_started = -10.0
+		motion_duration = 0.0
+		impact_until = -10.0
+		impact_strength = 0.0
+		for effect in catalog_fx:
+			effect["reduced"] = true
+			effect["reduced_effects"] = true
+			effect["duration"] = minf(float(effect.get("duration", 0.72)), 0.24)
 	queue_redraw()
 
 func _process(delta: float) -> void:
@@ -459,27 +479,37 @@ func _play_sfx(stream: AudioStream, volume_db := -7.0, pitch := 1.0) -> void:
 	player.pitch_scale = pitch
 	player.play()
 
+
+func _record_haptic(payload: Variant, suppressed: bool) -> void:
+	haptic_last_payload = payload
+	if suppressed:
+		haptic_suppressed_count += 1
+	else:
+		haptic_emitted_count += 1
+	if OS.has_feature("web"):
+		var bucket := "suppressed" if suppressed else "emitted"
+		JavaScriptBridge.eval("if (window.__offlineGamesHaptics) window.__offlineGamesHaptics.%s.push(%s);" % [bucket, JSON.stringify(payload)])
+
 func _haptic(duration_ms: int) -> void:
+	var suppressed := reduced_effects or _merge2048_effects_reduced() or not haptics_enabled
+	suppressed = suppressed or (game_id == "snake_io" and snakes_reduced_effects)
+	suppressed = suppressed or (game_id == "solitaire" and solitaire_reduced_effects)
+	suppressed = suppressed or (game_id == "tripeaks" and tripeaks_reduced_effects)
+	suppressed = suppressed or (game_id == "mahjong" and bool(state.get("reduced_effects", false)))
 	if game_id == "tileclub":
 		tileclub_haptic_last_payload = duration_ms
-		if tileclub_reduced_effects or reduced_effects or not haptics_enabled:
+		suppressed = suppressed or tileclub_reduced_effects
+		if suppressed:
 			tileclub_haptic_suppressed_count += 1
-			return
-		tileclub_haptic_emitted_count += 1
-	if reduced_effects or _merge2048_effects_reduced() or not haptics_enabled:
-		return
-	if game_id == "snake_io" and snakes_reduced_effects:
+		else:
+			tileclub_haptic_emitted_count += 1
+	_record_haptic(duration_ms, suppressed)
+	if suppressed:
 		return
 	if game_id == "solitaire":
-		if solitaire_reduced_effects:
-			return
 		solitaire_haptic_emissions += 1
-	if game_id == "tripeaks" and tripeaks_reduced_effects:
-		return
 	if game_id == "tripeaks":
 		tripeaks_haptic_emissions += 1
-	if game_id == "mahjong" and bool(state.get("reduced_effects", false)):
-		return
 	haptic_dispatch_count += 1
 	haptic_requests_sent += 1
 	if OS.has_feature("web"):
@@ -488,26 +518,27 @@ func _haptic(duration_ms: int) -> void:
 		Input.vibrate_handheld(duration_ms)
 
 func _haptic_pattern(pattern: Array[int]) -> void:
+	if pattern.is_empty():
+		return
+	var suppressed := reduced_effects or _merge2048_effects_reduced() or not haptics_enabled
+	suppressed = suppressed or (game_id == "snake_io" and snakes_reduced_effects)
+	suppressed = suppressed or (game_id == "solitaire" and solitaire_reduced_effects)
+	suppressed = suppressed or (game_id == "tripeaks" and tripeaks_reduced_effects)
+	suppressed = suppressed or (game_id == "mahjong" and bool(state.get("reduced_effects", false)))
 	if game_id == "tileclub":
 		tileclub_haptic_last_payload = pattern.duplicate()
-		if tileclub_reduced_effects or reduced_effects or not haptics_enabled:
+		suppressed = suppressed or tileclub_reduced_effects
+		if suppressed:
 			tileclub_haptic_suppressed_count += 1
-			return
-		tileclub_haptic_emitted_count += 1
-	if pattern.is_empty() or reduced_effects or _merge2048_effects_reduced() or not haptics_enabled:
-		return
-	if game_id == "snake_io" and snakes_reduced_effects:
+		else:
+			tileclub_haptic_emitted_count += 1
+	_record_haptic(pattern.duplicate(), suppressed)
+	if suppressed:
 		return
 	if game_id == "solitaire":
-		if solitaire_reduced_effects:
-			return
 		solitaire_haptic_emissions += 1
-	if game_id == "tripeaks" and tripeaks_reduced_effects:
-		return
 	if game_id == "tripeaks":
 		tripeaks_haptic_emissions += 1
-	if game_id == "mahjong" and bool(state.get("reduced_effects", false)):
-		return
 	haptic_dispatch_count += 1
 	haptic_requests_sent += 1
 	if OS.has_feature("web"):
@@ -527,7 +558,7 @@ func _setup_accessibility_preferences() -> void:
 func _impact(position: Vector2, color: Color, strength := 1.0) -> void:
 	impact_position = position
 	impact_color = color
-	if game_id == "tileclub" and tileclub_reduced_effects:
+	if reduced_effects or (game_id == "tileclub" and tileclub_reduced_effects):
 		impact_strength = 0.0
 		impact_until = elapsed
 	else:
@@ -538,7 +569,7 @@ func _impact(position: Vector2, color: Color, strength := 1.0) -> void:
 func _start_motion(kind: String, from: Vector2, to: Vector2, color: Color, label := "", duration := 0.34, visual_value := 0) -> void:
 	motion_kind = kind
 	motion_started = elapsed
-	motion_duration = 0.0 if game_id == "tileclub" and tileclub_reduced_effects else duration
+	motion_duration = 0.0 if reduced_effects or (game_id == "tileclub" and tileclub_reduced_effects) else duration
 	motion_from = from
 	motion_to = to
 	motion_color = color
@@ -566,9 +597,9 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 		"duration": effective_duration,
 		"seed": catalog_fx_serial,
 		"reduced": reduced,
-		"reduced_effects": reduced_tileclub,
+		"reduced_effects": reduced,
 	}
-	if game_id in ["merge2048", "sudoku", "meowdoku", "solitaire", "tripeaks", "mahjong", "tileclub", "amaze_go", "arrow_go"]:
+	if game_id in ["merge2048", "sudoku", "meowdoku", "solitaire", "tripeaks", "mahjong", "tileclub", "amaze_go", "arrow_go", "amaze"]:
 		effect["font_role"] = "ui_cjk"
 	effect.merge(metadata, true)
 	if game_id == "solitaire":
@@ -660,6 +691,12 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 		elif event_sfx == SFX_ARROW_GO_GAG_HARBOR_DOCK:
 			event_volume = -1.0
 			event_pitch = 1.0
+		elif event_sfx == SFX_AMAZE_GAG_WET_ROLL:
+			# The selected short ElevenLabs variation retains generous transient
+			# headroom but measures quietly as a whole. Keep the runtime gain bounded
+			# while promoting pitch and haptic cadence by semantic grade.
+			event_volume = -2.5 + float(event_grade) * 0.5
+			event_pitch = 0.94 + float(event_grade) * 0.035
 		elif game_id == "tileclub" and event_sfx == SFX_SNAKE_REJECT:
 			event_volume = -15.0 + float(event_grade)
 			event_pitch = 0.88 + float(event_grade) * 0.025
@@ -703,6 +740,8 @@ func _catalog_event_sfx(kind: String, grade: int) -> AudioStream:
 		return SFX_ARROW_GO_GAG_KITE_STEP
 	if game_id == "arrow_go" and kind == "path_complete":
 		return SFX_ARROW_GO_GAG_HARBOR_DOCK
+	if game_id == "amaze" and kind in ["path_roll", "path_revisit", "path_near_complete", "path_complete"]:
+		return SFX_AMAZE_GAG_WET_ROLL
 	return SFX_SNAKE_EAT if grade >= 2 else SFX_SNAKE_KEY
 
 func _play_logic_event_sfx(kind: String, grade: int) -> void:
@@ -946,6 +985,8 @@ func _gui_input(event: InputEvent) -> void:
 				_snakes_arena_end_pointer(event.position)
 			elif game_id == "watermelon" and _watermelon_board_rect().has_point(pointer_down):
 				_watermelon_drop_at(event.position.x)
+			elif pointer_down.x >= 0.0 and swipe_delta.length() > 42.0 and game_id == "amaze":
+				_amaze_step(_swipe_direction(swipe_delta))
 			elif pointer_down.x >= 0.0 and swipe_delta.length() > MERGE2048_SWIPE_THRESHOLD and game_id == "merge2048":
 				if abs(swipe_delta.x) > abs(swipe_delta.y):
 					_merge_move(Vector2i.RIGHT if swipe_delta.x > 0 else Vector2i.LEFT)
@@ -979,6 +1020,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif screen == "game" and game_id == "watermelon" and _watermelon_board_rect().has_point(event.position):
 			_watermelon_aim_at(event.position.x)
 	elif event is InputEventScreenTouch and not event.pressed:
+		var swipe_delta: Vector2 = event.position - pointer_down
 		if game_id == "meowdoku" and meowdoku_double_action_consumed:
 			meowdoku_double_action_consumed = false
 		elif game_id == "merge2248" and merge2248_drag_active:
@@ -991,18 +1033,17 @@ func _unhandled_input(event: InputEvent) -> void:
 			_snakes_arena_end_pointer(event.position)
 		elif game_id == "watermelon" and _watermelon_board_rect().has_point(pointer_down):
 			_watermelon_drop_at(event.position.x)
+		elif pointer_down.x >= 0.0 and swipe_delta.length() > 42.0 and game_id == "amaze":
+			_amaze_step(_swipe_direction(swipe_delta))
 		elif game_id == "merge2048" and pointer_down.x >= 0.0:
-			var swipe_delta: Vector2 = event.position - pointer_down
 			if swipe_delta.length() > MERGE2048_SWIPE_THRESHOLD:
 				if abs(swipe_delta.x) > abs(swipe_delta.y):
 					_merge_move(Vector2i.RIGHT if swipe_delta.x > 0 else Vector2i.LEFT)
 				else:
 					_merge_move(Vector2i.DOWN if swipe_delta.y > 0 else Vector2i.UP)
-			pointer_down = Vector2(-1, -1)
 		else:
 			_handle_tap(event.position)
-		if game_id == "tileclub":
-			pointer_down = Vector2(-1, -1)
+		pointer_down = Vector2(-1, -1)
 	elif event is InputEventScreenDrag:
 		if game_id == "merge2248" and merge2248_drag_active:
 			_merge2248_extend_at(event.position)
@@ -1012,6 +1053,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			_snakes_arena_aim_at_screen(event.position)
 		elif game_id == "watermelon" and _watermelon_board_rect().has_point(pointer_down):
 			_watermelon_aim_at(event.position.x)
+
+func _swipe_direction(delta: Vector2) -> Vector2i:
+	if abs(delta.x) > abs(delta.y):
+		return Vector2i.RIGHT if delta.x > 0.0 else Vector2i.LEFT
+	return Vector2i.DOWN if delta.y > 0.0 else Vector2i.UP
 
 func _build_home() -> void:
 	var leaving_mahjong := screen == "game" and game_id == "mahjong"
@@ -1044,9 +1090,13 @@ func _open_game(id: String) -> void:
 	rng.seed = abs(id.hash()) + 17
 	if id == "tileclub":
 		tileclub_level_index = 0
+	if id == "amaze":
+		amaze_level_index = 0
 	_start_game_state()
 	if id == "tileclub":
 		_try_restore_tileclub_checkpoint()
+	if id == "amaze":
+		_try_restore_amaze_checkpoint()
 	last_score = int(state.get("moves", 0)) if game_id == "merge2248" else int(state.get("score", 0))
 	_begin_transition(1.0)
 	_build_game_buttons()
@@ -1119,8 +1169,13 @@ func _build_game_buttons() -> void:
 				_add_button("下一关", Rect2(202, 816, 136, 52), Callable(self, "_tileclub_next_level"), SURFACE_2, 15)
 			else:
 				_add_button("槽位规则", Rect2(202, 816, 136, 52), Callable(self, "_tileclub_tray_hint"), SURFACE_2, 15)
-		"amaze_go", "arrow_go", "amaze":
+		"amaze_go", "arrow_go":
 			_add_button("路线提示", Rect2(202, 816, 136, 52), Callable(self, "_amaze_hint"), SURFACE_2, 15)
+		"amaze":
+			if str(state.get("status", "playing")) == "won":
+				_add_button("下一迷宫", Rect2(202, 816, 136, 52), Callable(self, "_amaze_next_level"), SURFACE_2, 15)
+			else:
+				_add_button("路线提示", Rect2(202, 816, 136, 52), Callable(self, "_amaze_hint"), SURFACE_2, 15)
 
 func _reset_current() -> void:
 	if game_id.is_empty():
@@ -1157,6 +1212,9 @@ func _reset_current() -> void:
 	if game_id == "tileclub":
 		tileclub_checkpoint_restored = false
 		_save_tileclub_checkpoint()
+	if game_id == "amaze":
+		amaze_checkpoint_restored = false
+		_save_amaze_checkpoint()
 	_log_event("game_reset", {"game_id":game_id})
 	_capture("reset_%s" % game_id)
 	if game_id == "snake_classic":
@@ -1755,6 +1813,56 @@ func _clear_tileclub_checkpoint() -> void:
 		JavaScriptBridge.eval("try { localStorage.removeItem(%s); } catch (error) {}" % JSON.stringify(TILECLUB_WEB_STORAGE_KEY))
 	tileclub_checkpoint_restored = false
 
+
+func _save_amaze_checkpoint() -> bool:
+	if game_id != "amaze":
+		return false
+	var encoded := JSON.stringify(amaze_model.checkpoint())
+	var saved := false
+	var file := FileAccess.open(AMAZE_CHECKPOINT_PATH, FileAccess.WRITE)
+	if file:
+		file.store_string(encoded)
+		saved = true
+	if OS.has_feature("web"):
+		var script := "try { localStorage.setItem(%s, %s); true; } catch (error) { false; }" % [JSON.stringify(AMAZE_WEB_STORAGE_KEY), JSON.stringify(encoded)]
+		saved = bool(JavaScriptBridge.eval(script)) or saved
+	return saved
+
+
+func _load_amaze_checkpoint_text() -> String:
+	if OS.has_feature("web"):
+		var script := "try { localStorage.getItem(%s) || ''; } catch (error) { ''; }" % JSON.stringify(AMAZE_WEB_STORAGE_KEY)
+		var stored: Variant = JavaScriptBridge.eval(script)
+		if stored is String and not str(stored).is_empty():
+			return str(stored)
+	if FileAccess.file_exists(AMAZE_CHECKPOINT_PATH):
+		return FileAccess.get_file_as_string(AMAZE_CHECKPOINT_PATH)
+	return ""
+
+
+func _try_restore_amaze_checkpoint() -> bool:
+	amaze_checkpoint_restored = false
+	var encoded := _load_amaze_checkpoint_text()
+	if encoded.is_empty():
+		return false
+	var decoded: Variant = JSON.parse_string(encoded)
+	if decoded == null or not amaze_model.restore(decoded):
+		_clear_amaze_checkpoint()
+		return false
+	amaze_level_index = amaze_model.level_index
+	amaze_last_outcome = {}
+	_sync_amaze_state()
+	amaze_checkpoint_restored = true
+	return true
+
+
+func _clear_amaze_checkpoint() -> void:
+	if FileAccess.file_exists(AMAZE_CHECKPOINT_PATH):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(AMAZE_CHECKPOINT_PATH))
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("try { localStorage.removeItem(%s); } catch (error) {}" % JSON.stringify(AMAZE_WEB_STORAGE_KEY))
+	amaze_checkpoint_restored = false
+
 func _capture(reason: String) -> void:
 	if logger:
 		logger.capture(reason, {"game_id":game_id, "state":state.duplicate(true)})
@@ -1764,6 +1872,7 @@ func _setup_web_acceptance() -> void:
 		return
 	JavaScriptBridge.eval("""
 		window.__gameAcceptanceState = {ready:true, screen:'home', game_id:'', catalog_size:14, state:{}};
+		window.__offlineGamesHaptics = {emitted:[], suppressed:[]};
 		window.__gameAcceptance = {
 			getState: function(){ return window.__gameAcceptanceState; },
 			getConfig: function(){ return {name:'No WiFi Games', offline:true, catalog_size:14, version:'0.1.0'}; }
@@ -1773,9 +1882,32 @@ func _setup_web_acceptance() -> void:
 func _publish_web_state() -> void:
 	if not OS.has_feature("web"):
 		return
-	var exposed := {"ready":true, "screen":screen, "game_id":game_id, "catalog_size":catalog.size(), "state":state.duplicate(true)}
+	var exposed := {
+		"ready":true,
+		"screen":screen,
+		"game_id":game_id,
+		"catalog_size":catalog.size(),
+		"state":state.duplicate(true),
+		"amaze_checkpoint_restored":amaze_checkpoint_restored,
+		"effects":{
+			"reduced":reduced_effects,
+			"haptic_emitted":haptic_emitted_count,
+			"haptic_suppressed":haptic_suppressed_count,
+			"haptic_last":haptic_last_payload,
+		},
+	}
 	if game_id == "tileclub":
 		exposed["presentation"] = _tileclub_presentation_state()
+	if game_id == "amaze":
+		exposed["presentation"] = {
+			"direction":"paint-workshop-gag-v2",
+			"signature_visible":"stable_player_pod",
+			"object_phase":_amaze_event_phase(),
+			"gag_assets":[
+				"res://assets/art/catalog/path_games/gag/amaze_paint_pod_gag_v2.png",
+				"res://assets/audio/catalog/path_games/gag/amaze_wet_corridor_roll_gag_v2.ogg",
+			],
+		}
 	JavaScriptBridge.eval("window.__gameAcceptanceState = %s;" % JSON.stringify(exposed))
 
 
@@ -1834,18 +1966,18 @@ func _draw() -> void:
 
 func _draw_ambient_backdrop() -> void:
 	var accent := CYAN if screen == "home" else Color(_catalog_item(game_id).get("accent", CYAN))
+	var ambient_elapsed := 0.0 if reduced_effects or (game_id == "tileclub" and tileclub_reduced_effects) else elapsed
 	draw_circle(Vector2(500, 28), 156, Color(accent, 0.075))
 	draw_circle(Vector2(34, 904), 184, Color(accent, 0.045))
 	for i in range(18):
-		var backdrop_elapsed := 0.0 if game_id == "tileclub" and tileclub_reduced_effects else elapsed
-		var px := fposmod(float(i * 83) + backdrop_elapsed * (3.0 + float(i % 3)), 600.0) - 30.0
+		var px := fposmod(float(i * 83) + ambient_elapsed * (3.0 + float(i % 3)), 600.0) - 30.0
 		var py := fposmod(float(i * 137), 940.0) + 10.0
 		draw_circle(Vector2(px, py), 0.8 + float(i % 3) * 0.35, Color(INK, 0.055))
 	for y in range(0, 960, 5):
 		draw_line(Vector2(0, y), Vector2(540, y), Color(INK, 0.009), 1.0)
 
 func _draw_transition_wipe() -> void:
-	if not has_transitioned:
+	if not has_transitioned or reduced_effects:
 		return
 	if game_id == "tileclub" and tileclub_reduced_effects:
 		return
@@ -1979,7 +2111,10 @@ func _draw_game() -> void:
 		_draw_result_overlay(false)
 	elif state.get("status", "playing") == "won" and _catalog_result_overlay_ready():
 		_draw_result_overlay(true)
-	if elapsed < feedback_until:
+	# Amaze already anchors feedback to the rolling pod / destination cell. Its
+	# stateful toast remains available to probes and accessibility bridges, but a
+	# second visible copy would compete with the local semantic label.
+	if elapsed < feedback_until and not (game_id == "amaze" and not catalog_fx.is_empty()):
 		var remaining := feedback_until - elapsed
 		var alpha: float = clampf(remaining / 0.24, 0.0, 1.0)
 		var toast_x := 276.0 + (1.0 - alpha) * 18.0
@@ -2004,7 +2139,7 @@ func _game_header_fill() -> Color:
 		"tileclub": return Color("4a2036", 0.985)
 		"amaze_go": return Color("102d4d", 0.985)
 		"arrow_go": return Color("2b2048", 0.985)
-		"amaze": return Color("173f34", 0.985)
+		"amaze": return Color("47223e", 0.985)
 	return Color("10192d", 0.985)
 
 func _game_panel_fill() -> Color:
@@ -2020,7 +2155,7 @@ func _game_panel_fill() -> Color:
 		"tileclub": return Color("663047", 0.96)
 		"amaze_go": return Color("16456b", 0.96)
 		"arrow_go": return Color("443467", 0.96)
-		"amaze": return Color("245b49", 0.96)
+		"amaze": return Color("67304e", 0.96)
 	return Color("101a2e", 0.94)
 
 func _game_secondary_text() -> Color:
@@ -2142,7 +2277,8 @@ func _objective_status() -> String:
 		"tripeaks": return "余牌 %d · 峰顶 %d/3" % [state.get("stock", []).size(), int(state.get("peak_count", 0))]
 		"mahjong": return "待配 %d" % int(state.get("remaining", 0))
 		"tileclub": return "槽位 %d / 7" % int(state.get("tray", []).size())
-		"amaze_go", "arrow_go", "amaze": return "已探索 %d 格" % _painted_count()
+		"amaze_go", "arrow_go": return "已探索 %d 格" % _painted_count()
+		"amaze": return "已涂 %d / %d" % [_painted_count(), int(state.get("walkable_count", 0))]
 	return ""
 
 func _play_rect() -> Rect2:
@@ -2281,6 +2417,20 @@ func _draw_result_overlay(won: bool) -> void:
 		_draw_center_font(UI_FONT, "得分 %d · 步数 %d" % [int(state.get("score", 0)), int(state.get("moves", 0))], Vector2(270, 512), 16, Color(emerald_ink, 0.88))
 		_draw_center_font(UI_FONT, "点击右上角“重开”继续挑战", Vector2(270, 557), 13, Color(emerald_ink, 0.66))
 		return
+	if game_id == "amaze":
+		draw_rect(Rect2(0, 112, 540, 848), Color("1a0d1d", 0.74))
+		_draw_panel(Rect2(55, 345, 430, 250), Color("100811", 0.42), Color.TRANSPARENT, 22, 0)
+		_draw_panel(Rect2(48, 338, 444, 250), Color("fff0da"), Color("ff739e", 0.94), 20, 3)
+		_draw_panel(Rect2(61, 351, 418, 224), Color("f7dfcc"), Color("7d3651", 0.26), 15, 1)
+		for dab in range(10):
+			var angle := float(dab) / 10.0 * TAU
+			var dab_color := Color("ff739e") if dab % 2 == 0 else Color("4ed8cf")
+			draw_circle(Vector2(270, 392) + Vector2(cos(angle), sin(angle)) * 55.0, 2.5 + float(dab % 3), Color(dab_color, 0.58))
+		_draw_amaze_paint_pod(Vector2(270, 386), 76.0, Vector2(1.04, 0.96), 1.0)
+		_draw_center_font(DISPLAY_FONT, "彩漆封版", Vector2(270, 470), 30, Color("632544"))
+		_draw_center_font(UI_FONT, "第 %d 关 · %d 步 · 轨道全满" % [int(state.get("level_number", 1)), int(state.get("moves", 0))], Vector2(270, 510), 16, Color("713650"))
+		_draw_center_font(UI_FONT, "点击下方“下一迷宫”继续", Vector2(270, 552), 13, Color("7c5a66"))
+		return
 	draw_rect(Rect2(0, 112, 540, 848), Color(COAL, 0.72))
 	var color := GREEN if won else RED
 	_draw_panel(Rect2(48, 338, 444, 238), Color("111a2e", 0.985), Color(color, 0.82), 18, 2)
@@ -2365,8 +2515,16 @@ func _draw_motion_overlay() -> void:
 				var courier_scale := 1.0 + sin(progress * PI) * 0.12
 				_draw_arrow_go_texture(_arrow_go_courier_texture(arrow_go_facing), planar_position, 43.0 * courier_scale, Color.WHITE)
 			else:
-				draw_line(motion_from, position, Color(motion_color, 0.46 * alpha), 8.0)
-				draw_circle(position, 11.0 + sin(progress * PI) * 4.0, Color(motion_color, 0.92))
+				var planar_position := motion_from.lerp(motion_to, eased)
+				var cell_size := float(_amaze_board_metrics()["cell"])
+				var travel_direction := motion_from.direction_to(motion_to)
+				var highlight_offset := Vector2(-travel_direction.y, travel_direction.x) * cell_size * 0.09
+				draw_line(motion_from + Vector2(1.5, 2.5), planar_position + Vector2(1.5, 2.5), Color("55142e", 0.54 * alpha), cell_size * 0.58, true)
+				draw_line(motion_from, planar_position, Color(_amaze_paint_palette()["paint"], 0.90 * alpha), cell_size * 0.50, true)
+				draw_line(motion_from - highlight_offset, planar_position - highlight_offset, Color("ffe1e9", 0.54 * alpha), cell_size * 0.065, true)
+				var speed_stretch := sin(progress * PI) * 0.13
+				var pod_scale := Vector2(1.0 + speed_stretch, 1.0 - speed_stretch * 0.65) if abs(travel_direction.x) > 0.5 else Vector2(1.0 - speed_stretch * 0.65, 1.0 + speed_stretch)
+				_draw_amaze_paint_pod(planar_position, cell_size * 0.78, pod_scale, maxf(0.82, alpha))
 
 func _card_event_phase_at(effect: Dictionary, now: float) -> String:
 	var duration := maxf(0.001, float(effect.get("duration", 0.72)))
@@ -7626,6 +7784,16 @@ func _tile_symbol(value: int) -> String:
 # -----------------------------------------------------------------------------
 
 func _init_amaze() -> void:
+	if game_id == "amaze":
+		amaze_go_object_fx = {}
+		amaze_go_route.clear()
+		arrow_go_object_fx = {}
+		arrow_go_route.clear()
+		amaze_last_outcome = {}
+		amaze_object_fx = {}
+		amaze_model.reset(amaze_level_index)
+		_sync_amaze_state()
+		return
 	var grid_size := 6 if game_id == "amaze_go" else (9 if game_id == "arrow_go" else 8)
 	var painted := _new_grid(grid_size, grid_size, false)
 	painted[0][0] = true
@@ -7652,6 +7820,7 @@ func _init_amaze() -> void:
 	arrow_go_object_fx = {}
 	arrow_go_route.clear()
 	arrow_go_facing = Vector2i.RIGHT
+	amaze_object_fx = {}
 	if game_id == "amaze_go":
 		# Presentation-only route memory. Rules continue to read state.painted;
 		# this ordered copy exists solely to render a legible surveyed trail.
@@ -7661,8 +7830,18 @@ func _init_amaze() -> void:
 		# by the frozen path rules. Generated art cannot mutate this trail.
 		arrow_go_route.append(Vector2i.ZERO)
 
+func _sync_amaze_state() -> void:
+	state = amaze_model.snapshot()
+	state["game_id"] = "amaze"
+	var hint := amaze_model.hint_direction()
+	state["hint"] = [hint.x, hint.y]
+
 func _amaze_tap(pos: Vector2) -> void:
 	if state.get("status") != "playing":
+		return
+	# Classic AMAZE is swipe-driven. A release without a directional gesture is
+	# intentionally inert; keyboard and touch both enter through _amaze_step().
+	if game_id == "amaze":
 		return
 	var grid_size := int(state["size"])
 	var cell := 430.0 / grid_size
@@ -7676,6 +7855,9 @@ func _amaze_tap(pos: Vector2) -> void:
 
 func _amaze_step(direction: Vector2i) -> void:
 	if (game_id != "amaze_go" and game_id != "arrow_go" and game_id != "amaze") or state.get("status") != "playing":
+		return
+	if game_id == "amaze":
+		_amaze_roll(direction)
 		return
 	var player: Array = state["player"]
 	var size_grid := int(state["size"])
@@ -7817,8 +7999,126 @@ func _amaze_step(direction: Vector2i) -> void:
 		state["score"] = int(state["score"]) + 100
 		_capture("path_win_%s" % game_id)
 
+func _amaze_roll(direction: Vector2i) -> void:
+	if game_id != "amaze" or state.get("status", "playing") != "playing":
+		return
+	var outcome: Dictionary = amaze_model.command(direction)
+	amaze_last_outcome = outcome.duplicate(true)
+	_sync_amaze_state()
+	var direction_payload := [direction.x, direction.y]
+	if not bool(outcome.get("changed", false)):
+		var player: Array = state["player"]
+		var center: Vector2 = _amaze_cell_center(int(player[0]), int(player[1]))
+		var cell_size := float(_amaze_board_metrics()["cell"])
+		var contact: Vector2 = center + Vector2(direction) * cell_size * 0.42
+		amaze_object_fx = {
+			"kind":"wall_reject",
+			"semantic":"amaze_blocked",
+			"started":elapsed,
+			"duration":0.52,
+			"grade":1,
+			"position":center,
+			"contact":contact,
+			"direction":direction,
+		}
+		_impact(contact, RED, 0.42)
+		_start_catalog_event(
+			"path_reject_wall", contact, RED, 1, "前方受阻", 0.52,
+			{"semantic":"amaze_blocked", "direction":direction_payload, "remaining":state.get("remaining", 0)}
+		)
+		_flash_feedback("前方没有通路", RED)
+		_log_event("amaze_blocked", {"direction":direction_payload, "remaining":state.get("remaining", 0)})
+		return
+	_save_amaze_checkpoint()
+
+	var from: Array = outcome["from"]
+	var to: Array = outcome["to"]
+	var from_position := _amaze_cell_center(int(from[0]), int(from[1]))
+	var to_position := _amaze_cell_center(int(to[0]), int(to[1]))
+	var traversed: Array = outcome["traversed"]
+	var newly_painted: Array = outcome["newly_painted"]
+	var remaining := int(outcome["remaining"])
+	var completed := bool(outcome["completed"])
+	var revisit_only := newly_painted.is_empty()
+	var near_complete := not completed and remaining <= 2
+	var long_roll := traversed.size() >= 4
+	var semantic := "amaze_complete" if completed else ("amaze_near_complete" if near_complete else ("amaze_revisit" if revisit_only else ("amaze_long_roll" if long_roll else "amaze_short_roll")))
+	var kind := "path_complete" if completed else ("path_near_complete" if near_complete else ("path_revisit" if revisit_only else "path_roll"))
+	var grade := 4 if completed else (3 if near_complete else (1 if revisit_only else (2 if long_roll else 1)))
+	var label := "全域完成" if completed else ("只差 %d 格" % remaining if near_complete else ("重访通道" if revisit_only else ("长廊涂色" if long_roll else "短廊涂色")))
+	var accent: Color = _amaze_paint_palette()["paint"]
+	var motion_time := minf(0.54, 0.18 + float(traversed.size()) * 0.055)
+	var event_time := 1.08 if completed else (0.82 if near_complete else 0.62)
+	amaze_object_fx = {
+		"kind":kind,
+		"semantic":semantic,
+		"started":elapsed,
+		"duration":event_time,
+		"motion_duration":motion_time,
+		"grade":grade,
+		"from":from_position,
+		"to":to_position,
+		"direction":direction,
+		"traversed":traversed.duplicate(true),
+		"newly_painted":newly_painted.duplicate(true),
+		"remaining":remaining,
+	}
+	_start_motion("path", from_position, to_position, accent, "", motion_time)
+	_impact(to_position, GOLD if completed else accent, 0.82 if completed else (0.48 if long_roll else 0.30))
+	_start_catalog_event(
+		kind, to_position, GOLD if completed else accent, grade, label, event_time,
+		{
+			"semantic":semantic,
+			"direction":direction_payload,
+			"traversed":traversed.duplicate(true),
+			"newly_painted":newly_painted.duplicate(true),
+			"revisit_count":outcome.get("revisit_count", 0),
+			"remaining":remaining,
+			"from_cell":from.duplicate(),
+			"to_cell":to.duplicate(),
+		}
+	)
+	_flash_feedback(label, GOLD if completed else accent)
+	_log_event(semantic, {
+		"direction":direction_payload,
+		"traversed":traversed.duplicate(true),
+		"newly_painted":newly_painted.duplicate(true),
+		"remaining":remaining,
+		"moves":state.get("moves", 0),
+	})
+	if completed:
+		_build_game_buttons()
+		_capture("path_win_amaze_level_%d" % int(state.get("level_number", 1)))
+
+func _amaze_next_level() -> void:
+	if game_id != "amaze" or str(state.get("status", "")) != "won":
+		return
+	if not amaze_model.advance_level():
+		return
+	amaze_level_index = amaze_model.level_index
+	catalog_fx.clear()
+	amaze_last_outcome = {}
+	amaze_object_fx = {}
+	_sync_amaze_state()
+	amaze_checkpoint_restored = false
+	_save_amaze_checkpoint()
+	_build_game_buttons()
+	_flash_feedback("进入第 %d 个迷宫" % int(state["level_number"]), GREEN)
+	_log_event("amaze_level_advanced", {"level_index":amaze_level_index, "level_id":state["level_id"]})
+	_capture("amaze_level_%d" % int(state["level_number"]))
+	queue_redraw()
+
 func _amaze_hint() -> void:
 	if state.get("status") != "playing":
+		return
+	if game_id == "amaze":
+		var hint := amaze_model.hint_direction()
+		if hint == Vector2i.ZERO:
+			_flash_feedback("这里没有可滑方向", RED)
+			return
+		state["hint"] = [hint.x, hint.y]
+		_flash_feedback("可%s滑动" % _direction_name(state["hint"]), CYAN)
+		_log_event("amaze_hint", {"direction":[hint.x, hint.y]})
 		return
 	var player: Array = state["player"]
 	var target: Array = state["target"]
@@ -7831,6 +8131,21 @@ func _amaze_hint() -> void:
 	_flash_feedback("建议%s" % _direction_name(state["hint"]), VIOLET if game_id == "arrow_go" else CYAN)
 	_log_event("path_hint", {"direction":str(direction)})
 
+func _amaze_board_metrics() -> Dictionary:
+	var width := maxi(1, int(state.get("width", state.get("size", 1))))
+	var height := maxi(1, int(state.get("height", state.get("size", 1))))
+	var span := maxi(width, height)
+	var cell := 430.0 / float(span)
+	var board_size := Vector2(float(width) * cell, float(height) * cell)
+	var origin := Vector2(54, 236) + (Vector2(430, 430) - board_size) * 0.5
+	return {"origin":origin, "cell":cell, "size":board_size, "width":width, "height":height}
+
+func _amaze_cell_center(x: int, y: int) -> Vector2:
+	var metrics := _amaze_board_metrics()
+	var origin: Vector2 = metrics["origin"]
+	var cell := float(metrics["cell"])
+	return origin + Vector2((float(x) + 0.5) * cell, (float(y) + 0.5) * cell)
+
 func _draw_amaze() -> void:
 	if game_id == "amaze_go":
 		_draw_amaze_go()
@@ -7838,62 +8153,184 @@ func _draw_amaze() -> void:
 	if game_id == "arrow_go":
 		_draw_arrow_go()
 		return
-	var grid_size := int(state["size"])
-	var cell := 430.0 / grid_size
-	var origin := Vector2(54, 236)
+	var metrics := _amaze_board_metrics()
+	var width := int(metrics["width"])
+	var height := int(metrics["height"])
+	var cell := float(metrics["cell"])
+	var origin: Vector2 = metrics["origin"]
+	var board_size: Vector2 = metrics["size"]
 	var painted: Array = state["painted"]
-	var accent: Color = _catalog_item(game_id).accent
-	_draw_section_heading("蓝图迷阵" if game_id == "amaze_go" else ("箭流中枢" if game_id == "arrow_go" else "霓彩工坊"), "相邻格点击或方向键移动", accent)
-	_draw_panel(Rect2(origin - Vector2(10, 10), Vector2(450, 450)), Color("081528", 0.88), Color(accent, 0.54), 18, 3)
-	for y in range(grid_size):
-		for x in range(grid_size):
-			var rect := Rect2(origin + Vector2(x * cell, y * cell), Vector2(cell - 2, cell - 2))
-			var fill := Color("16243f")
-			if painted[y][x]:
-				fill = Color(accent, 0.34)
-			_draw_panel(rect, fill, Color(INK, 0.11), 3 if game_id == "arrow_go" else 8, 1)
-			if game_id == "arrow_go":
-				_draw_path_arrow(rect.get_center(), state["arrows"][y][x], Color(accent, 0.82 if not painted[y][x] else 0.34), cell * 0.25)
-			elif game_id == "amaze_go":
-				_draw_maze_walls(rect, x, y, grid_size, accent)
-			elif painted[y][x]:
-				var paint := _paint_color(x + y)
-				paint.a = 0.72
-				draw_circle(rect.get_center(), cell * 0.34, paint)
-				if x > 0 and painted[y][x - 1]:
-					draw_line(rect.get_center(), rect.get_center() - Vector2(cell, 0), paint, cell * 0.55)
-				if y > 0 and painted[y - 1][x]:
-					draw_line(rect.get_center(), rect.get_center() - Vector2(0, cell), paint, cell * 0.55)
-	var target: Array = state["target"]
+	var walkable: Array = state["walkable"]
+	var palette := _amaze_paint_palette()
+	var accent: Color = palette["paint"]
+	var frame := Rect2(origin - Vector2(15, 15), board_size + Vector2(30, 30))
+	_draw_section_heading("彩漆工坊", "滑动到底 · 让轨道吸满颜色", accent)
+	# The playfield reads as one thick canvas-and-enamel workshop object before
+	# any particles or glow: contact, wood body, cream rim, then a quiet inset.
+	_draw_panel(Rect2(frame.position + Vector2(0, 8), frame.size), Color("160d1c", 0.44), Color.TRANSPARENT, 22, 0)
+	_draw_panel(frame, Color("f0d6bd"), Color("7d3651", 0.92), 21, 3)
+	_draw_panel(frame.grow(-7), Color("fff3dc"), Color("ffffff", 0.68), 16, 2)
+	_draw_panel(frame.grow(-12), Color("372238"), Color("7d3651", 0.42), 13, 2)
+
+	# Raised unpainted canvas cells establish topology independently of hue.
+	for y in range(height):
+		for x in range(width):
+			if not bool(walkable[y][x]):
+				continue
+			var rect := Rect2(origin + Vector2(x * cell, y * cell) + Vector2(2.5, 2.5), Vector2(cell - 5.0, cell - 5.0))
+			_draw_panel(Rect2(rect.position + Vector2(0, 3), rect.size), Color("130b18", 0.36), Color.TRANSPARENT, maxi(7, int(cell * 0.13)), 0)
+			_draw_panel(rect, Color("eadbc8"), Color("ba9f8c", 0.78), maxi(7, int(cell * 0.13)), 1)
+			draw_line(rect.position + Vector2(8, 4), Vector2(rect.end.x - 8, rect.position.y + 4), Color("fffaf0", 0.78), maxf(1.0, cell * 0.025), true)
+			draw_circle(rect.get_center() + Vector2(cell * 0.19, cell * 0.17), maxf(1.4, cell * 0.028), Color("9d7a70", 0.30))
+
+	# Painted cells become one connected wet ribbon. A just-committed traversal
+	# reveals in model order while the authoritative snapshot already stays final.
+	for y in range(height):
+		for x in range(width):
+			if not _amaze_visual_cell_painted(x, y):
+				continue
+			var center := _amaze_cell_center(x, y)
+			for direction_value in [Vector2i.RIGHT, Vector2i.DOWN]:
+				var direction: Vector2i = direction_value
+				var next_cell := Vector2i(x, y) + direction
+				if next_cell.x >= width or next_cell.y >= height or not _amaze_visual_cell_painted(next_cell.x, next_cell.y):
+					continue
+				var next_center := _amaze_cell_center(next_cell.x, next_cell.y)
+				draw_line(center + Vector2(1.5, 2.5), next_center + Vector2(1.5, 2.5), Color("5a1737", 0.54), cell * 0.60, true)
+				draw_line(center, next_center, accent, cell * 0.52, true)
+				draw_line(center - Vector2(0, cell * 0.105), next_center - Vector2(0, cell * 0.105), Color("ffd0dc", 0.50), cell * 0.075, true)
+
+	for y in range(height):
+		for x in range(width):
+			if not _amaze_visual_cell_painted(x, y):
+				continue
+			var rect := Rect2(origin + Vector2(x * cell, y * cell) + Vector2(3.5, 3.5), Vector2(cell - 7.0, cell - 7.0))
+			var paint := _amaze_cell_paint_color(x, y)
+			_draw_panel(Rect2(rect.position + Vector2(1.2, 2.8), rect.size), Color("54152f", 0.58), Color.TRANSPARENT, maxi(8, int(cell * 0.16)), 0)
+			_draw_panel(rect, paint, Color(paint.darkened(0.34), 0.74), maxi(8, int(cell * 0.16)), 1)
+			draw_arc(rect.get_center() - Vector2(0, cell * 0.04), cell * 0.245, PI * 1.08, PI * 1.88, 18, Color("ffe9ef", 0.58), maxf(1.4, cell * 0.045), true)
+			draw_circle(rect.get_center() + Vector2(cell * 0.20, cell * 0.18), maxf(1.5, cell * 0.032), Color("fff5e8", 0.70))
+
 	var player: Array = state["player"]
-	var target_pos := origin + Vector2((int(target[0]) + 0.5) * cell, (int(target[1]) + 0.5) * cell)
-	var player_pos := origin + Vector2((int(player[0]) + 0.5) * cell, (int(player[1]) + 0.5) * cell)
-	if game_id != "amaze":
-		draw_circle(target_pos, cell * 0.35 + sin(elapsed * 3.0) * 2.0, Color(AMBER, 0.16))
-		draw_arc(target_pos, cell * 0.25, 0, TAU, 24, AMBER, maxf(2.0, cell * 0.07), true)
-	draw_circle(player_pos, cell * 0.37, Color(accent, 0.18))
-	if game_id == "amaze_go":
-		draw_circle(player_pos, cell * 0.25, Color("f1d28a"))
-		draw_arc(player_pos, cell * 0.18, 0, TAU, 24, Color("75532c"), maxf(2.0, cell * 0.045), true)
-		draw_line(player_pos, player_pos + Vector2(cell * 0.12, -cell * 0.13), Color("b44343"), maxf(2.0, cell * 0.055), true)
-	elif game_id == "arrow_go":
-		draw_colored_polygon(PackedVector2Array([player_pos + Vector2(cell * 0.27, 0), player_pos + Vector2(-cell * 0.18, -cell * 0.20), player_pos + Vector2(-cell * 0.10, 0), player_pos + Vector2(-cell * 0.18, cell * 0.20)]), accent)
-	else:
-		draw_circle(player_pos, cell * 0.25, accent)
-		draw_circle(player_pos - Vector2(cell * 0.08, cell * 0.08), cell * 0.07, Color("fff4da", 0.88))
-	if game_id != "amaze":
-		_draw_center("终", target_pos, max(12, int(cell * 0.22)), COAL)
+	var player_pos := _amaze_cell_center(int(player[0]), int(player[1])) + _amaze_reject_offset()
+	if not _amaze_motion_active():
+		var pod_scale := _amaze_settle_scale()
+		draw_circle(player_pos, cell * 0.39 * maxf(pod_scale.x, pod_scale.y), Color(accent, 0.16))
+		_draw_amaze_paint_pod(player_pos, cell * 0.78, pod_scale, 1.0)
 	var painted_count := _painted_count()
-	if game_id == "amaze":
-		_draw_status_badge("涂色 %d%%" % int(float(painted_count) / float(grid_size * grid_size) * 100.0), Vector2(54, 692), accent, true, 124)
-		_draw_text("滚动彩球，涂满全部格子才能完成", Vector2(54, 746), 12, BRIGHT_MUTED)
-	elif game_id == "arrow_go":
-		_draw_status_badge("箭流%s" % _direction_name(state.get("hint", [1, 0])), Vector2(54, 692), accent, true, 124)
-		_draw_text("沿格内箭头辨认方向，寻找出口", Vector2(54, 746), 12, BRIGHT_MUTED)
-	else:
-		_draw_status_badge("轨迹 %d 格" % painted_count, Vector2(54, 692), accent, true, 124)
-		_draw_text("穿过蓝图迷宫，已走路径会持续点亮", Vector2(54, 746), 12, BRIGHT_MUTED)
-	_draw_text("目标在右下角", Vector2(388, 715), 12, Color(BRIGHT_MUTED, 0.78)) if game_id != "amaze" else _draw_text("覆盖全部区域", Vector2(388, 715), 12, Color(BRIGHT_MUTED, 0.78))
+	var walkable_count := maxi(1, int(state.get("walkable_count", 1)))
+	var progress := int(float(painted_count) / float(walkable_count) * 100.0)
+	_draw_status_badge("第 %d/%d 关 · %s · %d%%" % [int(state["level_number"]), int(state["level_count"]), str(state.get("level_name", "彩漆迷宫")), progress], Vector2(54, 692), accent, true, 224)
+	_draw_text("滚动颜料舱，经过的每格都会依次吸满彩漆", Vector2(54, 746), 12, Color("fff0e1", 0.86))
+	_draw_text("余 %d 格" % int(state.get("remaining", 0)), Vector2(437, 715), 12, Color("fff0e1", 0.72))
+
+
+func _amaze_paint_palette() -> Dictionary:
+	var palettes := [
+		{"paint":Color("ff739e"), "secondary":Color("ff9b75")},
+		{"paint":Color("4ed8cf"), "secondary":Color("72b9ff")},
+		{"paint":Color("f2c85b"), "secondary":Color("ff7e8f")},
+	]
+	return palettes[posmod(int(state.get("level_index", 0)), palettes.size())]
+
+
+func _amaze_cell_paint_color(x: int, y: int) -> Color:
+	var palette := _amaze_paint_palette()
+	var order: Array = state.get("paint_order", [])
+	var index := order.find([x, y])
+	var amount := 0.0 if index < 0 else float(posmod(index, 4)) * 0.055
+	return Color(palette["paint"]).lerp(Color(palette["secondary"]), amount)
+
+
+func _amaze_visual_cell_painted(x: int, y: int) -> bool:
+	var painted: Array = state.get("painted", [])
+	if y < 0 or y >= painted.size() or x < 0 or x >= painted[y].size() or not bool(painted[y][x]):
+		return false
+	if not _amaze_motion_active():
+		return true
+	var newly: Array = amaze_object_fx.get("newly_painted", [])
+	var index := newly.find([x, y])
+	if index < 0:
+		return true
+	return float(index + 1) / float(maxi(1, newly.size())) <= _amaze_motion_progress()
+
+
+func _amaze_motion_active() -> bool:
+	return game_id == "amaze" and motion_kind == "path" and motion_duration > 0.0 and elapsed >= motion_started and elapsed < motion_started + motion_duration
+
+
+func _amaze_motion_progress() -> float:
+	if motion_duration <= 0.0:
+		return 1.0
+	return clampf((elapsed - motion_started) / motion_duration, 0.0, 1.0)
+
+
+func _amaze_event_phase(effect: Dictionary = {}, now := -1.0) -> String:
+	var active_effect := amaze_object_fx if effect.is_empty() else effect
+	var sample_time := elapsed if now < 0.0 else float(now)
+	if active_effect.is_empty():
+		return "idle"
+	var duration := maxf(0.001, float(active_effect.get("duration", 0.62)))
+	var age := sample_time - float(active_effect.get("started", sample_time))
+	if age < 0.0 or age >= duration:
+		return "idle"
+	var t := age / duration
+	if t < 0.14:
+		return "intent"
+	if t < 0.48:
+		return "anticipation"
+	if t < 0.76:
+		return "impact"
+	return "settle"
+
+
+func _amaze_reject_offset() -> Vector2:
+	if reduced_effects:
+		return Vector2.ZERO
+	if str(amaze_object_fx.get("kind", "")) != "wall_reject":
+		return Vector2.ZERO
+	var duration := maxf(0.001, float(amaze_object_fx.get("duration", 0.52)))
+	var t := clampf((elapsed - float(amaze_object_fx.get("started", elapsed))) / duration, 0.0, 1.0)
+	if t >= 1.0:
+		return Vector2.ZERO
+	var direction := Vector2(amaze_object_fx.get("direction", Vector2i.ZERO)).normalized()
+	var envelope := pow(1.0 - t, 2.0)
+	return direction * sin(t * PI * 7.0) * 7.0 * envelope
+
+
+func _amaze_settle_scale() -> Vector2:
+	if reduced_effects:
+		return Vector2.ONE
+	if amaze_object_fx.is_empty():
+		return Vector2.ONE
+	var age := elapsed - float(amaze_object_fx.get("started", elapsed))
+	var duration := maxf(0.001, float(amaze_object_fx.get("duration", 0.62)))
+	if age < 0.0 or age >= duration:
+		return Vector2.ONE
+	if str(amaze_object_fx.get("kind", "")) == "wall_reject":
+		var compression := sin(clampf(age / duration / 0.44, 0.0, 1.0) * PI) * 0.13
+		return Vector2(1.0 - compression, 1.0 + compression)
+	var motion_time := float(amaze_object_fx.get("motion_duration", 0.28))
+	if age < motion_time:
+		return Vector2.ONE
+	var settle_t := clampf((age - motion_time) / maxf(0.001, duration - motion_time), 0.0, 1.0)
+	var grade := clampi(int(amaze_object_fx.get("grade", 1)), 1, 4)
+	var rebound := sin(clampf(settle_t / 0.52, 0.0, 1.0) * PI) * (0.055 + float(grade) * 0.018)
+	return Vector2(1.0 + rebound, 1.0 - rebound * 0.62)
+
+
+func _draw_amaze_paint_pod(center: Vector2, height: float, scale_value := Vector2.ONE, alpha := 1.0) -> void:
+	var size := Vector2(height * 0.915 * scale_value.x, height * scale_value.y)
+	_draw_amaze_ellipse(center + Vector2(1.5, height * 0.31), Vector2(size.x * 0.34, height * 0.13), Color("160b1d", 0.40 * alpha))
+	draw_texture_rect(AMAZE_GAG_PAINT_POD_TEXTURE, Rect2(center - size * 0.5, size), false, Color(1, 1, 1, alpha))
+
+
+func _draw_amaze_ellipse(center: Vector2, radii: Vector2, color: Color) -> void:
+	var points := PackedVector2Array()
+	for index in range(24):
+		var angle := float(index) / 24.0 * TAU
+		points.append(center + Vector2(cos(angle) * radii.x, sin(angle) * radii.y))
+	draw_colored_polygon(points, color)
 
 func _draw_arrow_go() -> void:
 	var grid_size := int(state["size"])

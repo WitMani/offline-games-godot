@@ -56,7 +56,8 @@ func _run() -> void:
 				var selectable: Array = game.state.get("selectable_ids", [])
 				if not selectable.is_empty():
 					game._tileclub_tap(game._tileclub_tile_center(int(selectable[0])))
-			"amaze_go", "arrow_go", "amaze": game._amaze_step(Vector2i.RIGHT)
+			"amaze_go", "arrow_go": game._amaze_step(Vector2i.RIGHT)
+			"amaze": game._amaze_step(Vector2i.UP)
 		await process_frame
 		if not game.state.has("moves"):
 			failures.append("state:%s" % id)

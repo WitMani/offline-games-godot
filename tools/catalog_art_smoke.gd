@@ -177,11 +177,6 @@ func _test_path_completion(id: String) -> void:
 
 func _test_paint_completion() -> void:
 	game._open_game("amaze")
-	var grid_size := int(game.state["size"])
-	for y in range(grid_size):
-		for x in range(grid_size):
-			game.state["painted"][y][x] = true
-	game.state["painted"][0][1] = false
-	game.state["player"] = [0, 0]
+	game._amaze_step(Vector2i.UP)
 	game._amaze_step(Vector2i.RIGHT)
 	_expect_event("amaze", "path_complete", 4)

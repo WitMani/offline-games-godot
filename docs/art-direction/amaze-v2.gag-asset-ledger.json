@@ -1,0 +1,212 @@
+{
+  "schema_version": "offline-games-gag-ledger/v1",
+  "created_at": "2026-08-20T18:49:32Z",
+  "scope": ["amaze"],
+  "starting_commit": "96bcf5170e1fd916aa1e78927d14534ecbd20c58",
+  "gag": {
+    "endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+    "transport": "MCP Streamable HTTP via direct Python client",
+    "server": "game-assets-generator",
+    "server_version_reported": "1.29.0",
+    "tools_count": 21,
+    "health_checked_at": "2026-08-20T18:28:00Z",
+    "execution_mode": {
+      "local_gpu": false,
+      "main_service_pytorch": false,
+      "semantic_embedding": "Gemini API",
+      "image": "fal.ai API",
+      "planning_or_critique_available": "OpenRouter API",
+      "background_removal": "Remove.bg API",
+      "audio": "ElevenLabs API"
+    },
+    "enabled_providers": [
+      "gemini",
+      "doubao",
+      "mock",
+      "elevenlabs",
+      "removebg",
+      "fal",
+      "openrouter",
+      "tripo",
+      "codex"
+    ]
+  },
+  "semantic_searches": [
+    {
+      "id": "amaze_visual_search",
+      "query": "无文字 透明背景 卡通游戏 涂色迷宫 湿润颜料滚珠 颜料弹珠 油漆飞溅 可读英雄对象",
+      "kinds": ["image"],
+      "limit": 16,
+      "result_count": 16,
+      "candidates": [
+        {"name": "juice_merge_burst.png", "score": 0.3942770114391229},
+        {"name": "20260124_164425_Green_slime_monster_gemini.png", "score": 0.39119737232176244},
+        {"name": "juice_merge_burst_transparent.png", "score": 0.38518300508968883},
+        {"name": "Character_Player_Hornet_sam.png", "score": 0.3801884038215384},
+        {"name": "character_31518.png", "score": 0.3771265280032461},
+        {"name": "generated_images__20260820_175440_FAL.ai.png", "score": 0.37688301003529895},
+        {"name": "20251117_112939_ground_step2_mask.png", "score": 0.3754794801682669},
+        {"name": "20251117_113556_ground_step2_mask.png", "score": 0.3754794801682669},
+        {"name": "VFX_Dash_WhiteSlash.png", "score": 0.37530924368960356},
+        {"name": "20251117_112631_ground_step2_mask.png", "score": 0.37527028390547773},
+        {"name": "kenney_smoke_03.png", "score": 0.37474387902315554},
+        {"name": "token_q2_runtime_source.png", "score": 0.37431650961826424}
+      ],
+      "decision": "reject all and generate",
+      "reason": "The closest files were 2048 Balls fruit-juice bursts, characters, masks and generic VFX. None supplied a single coherent rolling paint hero readable in the stable maze, and reusing fruit juice would violate the game-specific material pillar."
+    },
+    {
+      "id": "amaze_audio_search",
+      "query": "油漆滚动 湿润颜料刷过 迷宫长廊 涂色完成 短促游戏音效",
+      "kinds": ["audio"],
+      "limit": 16,
+      "result_count": 16,
+      "candidates": [
+        {"name": "garden_boss_bgm.mp3", "score": 0.6022876332802687},
+        {"name": "music_20251213_154333_fast_paced_chase_music__urgent.mp3", "score": 0.6022876332802687},
+        {"name": "d3fb372d8ab42f2a3c03201566490e02c861396c1faa7e38f7b5b50b8baca23d.mp3", "score": 0.6017574265966998},
+        {"name": "f14e54d2856aece8cd66e1a7a8efd05da637b79f9b242a0f55253cb5babfde91.mp3", "score": 0.599354306011748},
+        {"name": "music_20260330_002207_peaceful_ambient_exploration_m_loop.mp3", "score": 0.5991636369529924},
+        {"name": "accept.wav", "score": 0.5973164508280114},
+        {"name": "accept_32078.wav", "score": 0.5973164508280114},
+        {"name": "c8b142fec15c015c1d58606aa244cdbbb5da8d60c5163b509fb6ee88477e4a8b.mp3", "score": 0.5901395012047329},
+        {"name": "music_20251213_095552_dark_ominous_boss_battle_theme.mp3", "score": 0.586488718028681},
+        {"name": "music_20251213_095552_dark_ominous_boss_battle_theme_602253.mp3", "score": 0.586488718028681},
+        {"name": "302a5ce91db2a318e8dbfa5c89d37ffdd692739e21b1dcaf521db67703a85324.mp3", "score": 0.5864405148891583},
+        {"name": "e116c21a4e7fbf93f9b55faad69897e51eedbc122317e6d56a28c43dbb2d2185.mp3", "score": 0.5864081032729351}
+      ],
+      "decision": "reject all and generate",
+      "reason": "The results were long-form boss/chase/exploration music, opaque hashed clips or generic accept sounds. None combined a wet rolling swish, corridor rhythm and tactile stopping contact."
+    }
+  ],
+  "image_generations": [
+    {
+      "asset_id": "gag-image-20260821-023012-fal",
+      "status": "rejected",
+      "provider": "fal.ai",
+      "model": "fal-ai/flux-pro/v1.1",
+      "seed": null,
+      "server_source": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/path_games/amaze/gag-v2/generated_images__20260821_023012_FAL.ai.png",
+      "source_container": "JPEG payload despite .png archive suffix",
+      "source_dimensions": [1024, 1024],
+      "source_sha256": "76466c8a4c0ab7df517bdcfd3f9bce8ebee3c564e3b395458fc10cca727cf307",
+      "prompt": "Production-ready isolated 2D cartoon mobile game hero object, exactly one single glossy paint roller ball centered and nearly filling the canvas, perfect circular silhouette in straight front orthographic view. The sphere is a tactile violet-magenta wet-paint marble with a small cream enamel cap and a subtle mint paint ribbon wrapped around its lower third, readable as a rolling paint applicator rather than a fruit or character. Strong coherent contact shadow directly beneath, saturated wet-paint body, crisp darker rim, pearly top-left highlight, tiny controlled paint droplets attached to the bottom edge, subtle lacquer texture. Bold clean silhouette readable at 52 pixels. No face, no eyes, no mouth, no limbs, no letters, no numbers, no words, no logo, no UI, no maze, no board, no scene, no multiple objects, no detached splashes. Plain neutral gray studio background with strong silhouette separation for later background removal.",
+      "style_reference_prompt": "Warm crafted pocket-game cartoon art; paint workshop fantasy; structured contact, body, edge and highlight layers; tactile premium toy; magenta-violet, mint and cream palette; cheerful and clean, not photoreal, no neon glow.",
+      "rejection_reason": "At both source and intended small size the large cream orbital band read as an ornamental lacquer ball rather than a wet paint tool. It is not committed, referenced or shipped."
+    },
+    {
+      "asset_id": "gag-image-20260821-023128-fal",
+      "status": "selected_repair",
+      "provider": "fal.ai",
+      "model": "fal-ai/flux-pro/v1.1",
+      "seed": null,
+      "server_source": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/path_games/amaze/gag-v2/generated_images__20260821_023128_FAL.ai.png",
+      "source_container": "JPEG payload despite .png archive suffix",
+      "source_dimensions": [1024, 1024],
+      "source_sha256": "86f715278f9dd8df237aedd6c50504690a46d74ff818343cd451d852d0cc2720",
+      "prompt": "Production-ready isolated 2D cartoon mobile game hero object, exactly one compact spherical paint dauber centered and filling the canvas, straight front orthographic view. A simple round plum-purple rubber ball coated in thick glossy coral-pink paint, with one very small flat mint-green painter handle tab on top and three short wet paint drips clinging to its lower edge. Unmistakably a playful paint applicator: visible wet bristle seam around the lower third, one tiny attached paint bead, no ornamental band, no jewelry, no perfume bottle, no Christmas ornament, no toy capsule. Strong coherent contact shadow, simple saturated body, dark clean rim, single pearly top-left highlight, restrained wet-paint texture. Bold circular silhouette readable at 52 pixels. Exactly one object. No face, eyes, mouth, limbs, letters, numbers, words, logo, UI, maze, board, scene, detached splash or second object. Plain neutral gray studio background for clean background removal.",
+      "style_reference_prompt": "Warm crafted pocket-game cartoon art; paint workshop fantasy; chunky premium toy proportions; clear contact/body/edge/highlight layers; plum, coral-pink, mint and cream palette; cheerful clean 2D game asset, not photoreal and not neon.",
+      "derivations": [
+        {
+          "tool": "remove_background",
+          "provider": "removebg",
+          "server_path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/path_games/amaze/gag-v2/amaze_paint_pod_nobg.png",
+          "container": "PNG RGBA",
+          "dimensions": [500, 500],
+          "sha256": "1a4c3ac34d9679f4cae2b17babc2c706808cae4f571611dabd06a5266421bbc6"
+        },
+        {
+          "tool": "crop_image",
+          "mode": "auto_trim",
+          "padding": 8,
+          "server_path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/path_games/amaze/gag-v2/amaze_paint_pod_trimmed.png",
+          "container": "PNG RGBA",
+          "dimensions": [324, 354],
+          "sha256": "c071616ed85c15c394f644b90329bdd8c4c302ede5ec4c378aa19ae17872ee36"
+        }
+      ],
+      "runtime_asset": "res://assets/art/catalog/path_games/gag/amaze_paint_pod_gag_v2.png",
+      "runtime_sha256": "c071616ed85c15c394f644b90329bdd8c4c302ede5ec4c378aa19ae17872ee36",
+      "first_visible_beat": "untouched opening board on the only painted start cell",
+      "intended_runtime_size": "approximately 49x54 to 68x74 pixels as topology cell size changes",
+      "runtime_references": [
+        "stable player object in main.gd::_draw_amaze",
+        "every legal corridor travel in main.gd::_draw_motion_overlay",
+        "blocked object recoil and semantic settle",
+        "Amaze result plaque in main.gd::_draw_result_overlay"
+      ],
+      "matched_visibility_evidence": "docs/audit/amaze-gag-v2/candidate/00-stable-gag-visible.webp",
+      "shipped": true
+    }
+  ],
+  "audio_generations": [
+    {
+      "asset_id": "amaze_wet_corridor_roll",
+      "version": "v1",
+      "provider": "elevenlabs",
+      "model": "eleven_text_to_sound_v2",
+      "seed": null,
+      "delivery_digest": "665cd504c79f3243d047a6a91e736e00f8e8a18f4d80318dbb7a0ca17b802cb3",
+      "delivery_manifest_remote": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/path_games/amaze/gag-v2/sfx/sfx/amaze_wet_corridor_roll/v1/delivery.json",
+      "prompt": "A short tactile mobile puzzle game sound effect: a small rubber paint pod rolls quickly through a corridor with a smooth wet paint swish, three light rhythmic roller bumps, and a soft enamel stop click. Cheerful craft workshop tone, crisp fast attack, compact short decay, no voice, no speech, no melody, no ambience, no explosion.",
+      "source_quality_status": "issues_detected",
+      "failed_checks": ["variation_1.loudness", "variation_2.loudness"],
+      "variations": [
+        {
+          "variation": 1,
+          "decision": "selected",
+          "source_master_remote": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/path_games/amaze/gag-v2/sfx/sfx/amaze_wet_corridor_roll/v1/amaze_wet_corridor_roll_01_master.wav",
+          "source_container": "16-bit PCM WAV",
+          "source_sha256": "5c7db352bc38f0c1920bcc1f9d3ce6b35a214fb6af5876baf9ab202f2735117d",
+          "duration_seconds": 0.448688,
+          "sample_rate": 48000,
+          "channels": 1,
+          "measured_lufs": -28.05,
+          "measured_true_peak_db": -8.37,
+          "leading_silence_ms": 0.0,
+          "trailing_silence_ms": 0.0,
+          "selection_reason": "Long enough to span a routine corridor gesture and retains transient headroom for a bounded runtime derivation."
+        },
+        {
+          "variation": 2,
+          "decision": "rejected",
+          "source_master_remote": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/path_games/amaze/gag-v2/sfx/sfx/amaze_wet_corridor_roll/v1/amaze_wet_corridor_roll_02_master.wav",
+          "source_container": "16-bit PCM WAV",
+          "source_sha256": "a4de9df39c3c781ac6c4653625d3bd80966ab3d611b6f3bcae60556671d07b6a",
+          "duration_seconds": 0.256417,
+          "sample_rate": 48000,
+          "channels": 1,
+          "measured_lufs": null,
+          "measured_true_peak_db": -1.03,
+          "leading_silence_ms": 0.0,
+          "trailing_silence_ms": 0.021,
+          "rejection_reason": "Too short for the four-cell frequent roll envelope and already close to the peak ceiling."
+        }
+      ],
+      "derivation": "ffmpeg loudnorm I=-16:TP=-1.5:LRA=7; retain the short-transient limitation; 48 kHz mono; libvorbis q5",
+      "runtime_asset": "res://assets/audio/catalog/path_games/gag/amaze_wet_corridor_roll_gag_v2.ogg",
+      "runtime_sha256": "fe90d0137f851fe2da8614f2d362bda298acfc5f18a82f479338094306bc6330",
+      "runtime_qa": {
+        "container": "Ogg Vorbis",
+        "duration_seconds": 0.448688,
+        "sample_rate": 48000,
+        "channels": 1,
+        "measured_lufs": -21.5,
+        "measured_true_peak_db": -1.8,
+        "note": "The integrated target is not reachable for this very short transient without excessive limiting; the source warning remains explicit and runtime gain is bounded."
+      },
+      "first_audible_beat": "every legal short, long, revisit, near-complete and completion corridor command",
+      "runtime_reference": "main.gd::_catalog_event_sfx for Amaze path_roll/path_revisit/path_near_complete/path_complete",
+      "subjective_listening_claim": false,
+      "shipped": true
+    }
+  ],
+  "shipping_boundary": {
+    "source_masters_in_repository": 0,
+    "rejected_generations_in_repository": 0,
+    "private_reference_pixels_in_repository": 0,
+    "only_runtime_derivatives_ship": true,
+    "credentials_in_repository": 0,
+    "ephemeral_download_urls": "omitted because signed URLs expire"
+  }
+}

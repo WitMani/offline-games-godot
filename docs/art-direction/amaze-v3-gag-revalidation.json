@@ -1,0 +1,107 @@
+{
+  "schema_version": "offline-games-gag-revalidation/v1",
+  "observed_date": "2026-08-20",
+  "scope": ["amaze"],
+  "asset_identity_policy": "reuse the existing v2 asset IDs and hashes; do not relabel old assets as newly generated v3 work",
+  "authoritative_generation_ledger": "docs/art-direction/amaze-v2.gag-asset-ledger.json",
+  "gag_live_revalidation": {
+    "endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+    "transport": "MCP Streamable HTTP through the repository-independent Python client",
+    "reported_tools": 21,
+    "system": {
+      "gpu_detected": false,
+      "main_service_pytorch_installed": false,
+      "pure_api_available": true,
+      "enabled_providers": ["gemini", "doubao", "mock", "elevenlabs", "removebg", "fal", "openrouter", "tripo", "codex"]
+    }
+  },
+  "search_revalidation": [
+    {
+      "kind": "image",
+      "query": "无文字 透明背景 卡通游戏 涂色迷宫 湿润颜料滚珠 颜料弹珠 油漆飞溅 可读英雄对象",
+      "limit": 16,
+      "top_results": [
+        {"name": "amaze_paint_pod_trimmed.png", "score": 0.4143546190996011, "decision": "reuse exact existing runtime derivative"},
+        {"name": "amaze_paint_pod_nobg.png", "score": 0.4062464567874049, "decision": "retain as source derivation only"},
+        {"name": "juice_merge_burst.png", "score": 0.3942770114391229, "decision": "reject: unrelated fruit-juice identity"},
+        {"name": "20260124_164425_Green_slime_monster_gemini.png", "score": 0.39119737232176244, "decision": "reject: unrelated character"},
+        {"name": "juice_merge_burst_transparent.png", "score": 0.38518300508968883, "decision": "reject: unrelated fruit-juice identity"}
+      ],
+      "decision": "no new generation; the exact approved derivative is now the highest semantic result and remains visibly fit"
+    },
+    {
+      "kind": "audio",
+      "query": "油漆滚动 湿润颜料刷过 迷宫长廊 涂色完成 短促游戏音效",
+      "limit": 16,
+      "decision": "reject generic long-form music and accept clips; none express a wet corridor roll"
+    },
+    {
+      "kind": "audio",
+      "query": "amaze paint pod wet corridor roll paint applicator",
+      "limit": 30,
+      "top_results": [
+        {"name": "amaze_wet_corridor_roll_01_master.wav", "score": 0.507785, "decision": "reuse selected source master"},
+        {"name": "amaze_wet_corridor_roll_02_master.wav", "score": 0.49476122609090534, "decision": "retain rejected variation"}
+      ],
+      "decision": "no new generation; exact source family is recovered by the game-specific query"
+    }
+  ],
+  "image_asset": {
+    "asset_id": "gag-image-20260821-023128-fal",
+    "provider": "fal.ai",
+    "model": "fal-ai/flux-pro/v1.1",
+    "prompt": "Production-ready isolated 2D cartoon mobile game hero object, exactly one compact spherical paint dauber centered and filling the canvas, straight front orthographic view. A simple round plum-purple rubber ball coated in thick glossy coral-pink paint, with one very small flat mint-green painter handle tab on top and three short wet paint drips clinging to its lower edge. Unmistakably a playful paint applicator: visible wet bristle seam around the lower third, one tiny attached paint bead, no ornamental band, no jewelry, no perfume bottle, no Christmas ornament, no toy capsule. Strong coherent contact shadow, simple saturated body, dark clean rim, single pearly top-left highlight, restrained wet-paint texture. Bold circular silhouette readable at 52 pixels. Exactly one object. No face, eyes, mouth, limbs, letters, numbers, words, logo, UI, maze, board, scene, detached splash or second object. Plain neutral gray studio background for clean background removal.",
+    "source_master": {
+      "archive_name": "generated_images__20260821_023128_FAL.ai.png",
+      "actual_container": "JPEG",
+      "dimensions": [1024, 1024],
+      "sha256": "86f715278f9dd8df237aedd6c50504690a46d74ff818343cd451d852d0cc2720",
+      "live_download_hash_match": true
+    },
+    "derivation": [
+      {"tool": "remove_background", "provider": "removebg", "dimensions": [500, 500], "sha256": "1a4c3ac34d9679f4cae2b17babc2c706808cae4f571611dabd06a5266421bbc6"},
+      {"tool": "crop_image", "mode": "auto_trim", "padding": 8, "dimensions": [324, 354], "sha256": "c071616ed85c15c394f644b90329bdd8c4c302ede5ec4c378aa19ae17872ee36", "live_download_hash_match": true}
+    ],
+    "runtime_asset": "res://assets/art/catalog/path_games/gag/amaze_paint_pod_gag_v2.png",
+    "runtime_sha256": "c071616ed85c15c394f644b90329bdd8c4c302ede5ec4c378aa19ae17872ee36",
+    "runtime_references": ["main.gd::_draw_amaze", "main.gd::_draw_motion_overlay", "main.gd::_draw_result_overlay"],
+    "ordinary_visibility": "untouched opening board and every settled state",
+    "frequent_visibility": "every legal roll and revisit",
+    "peak_visibility": "completion impact and result plaque",
+    "v3_evidence": "docs/audit/amaze-v3/art/00-stable-gag-visible.webp"
+  },
+  "audio_asset": {
+    "asset_id": "amaze_wet_corridor_roll",
+    "version": "v1",
+    "provider": "elevenlabs",
+    "model": "eleven_text_to_sound_v2",
+    "prompt": "A short tactile mobile puzzle game sound effect: a small rubber paint pod rolls quickly through a corridor with a smooth wet paint swish, three light rhythmic roller bumps, and a soft enamel stop click. Cheerful craft workshop tone, crisp fast attack, compact short decay, no voice, no speech, no melody, no ambience, no explosion.",
+    "source_master": {
+      "archive_name": "amaze_wet_corridor_roll_01_master.wav",
+      "container": "16-bit PCM WAV",
+      "duration_seconds": 0.448688,
+      "sample_rate": 48000,
+      "channels": 1,
+      "sha256": "5c7db352bc38f0c1920bcc1f9d3ce6b35a214fb6af5876baf9ab202f2735117d",
+      "live_download_hash_match": true,
+      "known_warning": "source loudness gate reported issues; no subjective listening claim is made"
+    },
+    "rejected_variation": {
+      "archive_name": "amaze_wet_corridor_roll_02_master.wav",
+      "sha256": "a4de9df39c3c781ac6c4653625d3bd80966ab3d611b6f3bcae60556671d07b6a",
+      "reason": "too short for the frequent four-cell envelope and close to the peak ceiling"
+    },
+    "derivation": "ffmpeg loudnorm I=-16:TP=-1.5:LRA=7; 48 kHz mono; libvorbis q5",
+    "runtime_asset": "res://assets/audio/catalog/path_games/gag/amaze_wet_corridor_roll_gag_v2.ogg",
+    "runtime_sha256": "fe90d0137f851fe2da8614f2d362bda298acfc5f18a82f479338094306bc6330",
+    "runtime_reference": "main.gd::_catalog_event_sfx for path_roll, path_revisit, path_near_complete and path_complete",
+    "frequent_audibility": "every legal short, long, revisit, near-complete and complete command"
+  },
+  "shipping_boundary": {
+    "new_generations_for_v3": 0,
+    "source_masters_in_repository": 0,
+    "rejected_generations_in_repository": 0,
+    "credentials_or_signed_urls_in_repository": 0,
+    "only_existing_runtime_derivatives_ship": true
+  }
+}
