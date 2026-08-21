@@ -66,13 +66,26 @@ func _test_sudoku_roles() -> void:
 	_expect_event("meowdoku_error", "cat_error", 2)
 	game._open_game("sudoku")
 	var solution: Array = game.state["solution"]
-	for y in range(3):
-		for x in range(3):
-			game.state["board"][y][x] = solution[y][x]
-	game.state["board"][0][2] = 0
-	game.state["selected"] = [2, 0]
-	game._sudoku_place(int(solution[0][2]))
+	var cell := _first_sudoku_editable()
+	var block := int(cell.y / 3) * 3 + int(cell.x / 3)
+	var start_x := (block % 3) * 3
+	var start_y := int(block / 3) * 3
+	for y in range(start_y, start_y + 3):
+		for x in range(start_x, start_x + 3):
+			game.sudoku_model.board[y][x] = solution[y][x]
+	game.sudoku_model.board[cell.y][cell.x] = 0
+	game.sudoku_model.select(cell)
+	game._sync_sudoku_state()
+	game._sudoku_place(int(solution[cell.y][cell.x]))
 	_expect_event("sudoku_block", "logic_block_complete", 3)
+
+
+func _first_sudoku_editable() -> Vector2i:
+	for y in range(9):
+		for x in range(9):
+			if int(game.state.given[y][x]) == 0:
+				return Vector2i(x, y)
+	return Vector2i.ZERO
 
 
 func _test_solitaire_grade() -> void:

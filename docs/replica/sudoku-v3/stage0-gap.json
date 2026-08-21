@@ -1,0 +1,45 @@
+{
+  "schema_version": "offline-games-stage0-gap/v1",
+  "game_id": "sudoku",
+  "target": {
+    "title": "Offline Games - No Wifi Games",
+    "platform": "iOS",
+    "track_id": 6448104157,
+    "bundle_id": "com.JindoBlu.OfflineGamesIOS",
+    "version": "3.14.1",
+    "released_at": "2026-08-07T15:42:11Z",
+    "package_sha256": null,
+    "package_not_acquired_reason": "Public listing and promotional evidence only; no distributable package was acquired."
+  },
+  "replica_starting_head": "3e561fb3c55f3b0b813da2b9ee9468cd4d290bae",
+  "baseline": {
+    "givens": 54,
+    "holes": 27,
+    "solution_count": 3,
+    "acceptance_behavior": "Compares every entry to one stored solution and rejects other values."
+  },
+  "blocking_mismatch": "The baseline puzzle is not unique, but the implementation treats one answer grid as exclusively authoritative.",
+  "resolution": {
+    "model_commit": "ee75d92eb9cc9cd88d95cd1b57846d2b88135f3f",
+    "runtime_commit": "7f70019b1a6bbb689e0a03f8a60eaa42d744ef46",
+    "generated_givens": 36,
+    "solution_count": 1,
+    "model_smoke": "PASS assertions=54",
+    "runtime_smoke": "PASS assertions=36",
+    "presentation_smoke": "PASS assertions=118",
+    "catalog_smoke": "PASS games=14",
+    "font_coverage": "PASS assertions=65",
+    "font_subset": "PASS required=3879 bytes=1816916"
+  },
+  "remaining_gates": [
+    "retained wrong-cell and notes runtime visibility",
+    "reduced-effects behavior",
+    "continuous error and completion visual evidence",
+    "busy-frame performance",
+    "clean fingerprinted Web and PCK",
+    "real-browser action, restart, and reload recovery"
+  ],
+  "required_mechanics_slice": "Introduce a renderer-free Sudoku model and adapter probes before changing presentation.",
+  "production_authorized": true,
+  "stage_status": "mechanics_pass_art_unblocked"
+}

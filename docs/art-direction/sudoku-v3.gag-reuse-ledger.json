@@ -1,0 +1,52 @@
+{
+  "schema_version": "offline-games-gag-reuse-ledger/v1",
+  "generated_at": "2026-08-20",
+  "scope": ["sudoku"],
+  "decision": "reuse verified v2 signature family; no character or signature-role gap",
+  "new_semantic_searches": [],
+  "new_generations": [],
+  "source_ledger": {
+    "path": "docs/art-direction/sudoku-v2.gag-asset-ledger.json",
+    "sha256": "5921947091a53c7bfba7cc3888517bb68b44eb68a1803bb8cc57c4d7589d4209"
+  },
+  "gag": {
+    "endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+    "server": "game-assets-generator",
+    "server_version": "1.29.0",
+    "transport": "MCP Streamable HTTP",
+    "execution_mode": "pure API",
+    "providers": ["gemini", "removebg", "elevenlabs"]
+  },
+  "visual": {
+    "runtime_asset": "res://assets/art/logic/gag-v1/sudoku_compass_reward.png",
+    "runtime_sha256": "a8980a0667e547c8c8b7486f29a65905126cac2da2af41bfca5ab96afe526c97",
+    "dimensions": [341, 344],
+    "source_master_remote": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/logic_games/gag-v1/masters/generated_images__20260820_183633_Gemini.png",
+    "source_master_sha256": "b68c4431b5a5bf0c124f7cfa395fec094fb1da216e6f1c315fedfb6689bf07f6",
+    "provider": "gemini",
+    "model": "gemini-3.1-flash-image",
+    "derivation": ["remove_background via removebg", "auto-trim crop with 12px padding"],
+    "runtime_references": [
+      "presentation/logic_game_presenter.gd::SUDOKU_REWARD_TEXTURE",
+      "draw_header_badge ordinary stable beat",
+      "logic_block_complete reward",
+      "logic_complete reward",
+      "draw_result_badge"
+    ],
+    "ordinary_visibility_evidence": "docs/audit/sudoku-v3/candidate/00-stable-ordinary.webp"
+  },
+  "audio": {
+    "runtime_asset": "res://assets/audio/logic/gag-v1/sudoku_complete_reward.ogg",
+    "runtime_sha256": "4be425f00093f2dc47073c0d405f4d2332e32554bc433959ee0c460dff952d12",
+    "duration_seconds": 1.080042,
+    "format": "Vorbis mono 48000 Hz",
+    "source_master_remote": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/logic_games/gag-v1/masters/sfx/offline_games_sudoku_compass_complete_gag/v1/offline_games_sudoku_compass_complete_gag_02_master.wav",
+    "source_master_sha256": "741ff214ac3a57697a5d8d8568b30578089261800fe47541ed9301154dfd83d0",
+    "provider": "elevenlabs",
+    "model": "eleven_text_to_sound_v2",
+    "derivation": "ffmpeg loudnorm I=-20:LRA=7:TP=-3, 48 kHz mono Vorbis q5",
+    "runtime_reference": "main.gd::SFX_SUDOKU_GAG_COMPLETE -> _play_logic_event_sfx(logic_complete, grade 4)",
+    "runtime_probe": "tools/sudoku_presentation_smoke.gd::_audio_stream_was_routed"
+  },
+  "provenance_boundary": "v3 reuses and verifies the existing GAG outputs; it does not relabel code-native drawing or prior assets as new GAG work"
+}

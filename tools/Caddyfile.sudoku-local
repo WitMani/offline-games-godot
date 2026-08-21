@@ -1,0 +1,18 @@
+:{$SUDOKU_WEB_PORT:18791} {
+	root * {$SUDOKU_WEB_ROOT}
+	encode gzip
+
+	@entry path / /index.html
+	header @entry Cache-Control "no-cache"
+
+	@fingerprinted path_regexp fp ^/index\.[0-9a-f]{12}\..+$
+	header @fingerprinted Cache-Control "public, max-age=31536000, immutable"
+
+	header {
+		Cross-Origin-Opener-Policy "same-origin"
+		Cross-Origin-Embedder-Policy "require-corp"
+		X-Content-Type-Options "nosniff"
+	}
+
+	file_server
+}

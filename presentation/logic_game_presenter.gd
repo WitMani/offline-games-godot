@@ -18,6 +18,7 @@ var event_block := -1
 var event_number := 0
 var event_grade := 0
 var event_started := -10.0
+var reduced_effects_active := false
 
 
 func reset(now: float, initial_cell := Vector2i(0, 0)) -> void:
@@ -56,6 +57,7 @@ func snapshot(now: float) -> Dictionary:
 		"grade": event_grade,
 		"event_age": maxf(0.0, now - event_started),
 		"font_role": "ui_cjk",
+		"reduced_effects": reduced_effects_active,
 	}
 
 
@@ -80,21 +82,25 @@ func draw_result_badge(canvas: CanvasItem, game_id: String, center: Vector2) -> 
 	canvas.draw_arc(center, 40.0, -PI * 0.88, PI * 0.20, 30, Color("d55f96" if meow else "7566c7", 0.34), 2.0, true)
 
 
-func draw_board(canvas: CanvasItem, game_id: String, state: Dictionary, now: float, number_font: Font) -> void:
+func draw_board(canvas: CanvasItem, game_id: String, state: Dictionary, now: float, number_font: Font, reduced_effects := false) -> void:
+	reduced_effects_active = reduced_effects
 	var board: Array = state.get("board", [])
 	var given: Array = state.get("given", [])
+	var solution: Array = state.get("solution", [])
+	var notes: Array = state.get("notes", [])
+	var wrong: Array = state.get("wrong", [])
 	if board.size() != 9 or given.size() != 9:
 		return
 	var meow := game_id == "meowdoku"
 	var accent := Color("e16c9f") if meow else Color("7566c7")
 	_draw_folio_shell(canvas, meow, accent)
-	_draw_event_block_wash(canvas, meow, accent, now)
+	_draw_event_block_wash(canvas, meow, accent, now, reduced_effects)
 	for y in range(9):
 		for x in range(9):
-			_draw_cell(canvas, meow, board, given, Vector2i(x, y), accent, now, number_font)
+			_draw_cell(canvas, meow, board, given, notes, wrong, Vector2i(x, y), accent, now, number_font, reduced_effects)
 	_draw_grid(canvas, meow)
-	_draw_completed_block_marks(canvas, meow, board, accent)
-	_draw_object_event(canvas, meow, accent, now, number_font)
+	_draw_completed_block_marks(canvas, meow, board, solution, wrong, accent)
+	_draw_object_event(canvas, meow, accent, now, number_font, reduced_effects)
 
 
 func _draw_folio_shell(canvas: CanvasItem, meow: bool, accent: Color) -> void:
@@ -123,6 +129,11 @@ func _draw_folio_shell(canvas: CanvasItem, meow: bool, accent: Color) -> void:
 		_draw_box(canvas, rect.grow(8.0), 7.0, Color("4a4237"))
 		_draw_box(canvas, rect.grow(4.0), 5.0, Color("d8c7a7"))
 		_draw_box(canvas, rect, 3.0, Color("faf5e8"))
+		# A brass spring clip and ruled registration ticks keep the stable frame
+		# identifiable as a working folio before any feedback animation begins.
+		_draw_box(canvas, Rect2(rect.get_center().x - 34.0, rect.position.y - 14.0, 68.0, 13.0), 3.0, Color("8b7047"))
+		_draw_box(canvas, Rect2(rect.get_center().x - 28.0, rect.position.y - 11.0, 56.0, 8.0), 2.0, Color("d5b77c"))
+		canvas.draw_line(Vector2(rect.get_center().x - 21.0, rect.position.y - 8.0), Vector2(rect.get_center().x + 21.0, rect.position.y - 8.0), Color("fff0c8", 0.62), 1.0, true)
 		for mark in range(9):
 			var mark_x := rect.position.x + 25.0 + float(mark) * 49.5
 			canvas.draw_line(Vector2(mark_x, rect.position.y - 7), Vector2(mark_x, rect.position.y - 2), Color("b78f55", 0.74), 1.5, true)
@@ -135,12 +146,14 @@ func _draw_folio_shell(canvas: CanvasItem, meow: bool, accent: Color) -> void:
 	canvas.draw_arc(rect.get_center(), rect.size.x * 0.69, -PI * 0.92, -PI * 0.08, 48, Color(accent, 0.035), 1.5, true)
 
 
-func _draw_cell(canvas: CanvasItem, meow: bool, board: Array, given: Array, cell: Vector2i, accent: Color, now: float, number_font: Font) -> void:
+func _draw_cell(canvas: CanvasItem, meow: bool, board: Array, given: Array, notes: Array, wrong: Array, cell: Vector2i, accent: Color, now: float, number_font: Font, reduced_effects: bool) -> void:
 	var base := Rect2(BOARD_ORIGIN + Vector2(cell.x * CELL_SIZE, cell.y * CELL_SIZE), Vector2(CELL_SIZE, CELL_SIZE))
-	var visual := _animated_cell_rect(base, cell, now)
+	var visual := _animated_cell_rect(base, cell, now, reduced_effects)
 	var selected := cell == selected_cell
 	var value := int(board[cell.y][cell.x])
 	var fixed := int(given[cell.y][cell.x]) > 0
+	var is_wrong: bool = wrong.size() == 9 and wrong[cell.y] is Array and wrong[cell.y].size() == 9 and bool(wrong[cell.y][cell.x])
+	var note_mask: int = int(notes[cell.y][cell.x]) if notes.size() == 9 and notes[cell.y] is Array and notes[cell.y].size() == 9 else 0
 	var same_group := cell.x / 3 == selected_cell.x / 3 and cell.y / 3 == selected_cell.y / 3
 	var related := cell.x == selected_cell.x or cell.y == selected_cell.y or same_group
 	var block_even := ((cell.x / 3) + (cell.y / 3)) % 2 == 0
@@ -155,31 +168,42 @@ func _draw_cell(canvas: CanvasItem, meow: bool, board: Array, given: Array, cell
 			fill = Color("e9e2d7") if block_even else Color("e4dccf")
 	if related:
 		fill = fill.lerp(Color(accent, 0.72), 0.10)
+	if is_wrong:
+		fill = fill.lerp(Color("f3a4a9"), 0.22)
 	if selected:
 		fill = fill.lerp(Color(accent, 0.88), 0.25)
-	var raised := selected or (cell == event_cell and event_kind in ["logic_correct", "logic_erase", "logic_error"])
+	var raised := selected or (cell == event_cell and event_kind in ["logic_correct", "logic_erase", "logic_error", "logic_hint", "logic_note", "logic_undo"])
 	if raised:
 		_draw_box(canvas, Rect2(visual.position + Vector2(0, 2.5), visual.size), 4.0, Color("3d2132" if meow else "30343b", 0.22))
 	# The heavy grid supplies each cell silhouette. A single inset paper fill keeps
 	# the 81-cell stable frame tactile without multiplying rounded-box draw calls.
 	canvas.draw_rect(visual.grow(-0.7), fill)
 	canvas.draw_line(visual.position + Vector2(4, 2), Vector2(visual.end.x - 4, visual.position.y + 2), Color("ffffff", 0.42), 1.0, true)
+	if not meow:
+		var grain_y := visual.position.y + 9.0 + float(posmod(cell.x * 7 + cell.y * 11, 22))
+		canvas.draw_line(Vector2(visual.position.x + 6.0, grain_y), Vector2(visual.position.x + 16.0 + float(posmod(cell.x + cell.y, 4)) * 3.0, grain_y + 0.5), Color("806f58", 0.055), 1.0, true)
 	if selected:
 		_draw_cell_focus(canvas, visual, meow, accent)
 	if value > 0:
-		var ink := Color("253047") if fixed else (Color("b24778") if meow else Color("3f5f9b"))
-		var number_scale := _number_scale_for_cell(cell, now)
+		var ink := Color("c23f52") if is_wrong else (Color("253047") if fixed else (Color("b24778") if meow else Color("3f5f9b")))
+		var number_scale := _number_scale_for_cell(cell, now, reduced_effects)
 		var font_size := maxi(18, int(23.0 * number_scale))
 		_draw_center_text(canvas, number_font, str(value), visual.get_center() + Vector2(0, 1), font_size, ink)
 		if not fixed:
 			# Entered values have a small ink underline/dot, adding a non-color
 			# distinction from printed givens.
 			var underline_y := visual.end.y - 8.0
-			canvas.draw_line(Vector2(visual.get_center().x - 7, underline_y), Vector2(visual.get_center().x + 7, underline_y), Color(ink, 0.46), 1.6, true)
-			canvas.draw_circle(Vector2(visual.get_center().x + 10, underline_y - 1), 1.4, Color(ink, 0.58))
+			canvas.draw_line(Vector2(visual.get_center().x - 7, underline_y), Vector2(visual.get_center().x + 7, underline_y), Color(ink, 0.58 if is_wrong else 0.46), 1.9 if is_wrong else 1.6, true)
+			canvas.draw_circle(Vector2(visual.get_center().x + 10, underline_y - 1), 1.4, Color(ink, 0.68 if is_wrong else 0.58))
+		if is_wrong:
+			_draw_persistent_correction(canvas, visual)
+	elif note_mask != 0:
+		_draw_notes(canvas, visual, note_mask, number_font, Color("4f628c") if not meow else Color("a55079"))
 
 
-func _animated_cell_rect(base: Rect2, cell: Vector2i, now: float) -> Rect2:
+func _animated_cell_rect(base: Rect2, cell: Vector2i, now: float, reduced_effects: bool) -> Rect2:
+	if reduced_effects:
+		return base
 	var scale := 1.0
 	var offset := Vector2.ZERO
 	if cell == selected_cell:
@@ -195,20 +219,38 @@ func _animated_cell_rect(base: Rect2, cell: Vector2i, now: float) -> Rect2:
 		if event_kind == "logic_error" and age >= 0.0 and age < 0.34:
 			var envelope := 1.0 - age / 0.34
 			offset.x += sin(age * 102.0) * 4.6 * envelope
-		elif event_kind in ["logic_correct", "logic_erase"] and age >= 0.0 and age < 0.42:
+		elif event_kind in ["logic_correct", "logic_erase", "logic_hint", "logic_note", "logic_undo"] and age >= 0.0 and age < 0.42:
 			scale *= 1.0 + sin(clampf(age / 0.42, 0.0, 1.0) * PI) * 0.09
 	var center := base.get_center() + offset
 	var size := base.size * scale
 	return Rect2(center - size * 0.5, size)
 
 
-func _number_scale_for_cell(cell: Vector2i, now: float) -> float:
-	if cell != event_cell or event_kind != "logic_correct":
+func _number_scale_for_cell(cell: Vector2i, now: float, reduced_effects: bool) -> float:
+	if reduced_effects or cell != event_cell or event_kind not in ["logic_correct", "logic_hint"]:
 		return 1.0
 	var age := now - event_started
 	if age < 0.0 or age >= 0.48:
 		return 1.0
 	return 1.0 + sin(clampf(age / 0.48, 0.0, 1.0) * PI) * 0.18
+
+
+func _draw_notes(canvas: CanvasItem, rect: Rect2, mask: int, number_font: Font, color: Color) -> void:
+	var slot := rect.size / 3.0
+	for value in range(1, 10):
+		if (mask & (1 << value)) == 0:
+			continue
+		var index := value - 1
+		var note_center := rect.position + Vector2((float(index % 3) + 0.5) * slot.x, (float(int(index / 3)) + 0.5) * slot.y)
+		_draw_center_text(canvas, number_font, str(value), note_center + Vector2(0, -0.5), 9, Color(color, 0.86))
+
+
+func _draw_persistent_correction(canvas: CanvasItem, rect: Rect2) -> void:
+	# A tiny crossed proofing mark survives after the transient shake, so an
+	# incorrect retained digit never falls back to a color-only distinction.
+	var center := rect.position + Vector2(rect.size.x - 8.0, 8.0)
+	canvas.draw_line(center + Vector2(-3.0, -3.0), center + Vector2(3.0, 3.0), Color("a92f42", 0.92), 1.8, true)
+	canvas.draw_line(center + Vector2(-3.0, 3.0), center + Vector2(3.0, -3.0), Color("d75c68", 0.92), 1.8, true)
 
 
 func _draw_cell_focus(canvas: CanvasItem, rect: Rect2, meow: bool, accent: Color) -> void:
@@ -246,7 +288,9 @@ func _draw_grid(canvas: CanvasItem, meow: bool) -> void:
 		canvas.draw_line(Vector2(BOARD_ORIGIN.x, y), Vector2(BOARD_ORIGIN.x + BOARD_EDGE, y), color, width, true)
 
 
-func _draw_event_block_wash(canvas: CanvasItem, meow: bool, accent: Color, now: float) -> void:
+func _draw_event_block_wash(canvas: CanvasItem, meow: bool, accent: Color, now: float, reduced_effects: bool) -> void:
+	if reduced_effects:
+		return
 	var age := now - event_started
 	if age < 0.0:
 		return
@@ -260,9 +304,9 @@ func _draw_event_block_wash(canvas: CanvasItem, meow: bool, accent: Color, now: 
 		_draw_box(canvas, board_rect().grow(5.0 + sin(clampf(age / 0.62, 0.0, 1.0) * PI) * 6.0), 18.0 if meow else 7.0, Color("f4bf57", 0.15 * fade))
 
 
-func _draw_completed_block_marks(canvas: CanvasItem, meow: bool, board: Array, accent: Color) -> void:
+func _draw_completed_block_marks(canvas: CanvasItem, meow: bool, board: Array, solution: Array, wrong: Array, accent: Color) -> void:
 	for block in range(9):
-		if not _block_complete(board, block):
+		if not _block_complete(board, solution, wrong, block):
 			continue
 		var rect := _block_rect(block)
 		var mark := rect.position + Vector2(rect.size.x - 15, 15)
@@ -272,7 +316,9 @@ func _draw_completed_block_marks(canvas: CanvasItem, meow: bool, board: Array, a
 			_draw_compass(canvas, mark, 8.0, Color("b78f55", 0.64), 0.0)
 
 
-func _draw_object_event(canvas: CanvasItem, meow: bool, accent: Color, now: float, number_font: Font) -> void:
+func _draw_object_event(canvas: CanvasItem, meow: bool, accent: Color, now: float, number_font: Font, reduced_effects: bool) -> void:
+	if reduced_effects:
+		return
 	var age := now - event_started
 	if age < 0.0:
 		return
@@ -294,6 +340,23 @@ func _draw_object_event(canvas: CanvasItem, meow: bool, accent: Color, now: floa
 		else:
 			var radius := 8.0 + _ease_out_cubic(clampf(age / 0.26, 0.0, 1.0)) * 16.0
 			_draw_compass(canvas, center, radius, Color(accent, 0.56 * fade), age * 1.8)
+	elif event_kind == "logic_hint" and age < 0.72:
+		var center := cell_center(event_cell)
+		var progress := _ease_out_cubic(clampf(age / 0.30, 0.0, 1.0))
+		var fade := 1.0 - clampf((age - 0.34) / 0.38, 0.0, 1.0)
+		canvas.draw_arc(center, 8.0 + progress * 15.0, -PI * 0.82, PI * 0.34, 26, Color("b78f55", 0.72 * fade), 2.0, true)
+		_draw_compass(canvas, center + Vector2(14, -14), 7.0 + progress * 3.0, Color("b78f55", 0.70 * fade), -age)
+	elif event_kind == "logic_note" and age < 0.48:
+		var center := cell_center(event_cell)
+		var progress := _ease_out_cubic(clampf(age / 0.26, 0.0, 1.0))
+		var pencil_start := center + Vector2(-14, 13)
+		var pencil_end := center + Vector2(lerpf(-14.0, 12.0, progress), lerpf(13.0, -13.0, progress))
+		canvas.draw_line(pencil_start, pencil_end, Color(accent, 0.62 * (1.0 - age / 0.48)), 2.2, true)
+	elif event_kind == "logic_undo" and age < 0.52:
+		var center := cell_center(event_cell)
+		var fade := 1.0 - clampf(age / 0.52, 0.0, 1.0)
+		canvas.draw_arc(center, 17.0, -PI * 0.15, PI * 1.36, 24, Color("806f58", 0.54 * fade), 2.0, true)
+		canvas.draw_colored_polygon(PackedVector2Array([center + Vector2(-16, -8), center + Vector2(-7, -11), center + Vector2(-11, -2)]), Color("806f58", 0.54 * fade))
 	elif event_kind == "logic_erase" and age < 0.52:
 		var center := cell_center(event_cell)
 		var progress := _ease_out_cubic(clampf(age / 0.52, 0.0, 1.0))
@@ -388,12 +451,16 @@ func _block_rect(block: int) -> Rect2:
 	return Rect2(BOARD_ORIGIN + Vector2(float(x) * CELL_SIZE * 3.0, float(y) * CELL_SIZE * 3.0), Vector2(CELL_SIZE * 3.0, CELL_SIZE * 3.0))
 
 
-func _block_complete(board: Array, block: int) -> bool:
+func _block_complete(board: Array, solution: Array, wrong: Array, block: int) -> bool:
+	if solution.size() != 9:
+		return false
 	var start_x := (block % 3) * 3
 	var start_y := (block / 3) * 3
 	for y in range(start_y, start_y + 3):
 		for x in range(start_x, start_x + 3):
-			if int(board[y][x]) == 0:
+			if int(board[y][x]) != int(solution[y][x]):
+				return false
+			if wrong.size() == 9 and wrong[y] is Array and wrong[y].size() == 9 and bool(wrong[y][x]):
 				return false
 	return true
 

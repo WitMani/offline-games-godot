@@ -75,6 +75,7 @@ const MERGE2248_RULES = preload("res://models/merge2248_model.gd")
 const MERGE2048_RULES = preload("res://models/merge2048_model.gd")
 const WATERMELON_RULES = preload("res://models/watermelon_physics_model.gd")
 const MEOWDOKU_RULES = preload("res://models/meowdoku_model.gd")
+const SUDOKU_RULES = preload("res://models/sudoku_model.gd")
 const MERGE2248_PRESENTATION = preload("res://presentation/merge2248_presenter.gd")
 const MERGE2248_SAVE_PATH := "user://offline_games_merge2248_v4.json"
 const MERGE2048_CLASSIC_PRESENTATION = preload("res://presentation/merge2048_classic_presenter.gd")
@@ -190,6 +191,7 @@ var meowdoku_model = MEOWDOKU_RULES.new()
 var meowdoku_fixture_id := "notebook_5"
 var meowdoku_recovery_enabled := true
 var meowdoku_skip_recovery_once := false
+var sudoku_model = SUDOKU_RULES.new()
 var merge2248_presenter = MERGE2248_PRESENTATION.new()
 var merge2048_classic_presenter = MERGE2048_CLASSIC_PRESENTATION.new()
 var catalog_art_director = CATALOG_ART_DIRECTION.new()
@@ -197,6 +199,8 @@ var watermelon_presenter = WATERMELON_PRESENTATION.new()
 var logic_game_presenter = LOGIC_GAME_PRESENTATION.new()
 var meowdoku_presenter = MEOWDOKU_PRESENTATION.new()
 var reduced_effects := false
+var sudoku_restart_requested := false
+var sudoku_reduced_effects := false
 var mahjong_object_fx: Dictionary = {}
 var tileclub_object_fx: Dictionary = {}
 var amaze_go_object_fx: Dictionary = {}
@@ -300,6 +304,7 @@ func _ready() -> void:
 		merge2048_persistence_enabled = false
 	_detect_reduced_effects()
 	reduced_effects_enabled = reduced_effects
+	sudoku_reduced_effects = reduced_effects
 	var cjk_font := UI_FONT as FontFile
 	if cjk_font:
 		cjk_font.fallbacks = [LATIN_FONT, SYMBOL_FONT]
@@ -335,6 +340,7 @@ func _detect_reduced_effects() -> void:
 
 func _set_reduced_effects(value: bool) -> void:
 	reduced_effects = value
+	sudoku_reduced_effects = value
 	if reduced_effects:
 		catalog_fx.clear()
 	queue_redraw()
@@ -577,7 +583,7 @@ func _prune_catalog_fx() -> void:
 	catalog_fx = active
 
 func _catalog_shake_offset() -> Vector2:
-	if reduced_effects:
+	if reduced_effects or (game_id == "sudoku" and sudoku_reduced_effects):
 		return Vector2.ZERO
 	for index in range(catalog_fx.size() - 1, -1, -1):
 		var effect: Dictionary = catalog_fx[index]
@@ -586,7 +592,7 @@ func _catalog_shake_offset() -> Vector2:
 	return Vector2.ZERO
 
 func _catalog_result_overlay_ready() -> bool:
-	if reduced_effects:
+	if reduced_effects or (game_id == "sudoku" and sudoku_reduced_effects):
 		return true
 	# Let the authoritative board consequence and its local event read before a
 	# terminal modal covers the playfield. Rules already ended the game; this is
@@ -667,6 +673,29 @@ func _input(event: InputEvent) -> void:
 				return
 			if not meow_command.is_empty():
 				_meowdoku_command(meow_command)
+			get_viewport().set_input_as_handled()
+			return
+		if game_id == "sudoku":
+			if (event.ctrl_pressed or event.meta_pressed) and event.keycode == KEY_Z:
+				_sudoku_undo()
+			elif event.keycode in [KEY_UP, KEY_W]:
+				_sudoku_move_selection(Vector2i.UP)
+			elif event.keycode in [KEY_DOWN, KEY_S]:
+				_sudoku_move_selection(Vector2i.DOWN)
+			elif event.keycode in [KEY_LEFT, KEY_A]:
+				_sudoku_move_selection(Vector2i.LEFT)
+			elif event.keycode in [KEY_RIGHT, KEY_D]:
+				_sudoku_move_selection(Vector2i.RIGHT)
+			elif event.keycode >= KEY_1 and event.keycode <= KEY_9:
+				_sudoku_place(event.keycode - KEY_0)
+			elif event.keycode in [KEY_0, KEY_BACKSPACE, KEY_DELETE]:
+				_sudoku_place(0)
+			elif event.keycode == KEY_N:
+				_sudoku_toggle_notes()
+			elif event.keycode == KEY_H:
+				_sudoku_hint()
+			else:
+				return
 			get_viewport().set_input_as_handled()
 			return
 		if event.keycode in [KEY_UP, KEY_W] or (game_id == "merge2048" and event.keycode == KEY_K):
@@ -823,11 +852,18 @@ func _build_game_buttons() -> void:
 		"watermelon":
 			_add_button("拖动瞄准 · 松手投放", Rect2(158, 878, 224, 52), Callable(self, "_water_drop_hint"), SURFACE_2, 14)
 		"sudoku":
+			var undo_button := _add_button("撤销", Rect2(34, 724, 106, 46), Callable(self, "_sudoku_undo"), SURFACE_2, 14)
+			undo_button.name = "SudokuUndo"
+			var erase_button := _add_button("擦除", Rect2(150, 724, 106, 46), Callable(self, "_sudoku_place").bind(0), SURFACE_2, 14)
+			erase_button.name = "SudokuErase"
+			var notes_label := "笔记 · %s" % ("开" if bool(state.get("notes_mode", false)) else "关")
+			var notes_button := _add_button(notes_label, Rect2(266, 724, 106, 46), Callable(self, "_sudoku_toggle_notes"), SURFACE_2, 14)
+			notes_button.name = "SudokuNotes"
+			var hint_button := _add_button("提示 · %d" % int(state.get("hints_remaining", 0)), Rect2(382, 724, 124, 46), Callable(self, "_sudoku_hint"), SURFACE_2, 14)
+			hint_button.name = "SudokuHint"
 			for n in range(1, 10):
-				var row := (n - 1) / 5
-				var col := (n - 1) % 5
-				_add_button(str(n), Rect2(72 + col * 80, 736 + row * 58, 62, 50), Callable(self, "_sudoku_place").bind(n), SURFACE_2, 17)
-			_add_button("擦除", Rect2(392, 794, 76, 50), Callable(self, "_sudoku_place").bind(0), SURFACE_2, 14)
+				var digit_button := _add_button(str(n), Rect2(30 + (n - 1) * 53, 784, 47, 52), Callable(self, "_sudoku_place").bind(n), SURFACE_2, 17)
+				digit_button.name = "SudokuDigit%d" % n
 		"meowdoku":
 			_add_button("标记 ×", Rect2(90, 804, 104, 52), Callable(self, "_meowdoku_command").bind("mark"), SURFACE_2, 14)
 			_add_button("放置猫", Rect2(218, 804, 104, 52), Callable(self, "_meowdoku_command").bind("cat"), SURFACE_2, 14)
@@ -858,9 +894,15 @@ func _reset_current() -> void:
 		merge2048_force_new_run = true
 	if game_id == "meowdoku":
 		meowdoku_skip_recovery_once = true
+	if game_id == "sudoku":
+		sudoku_restart_requested = true
+		_clear_sudoku_web_snapshot()
 	_start_game_state(true)
+	sudoku_restart_requested = false
 	if game_id == "merge2048":
 		_build_game_buttons()
+	if game_id == "sudoku":
+		_update_sudoku_tool_buttons()
 	_log_event("game_reset", {"game_id":game_id})
 	_capture("reset_%s" % game_id)
 	if game_id == "snake_classic":
@@ -1155,6 +1197,33 @@ func _save_snapshot(snapshot: Dictionary) -> void:
 	var file := FileAccess.open("user://offline_games_state.json", FileAccess.WRITE)
 	if file:
 		file.store_string(JSON.stringify(snapshot))
+	if OS.has_feature("web") and str(snapshot.get("game_id", "")) == "sudoku":
+		var payload := JSON.stringify(snapshot)
+		JavaScriptBridge.eval("window.localStorage.setItem('offline-games-sudoku-v3', %s);" % JSON.stringify(payload))
+
+func _load_sudoku_web_snapshot() -> Dictionary:
+	if not OS.has_feature("web"):
+		return {}
+	var raw: Variant = JavaScriptBridge.eval("window.localStorage.getItem('offline-games-sudoku-v3') || '';" )
+	if not raw is String or str(raw).is_empty():
+		return {}
+	var parsed: Variant = JSON.parse_string(str(raw))
+	if parsed is Dictionary and str(parsed.get("game_id", "")) == "sudoku":
+		return parsed
+	return {}
+
+func _clear_sudoku_web_snapshot() -> void:
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("window.localStorage.removeItem('offline-games-sudoku-v3');")
+
+func _persist_sudoku_progress() -> void:
+	if game_id != "sudoku" or not OS.has_feature("web"):
+		return
+	var snapshot := state.duplicate(true)
+	snapshot["game_id"] = game_id
+	snapshot["screen"] = screen
+	snapshot["tick"] = tick
+	_save_snapshot(snapshot)
 
 func _capture(reason: String) -> void:
 	if logger:
@@ -1386,7 +1455,7 @@ func _game_secondary_text() -> Color:
 	return Color("d7e5d8", 0.88) if game_id == "merge2248" else BRIGHT_MUTED
 
 func _draw_catalog_fx() -> void:
-	if reduced_effects and game_id == "meowdoku":
+	if reduced_effects or (game_id == "sudoku" and sudoku_reduced_effects):
 		return
 	for effect in catalog_fx:
 		if str(effect.get("game_id", "")) == game_id:
@@ -3074,6 +3143,16 @@ func _sudoku_solution() -> Array:
 	]
 
 func _init_sudoku() -> void:
+	if game_id == "sudoku":
+		sudoku_model.reset(20260820, 36)
+		if not sudoku_restart_requested:
+			var saved := _load_sudoku_web_snapshot()
+			if not saved.is_empty():
+				sudoku_model.restore(saved)
+		_sync_sudoku_state()
+		selected_cell = sudoku_model.selected
+		logic_game_presenter.reset(elapsed, sudoku_model.selected)
+		return
 	var solution := _sudoku_solution()
 	var puzzle := solution.duplicate(true)
 	var holes := [0, 2, 4, 7, 10, 12, 15, 18, 20, 23, 27, 30, 32, 35, 38, 41, 44, 47, 50, 53, 56, 60, 63, 66, 70, 73, 76]
@@ -3085,8 +3164,23 @@ func _init_sudoku() -> void:
 	state["mistakes"] = 0
 	state["selected"] = [0, 0]
 	state["score"] = 0
-	if game_id in ["sudoku", "meowdoku"]:
-		logic_game_presenter.reset(elapsed, Vector2i(0, 0))
+	logic_game_presenter.reset(elapsed, Vector2i(0, 0))
+
+func _sync_sudoku_state() -> void:
+	state = sudoku_model.snapshot()
+	state["game_id"] = "sudoku"
+	state["reduced_effects"] = sudoku_reduced_effects
+
+func _restore_sudoku_snapshot(saved: Dictionary) -> bool:
+	if not sudoku_model.restore(saved):
+		return false
+	_sync_sudoku_state()
+	selected_cell = sudoku_model.selected
+	logic_game_presenter.reset(elapsed, sudoku_model.selected)
+	_update_sudoku_tool_buttons()
+	_persist_sudoku_progress()
+	queue_redraw()
+	return true
 
 func _sudoku_tap(pos: Vector2) -> void:
 	if game_id == "meowdoku":
@@ -3097,13 +3191,33 @@ func _sudoku_tap(pos: Vector2) -> void:
 	if Rect2(origin, Vector2(cell * 9, cell * 9)).has_point(pos):
 		var x := int((pos.x - origin.x) / cell)
 		var y := int((pos.y - origin.y) / cell)
-		state["selected"] = [x, y]
+		if game_id == "sudoku":
+			sudoku_model.select(Vector2i(x, y))
+			_sync_sudoku_state()
+		else:
+			state["selected"] = [x, y]
 		selected_cell = Vector2i(x, y)
 		logic_game_presenter.select(selected_cell, elapsed)
 		_play_sfx(SFX_LOGIC_SELECT, -19.0, 1.08 if game_id == "meowdoku" else 0.96)
 		_haptic(4)
 		_log_event("sudoku_cell_selected", {"x":x, "y":y})
+		_persist_sudoku_progress()
 		queue_redraw()
+
+func _sudoku_move_selection(direction: Vector2i) -> void:
+	if game_id != "sudoku" or state.get("status") != "playing":
+		return
+	var event: Dictionary = sudoku_model.move_selection(direction)
+	if not bool(event.get("changed", false)):
+		return
+	_sync_sudoku_state()
+	selected_cell = sudoku_model.selected
+	logic_game_presenter.select(selected_cell, elapsed)
+	_play_sfx(SFX_LOGIC_SELECT, -19.0, 0.96)
+	_haptic(4)
+	_log_event("sudoku_cell_selected", {"x":selected_cell.x, "y":selected_cell.y, "input":"keyboard"})
+	_persist_sudoku_progress()
+	queue_redraw()
 
 func _sudoku_place(number: int) -> void:
 	if (game_id != "sudoku" and game_id != "meowdoku") or state.get("status") != "playing":
@@ -3114,50 +3228,104 @@ func _sudoku_place(number: int) -> void:
 	_classic_sudoku_place(number)
 
 func _classic_sudoku_place(number: int) -> void:
-	var selected: Array = state.get("selected", [0, 0])
-	var x := int(selected[0])
-	var y := int(selected[1])
-	var given: Array = state["given"]
-	if int(given[y][x]) != 0:
+	var event: Dictionary = sudoku_model.erase() if number == 0 else sudoku_model.place(number)
+	_sync_sudoku_state()
+	_update_sudoku_tool_buttons()
+	_dispatch_sudoku_event(event)
+
+func _sudoku_toggle_notes() -> void:
+	if game_id != "sudoku" or state.get("status") != "playing":
 		return
-	var solution: Array = state["solution"]
-	var cell := Vector2i(x, y)
+	var event: Dictionary = sudoku_model.toggle_notes_mode()
+	_sync_sudoku_state()
+	_update_sudoku_tool_buttons()
+	if bool(event.get("changed", false)):
+		_flash_feedback("笔记已%s" % ("开启" if bool(event.get("enabled", false)) else "关闭"), Color("7566c7"))
+		_log_event("sudoku_notes_mode", {"enabled":bool(event.get("enabled", false))})
+		_persist_sudoku_progress()
+	queue_redraw()
+
+func _sudoku_hint() -> void:
+	if game_id != "sudoku" or state.get("status") != "playing":
+		return
+	var event: Dictionary = sudoku_model.hint()
+	_sync_sudoku_state()
+	_update_sudoku_tool_buttons()
+	_dispatch_sudoku_event(event)
+
+func _sudoku_undo() -> void:
+	if game_id != "sudoku":
+		return
+	var event: Dictionary = sudoku_model.undo()
+	_sync_sudoku_state()
+	_update_sudoku_tool_buttons()
+	if bool(event.get("changed", false)):
+		selected_cell = sudoku_model.selected
+		var block := int(selected_cell.y / 3) * 3 + int(selected_cell.x / 3)
+		logic_game_presenter.present("logic_undo", selected_cell, block, int(state.board[selected_cell.y][selected_cell.x]), 1, elapsed)
+		_flash_feedback("撤销上一步", Color("7566c7"))
+		_log_event("sudoku_undo", {"x":selected_cell.x, "y":selected_cell.y})
+		_persist_sudoku_progress()
+	queue_redraw()
+
+func _dispatch_sudoku_event(event: Dictionary) -> void:
+	if not bool(event.get("changed", false)):
+		return
+	var kind := str(event.get("kind", ""))
+	var cell: Vector2i = event.get("cell", sudoku_model.selected)
+	var block := int(event.get("block", 0))
+	var number := int(event.get("value", 0))
 	var position := logic_game_presenter.cell_center(cell)
-	var block := int(y / 3) * 3 + int(x / 3)
 	var accent := Color("7566c7")
-	if number != 0 and number != int(solution[y][x]):
-		state["mistakes"] = int(state["mistakes"]) + 1
-		_flash_feedback("这里不是 %d" % number, RED)
-		logic_game_presenter.present("logic_error", cell, block, number, 2, elapsed)
-		_start_catalog_event("logic_error", position, RED, 2, "红笔修正", 0.66, {"semantic":"logic_error"})
-		_log_event("sudoku_mistake", {"x":x, "y":y, "value":number})
+	selected_cell = cell
+	match kind:
+		"error":
+			_flash_feedback("这里不是 %d" % number, RED)
+			logic_game_presenter.present("logic_error", cell, block, number, 2, elapsed)
+			_start_catalog_event("logic_error", position, RED, 2, "红笔修正", 0.66, {"semantic":"logic_error"})
+			_log_event("sudoku_mistake", {"x":cell.x, "y":cell.y, "value":number})
+		"erase":
+			_flash_feedback("轻轻擦去", accent)
+			logic_game_presenter.present("logic_erase", cell, block, number, 1, elapsed)
+			_start_catalog_event("logic_erase", position, accent, 1, "轻轻擦去", 0.54, {"semantic":"logic_erase"})
+			_log_event("sudoku_erase", {"x":cell.x, "y":cell.y})
+		"note":
+			_flash_feedback("笔记 %d" % number, accent)
+			logic_game_presenter.present("logic_note", cell, block, number, 1, elapsed)
+			_log_event("sudoku_note", {"x":cell.x, "y":cell.y, "value":number, "enabled":bool(event.get("enabled", false))})
+		"complete":
+			_flash_feedback("整册完成", GOLD)
+			logic_game_presenter.present("logic_complete", cell, block, number, 4, elapsed)
+			_start_catalog_event("logic_complete", Vector2(270, 458), GOLD, 4, "整册完成", 1.18, {"semantic":"logic_complete", "action":str(event.get("action", "place"))})
+			_capture("sudoku_win")
+		"block_complete":
+			_flash_feedback("九宫完成", accent)
+			logic_game_presenter.present("logic_block_complete", cell, block, number, 3, elapsed)
+			_start_catalog_event("logic_block_complete", _sudoku_block_center(block), accent, 3, "九宫完成", 0.96, {"semantic":"logic_block_complete", "action":str(event.get("action", "place"))})
+			_log_event("sudoku_place", {"x":cell.x, "y":cell.y, "value":number, "action":str(event.get("action", "place"))})
+		"hint":
+			_flash_feedback("提示落笔 %d" % number, accent)
+			logic_game_presenter.present("logic_hint", cell, block, number, 2, elapsed)
+			_start_catalog_event("logic_hint", position, accent, 2, "提示落笔", 0.68, {"semantic":"logic_hint"})
+			_log_event("sudoku_hint", {"x":cell.x, "y":cell.y, "value":number})
+		"correct":
+			_flash_feedback("落子 %d" % number, accent)
+			logic_game_presenter.present("logic_correct", cell, block, number, 1, elapsed)
+			_start_catalog_event("logic_correct", position, accent, 1, "落笔正确", 0.68, {"semantic":"logic_correct"})
+			_log_event("sudoku_place", {"x":cell.x, "y":cell.y, "value":number})
+	_persist_sudoku_progress()
+	queue_redraw()
+
+func _update_sudoku_tool_buttons() -> void:
+	if game_id != "sudoku":
 		return
-	state["board"][y][x] = number
-	state["moves"] = int(state["moves"]) + 1
-	var completed_block := _sudoku_block_complete(block)
-	var completed_all := _sudoku_complete()
-	if number == 0:
-		_flash_feedback("轻轻擦去", accent)
-		logic_game_presenter.present("logic_erase", cell, block, number, 1, elapsed)
-		_start_catalog_event("logic_erase", position, accent, 1, "轻轻擦去", 0.54, {"semantic":"logic_erase"})
-	elif completed_all:
-		_flash_feedback("整册完成", GOLD)
-		logic_game_presenter.present("logic_complete", cell, block, number, 4, elapsed)
-		_start_catalog_event("logic_complete", Vector2(270, 458), GOLD, 4, "整册完成", 1.18, {"semantic":"logic_complete"})
-	elif completed_block:
-		_flash_feedback("九宫完成", accent)
-		logic_game_presenter.present("logic_block_complete", cell, block, number, 3, elapsed)
-		_start_catalog_event("logic_block_complete", _sudoku_block_center(block), accent, 3, "九宫完成", 0.96, {"semantic":"logic_block_complete"})
-	else:
-		_flash_feedback("落子 %d" % number, accent)
-		logic_game_presenter.present("logic_correct", cell, block, number, 1, elapsed)
-		_start_catalog_event("logic_correct", position, accent, 1, "落笔正确", 0.68, {"semantic":"logic_correct"})
-	if completed_all:
-		state["score"] = max(100, 1000 - int(state["mistakes"]) * 25)
-		state["status"] = "won"
-		_capture("sudoku_win")
-	else:
-		_log_event("sudoku_place", {"x":x, "y":y, "value":number})
+	for button in buttons:
+		if not is_instance_valid(button):
+			continue
+		if button.name == "SudokuNotes":
+			button.text = "笔记 · %s" % ("开" if bool(state.get("notes_mode", false)) else "关")
+		elif button.name == "SudokuHint":
+			button.text = "提示 · %d" % int(state.get("hints_remaining", 0))
 
 func _meowdoku_place(number: int) -> void:
 	# Backward-compatible automation entry point. Numeric values are not part of
@@ -3166,6 +3334,8 @@ func _meowdoku_place(number: int) -> void:
 	_meowdoku_command("erase" if number == 0 else "cat")
 
 func _sudoku_complete() -> bool:
+	if game_id == "sudoku":
+		return sudoku_model.is_complete()
 	for row in state["board"]:
 		for value in row:
 			if int(value) == 0:
@@ -3179,7 +3349,7 @@ func _draw_sudoku() -> void:
 	_draw_text_font(DISPLAY_FONT, "逻辑手册", Vector2(30, 207), 18, ink)
 	_draw_text(detail, Vector2(508 - UI_FONT.get_string_size(detail, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x, 205), 11, Color("5d6170"))
 	draw_line(Vector2(30, 216), Vector2(510, 216), Color(accent, 0.44), 2.0)
-	logic_game_presenter.draw_board(self, game_id, state, elapsed, NUMBER_FONT)
+	logic_game_presenter.draw_board(self, game_id, state, elapsed, NUMBER_FONT, sudoku_reduced_effects)
 	_draw_text("同行、同列与九宫同步定位", Vector2(47, 706), 13, Color("4f5665"))
 
 
@@ -3192,6 +3362,8 @@ func _sudoku_block_center(block: int) -> Vector2:
 	return Vector2(47, 236) + Vector2((float(bx) * 3.0 + 1.5) * 49.5, (float(by) * 3.0 + 1.5) * 49.5)
 
 func _sudoku_block_complete(block: int) -> bool:
+	if game_id == "sudoku":
+		return sudoku_model.block_complete(block)
 	var board: Array = state["board"]
 	var start_x := (block % 3) * 3
 	var start_y := (block / 3) * 3
