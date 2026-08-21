@@ -17,6 +17,8 @@ func _init() -> void:
 
 func _run() -> void:
 	game = load("res://main.tscn").instantiate()
+	game.merge2248_persistence_enabled = false
+	game.merge2248_reduced_effects_override = false
 	root.add_child(game)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUTPUT))
 	await process_frame
@@ -45,16 +47,16 @@ func _run() -> void:
 
 
 func _prepare_chain(chain_length: int) -> void:
-	game._init_merge2248()
+	game._init_merge2248(true)
 	for y in range(game.merge2248_model.height):
 		for x in range(game.merge2248_model.width):
-			game.merge2248_model.board[y][x] = 2
+			game.merge2248_model.board[y][x] = 1
 	game._sync_merge2248_state()
 	var path: Array[Vector2i] = []
 	for index in range(chain_length):
 		var row := index / 5
 		var column := index % 5 if row % 2 == 0 else 4 - index % 5
-		path.append(Vector2i(column, 7 - row))
+		path.append(Vector2i(column, game.merge2248_model.height - 1 - row))
 	game._merge2248_begin_at(game._merge2248_cell_center(path[0]))
 	game.merge2248_drag_active = true
 	for index in range(1, path.size()):

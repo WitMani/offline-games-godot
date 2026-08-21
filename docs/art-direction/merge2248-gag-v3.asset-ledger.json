@@ -1,0 +1,263 @@
+{
+  "schema": "offline-games/gag-asset-ledger/v3",
+  "created_at": "2026-08-20T17:04:56Z",
+  "game_id": "merge2248",
+  "slice": "ordinary board confection material and graded merge release",
+  "starting_commit": "d9ee2dcbbec523b66169b40140de352cf2b5f213",
+  "branch": "codex/art-2248-gag-v3",
+  "production_mode": "GAG pure API; no local GPU inference",
+  "service": {
+    "production_endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+    "health": {
+      "status": "healthy",
+      "server": "game-assets-generator",
+      "version": "0.2.0",
+      "transport": "streamable-http",
+      "tools_count": 21
+    },
+    "system": {
+      "detected_gpu": false,
+      "main_service_pytorch": "not installed",
+      "pure_api_available": true,
+      "providers_used": ["gemini", "fal", "removebg", "elevenlabs"]
+    },
+    "configuration_drift": {
+      "registered_in_process_tool": "EC2 instance exposing mock-only image generation",
+      "decision": "rejected before production and not represented as a successful GAG route",
+      "resolution": "used the live HOME-WSL HTTPS MCP"
+    }
+  },
+  "mechanics_freeze": {
+    "path": "models/merge2248_model.gd",
+    "sha256": "60123a003f66803247040927f4438343b75bd76a1cbbd3df01908d31bbd78d18",
+    "model_smoke": "10 PASS",
+    "integration_smoke": "10 PASS"
+  },
+  "semantic_searches": [
+    {
+      "query": "卡通糖果工坊数字合并游戏，成套空白糖果徽章，软糖枕、包裹糖、硬糖圆片、花形糖，奶油高光和可可描边，透明背景，无文字无数字，可作游戏棋子",
+      "kinds": ["image"],
+      "limit": 15,
+      "provider": "Gemini embedding",
+      "reviewed_pre_generation": [
+        {
+          "name": "generated_images__20260820_184012_FAL.ai_nobg_20260820_184123.png",
+          "score": 0.433509729761925,
+          "sha256": "7c34fff62346dce7ff0b9df3a49e8fad90bd06793c7223d81824b151b64d3002",
+          "decision": "rejected",
+          "reason": "Tile Club fabric badge atlas with unrelated leaf, moon, gem and flower symbols; wrong material family and asset-sheet soup"
+        },
+        {
+          "name": "generated_images__20260820_184012_FAL.ai.png",
+          "score": 0.41343326204121505,
+          "sha256": "c59cdd954a747b3a02ebb9976d9c743703411a0baabeab50994d565134870d59",
+          "decision": "rejected",
+          "reason": "source master of the same fabric badge atlas; wrong game identity and baked symbols"
+        },
+        {
+          "name": "reward-new-badge.png",
+          "score": 0.39417203101490633,
+          "sha256": "69948e2a0f9a5d8f01ebb72119c0327b906fd5e0e748c4a0adad12e4818de3bd",
+          "decision": "rejected",
+          "reason": "generic red/gold progression medal, not a frequently repeated candy token"
+        },
+        {
+          "name": "card-ui-chrome-atlas-chroma-v1.png",
+          "score": 0.39127720765035845,
+          "sha256": "bae841f7f6974586df165faa9a68a22087d2de99e9e019b3bfcbac486bdac326",
+          "decision": "rejected",
+          "reason": "card chrome atlas with no confection material or number-token role"
+        }
+      ]
+    },
+    {
+      "query": "卡通糖果工坊合并爆发，焦糖奶油飞溅、糖屑星芒、空心中心，透明背景，无文字，休闲游戏VFX",
+      "kinds": ["image"],
+      "limit": 15,
+      "provider": "Gemini embedding",
+      "reviewed_pre_generation": [
+        {
+          "name": "reward-reveal-burst.png",
+          "score": 0.4362321907450278,
+          "sha256": "ba915024e59cd52b95bfe6e63f85d0949e5972867632d0b4a7af78a0b1eb3e90",
+          "decision": "rejected",
+          "reason": "generic filled pink/orange reward starburst; no caramel material and it obscures the number"
+        },
+        {
+          "name": "conquest-vfx-atlas-chroma-v2.png",
+          "score": 0.43529838703105006,
+          "sha256": "2c4fa9d5ba7f44efda18a35883b2566c0fdefbb1d30590b83ada529925169a5d",
+          "decision": "rejected",
+          "reason": "blue/gold conquest combat atlas on chroma green; wrong tone, material and deliverable shape"
+        },
+        {
+          "name": "juice_merge_burst.png",
+          "score": 0.43001504630300674,
+          "sha256": "114645dffd4875a4d2961b2a9555cdf117698ddabd3878f8f33fb44505c227a6",
+          "decision": "rejected",
+          "reason": "2048 Balls fruit-juice identity would erase per-game authorship"
+        },
+        {
+          "name": "impact-burst.png",
+          "score": 0.4285923891052035,
+          "sha256": "c33ed0de8d1164fb44348ba36739bc6478d593619a9f6a5287430a7d668b7c85",
+          "decision": "rejected",
+          "reason": "generic impact symbol with no hollow confection structure"
+        }
+      ]
+    },
+    {
+      "query": "糖果连接节点吸附、奶油糖合并、长连锁升级奖励的短游戏音效，无人声无音乐",
+      "kinds": ["audio"],
+      "limit": 15,
+      "provider": "Gemini embedding",
+      "reviewed_pre_generation": [
+        {
+          "name": "music_20260330_002207_peaceful_ambient_exploration_m_loop.mp3",
+          "score": 0.6260602922129789,
+          "decision": "rejected",
+          "reason": "long-form exploration music, not a repeatable merge event"
+        },
+        {
+          "name": "player_idle.mp3",
+          "score": 0.610965041242179,
+          "decision": "rejected",
+          "reason": "idle audio with no merge or progression semantics"
+        },
+        {
+          "name": "sfx_20251213_095733_magic_spell_cast_spa_1.wav",
+          "score": 0.6067692294951489,
+          "decision": "rejected",
+          "reason": "generic spell identity conflicts with the tactile candy workshop"
+        },
+        {
+          "name": "fruit_cascade_reward_01_master.wav",
+          "score": 0.5991080686082287,
+          "decision": "rejected",
+          "reason": "belongs to 2048 Balls and would collapse per-game sound identity"
+        },
+        {
+          "name": "coin / accept / warning candidates",
+          "score_range": [0.5941259522973655, 0.5984895512807702],
+          "decision": "rejected",
+          "reason": "generic currency, UI confirmation or warning semantics"
+        }
+      ]
+    }
+  ],
+  "generations": [
+    {
+      "id": "merge2248-token-family-v1",
+      "kind": "image",
+      "provider": "fal",
+      "model": "fal-ai/flux-pro/v1.1",
+      "requested_size": "1024x1024",
+      "archive_path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/merge2248/gag-v3/generated_images__20260821_004833_FAL.ai.png",
+      "source_container": "JPEG payload in generated .png path",
+      "dimensions": [1024, 1024],
+      "bytes": 272034,
+      "sha256": "8ed16548a3ff2c7c90b0aca9ddfb5f9c900bc8d737d62d41c80e62c30273782f",
+      "prompt": "A production-ready 2 by 2 sprite sheet containing exactly four separate blank candy game tokens for a premium cheerful cartoon number-merging mobile game. Top-left: plump rounded pillow gummy. Top-right: compact wrapped candy with short symmetrical wrapper ends. Bottom-left: thick round hard-candy lozenge. Bottom-right: six-lobed flower bonbon. All four tokens share one coherent cream-sugar material, dark cocoa-brown outer rim, soft baked edge, subtle icing highlight, warm caramel inner shading, tactile toy-like 2.5D front view. Each token must have a large completely blank clean center reserved for a live number overlay. Exactly one token in each quadrant, centered, equal scale, no overlap, generous white space around every token. Pure flat white background. No letters, no numbers, no symbols, no faces, no decorations, no labels, no UI panels, no shadows outside the object, no gradients in the background.",
+      "critique": "No text or pseudo-glyphs; four isolated readable objects and clean centers. Deviations: top-left became the wrapped form, top-right became tart-like, and the flower has five lobes rather than six.",
+      "decision": "selected with recorded shape deviations"
+    },
+    {
+      "id": "merge2248-caramel-burst-v1",
+      "kind": "image",
+      "provider": "fal",
+      "model": "fal-ai/flux-pro/v1.1",
+      "requested_size": "1024x1024",
+      "archive_path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/merge2248/gag-v3/generated_images__20260821_005009_FAL.ai.png",
+      "source_container": "JPEG payload in generated .png path",
+      "dimensions": [1024, 1024],
+      "bytes": 459257,
+      "sha256": "4c89a87c2997c2ed115bb10fd098689b68ace1f8f3afa558a81db5c19d13adb1",
+      "prompt": "One isolated production-ready cartoon game VFX sprite for a premium cheerful candy-workshop number-merging game: a compact hollow ring burst made of warm caramel ribbons, cream frosting curls, tiny sugar crystals, and six short restrained golden star rays. The exact center must remain a large clean empty white hole so a live game token and number stay fully readable. Strong radial silhouette, tactile confection material, dark cocoa accents, cozy cream-pink-honey palette, crisp 2D mobile-game illustration, front orthographic view. Exactly one burst only, centered, generous white margin. Pure flat white background. No candy token, no number, no letters, no text, no symbols, no badge, no UI panel, no fire, no smoke, no neon, no magic rune, no scene, no border.",
+      "critique": "The wreath is richer and thicker than a restrained flat VFX, but its large hollow center preserves the authoritative token and the material is specific to the approved workshop.",
+      "decision": "selected for grade 3 and 4 only"
+    },
+    {
+      "id": "merge2248_candy_merge",
+      "kind": "sfx",
+      "provider": "elevenlabs",
+      "model": "eleven_text_to_sound_v2",
+      "mode": "sfx",
+      "requested_duration_seconds": 0.7,
+      "variations": 2,
+      "prompt": "A very short premium cartoon candy merging game sound: two soft gummy candies snap together with a warm rounded caramel pop, a tiny sugar crystal sparkle, and a clean tactile finish. Fast attack and decay, satisfying for frequent puzzle merges, no voice, no speech, no music, no ambience, no long reverb.",
+      "asset_id": "merge2248_candy_merge",
+      "version": "v1",
+      "digest": "cae72f95c1158b40044e51de80076747fb5129b81448b51e41255366507fe930",
+      "source_report_status": "issues_detected",
+      "selected_variation": 2,
+      "selected_report": {
+        "duration_seconds": 0.330729,
+        "sample_rate": 48000,
+        "channels": 1,
+        "measured_lufs": null,
+        "measured_true_peak_db": -5.34,
+        "leading_silence_ms": 0.0,
+        "trailing_silence_ms": 0.0
+      },
+      "selected_master_path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/merge2248/gag-v3/sfx/sfx/merge2248_candy_merge/v1/merge2248_candy_merge_02_master.wav",
+      "selected_master_sha256": "5d6ccd11f22a07f3e8283da05ff01340d250b3e1c2aaa2078b85862b66c91721",
+      "decision": "variation 2 selected for short duration and zero trailing silence; no subjective listening claim"
+    },
+    {
+      "id": "merge2248_recipe_mastery",
+      "kind": "sfx",
+      "provider": "elevenlabs",
+      "model": "eleven_text_to_sound_v2",
+      "mode": "sfx",
+      "requested_duration_seconds": 1.1,
+      "variations": 2,
+      "prompt": "A compact celebratory candy workshop chain-completion game sound: a firm caramel crack, a quick rising three-step marimba confection chime, a creamy whoosh, then one bright sugar crystal ping. Premium playful mobile puzzle milestone, strong but concise, no voice, no speech, no music bed, no ambience, no long reverb.",
+      "asset_id": "merge2248_recipe_mastery",
+      "version": "v1",
+      "digest": "16270eb993c3022215127f3e355130840ba629acf860f6e9ca0817efbca12d24",
+      "source_report_status": "issues_detected",
+      "selected_variation": 2,
+      "selected_report": {
+        "duration_seconds": 0.832729,
+        "sample_rate": 48000,
+        "channels": 1,
+        "measured_lufs": -21.4,
+        "measured_true_peak_db": -3.34,
+        "leading_silence_ms": 0.0,
+        "trailing_silence_ms": 0.0
+      },
+      "selected_master_path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/merge2248/gag-v3/sfx/sfx/merge2248_recipe_mastery/v1/merge2248_recipe_mastery_02_master.wav",
+      "selected_master_sha256": "fd4dd7bee3fdf41e949dfb76ba64e3a7bdada2ca223f7dfcb3b5cf00df42c751",
+      "decision": "variation 2 selected for stronger measured level and zero trailing silence; no subjective listening claim"
+    }
+  ],
+  "remote_derivation": {
+    "token_pipeline": "GAG manual quadrant crop -> Remove.bg API -> GAG auto_trim padding 8",
+    "burst_pipeline": "Remove.bg API -> GAG auto_trim padding 8",
+    "removebg_calls": 5,
+    "trimmed_sources": [
+      {"path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/merge2248/gag-v3/token_q0_runtime_source.png", "dimensions": [406, 296], "sha256": "adef2ca5bd473bf042374c5a12483ab91f3896d58f25047b4e9acd14fcd34301"},
+      {"path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/merge2248/gag-v3/token_q1_runtime_source.png", "dimensions": [355, 297], "sha256": "1d1f4242f88a40cf9c64db72e5116d37620b20b89ecbbad3a68390b91ca9e821"},
+      {"path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/merge2248/gag-v3/token_q2_runtime_source.png", "dimensions": [365, 365], "sha256": "d1bb389c785e0b90e47405f2115146cd972697a4ee498d91552d28ced27cc3e3"},
+      {"path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/merge2248/gag-v3/token_q3_runtime_source.png", "dimensions": [361, 355], "sha256": "4c16ced5355253ee037916c1538580833179aefe47657ab3e263f0ebab2690ff"},
+      {"path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/merge2248/gag-v3/merge_burst_runtime_source.png", "dimensions": [488, 483], "sha256": "b01da184f607087d5140c092d0c15b44786657a39267c9920214bad611f677b8"}
+    ]
+  },
+  "runtime_assets": [
+    {"path": "assets/art/merge2248/gag/candy_wrapped_gag_v3.png", "dimensions": [256, 186], "bytes": 80507, "sha256": "96114935b5d715de786ae2d90ba040c7f443090ca68557e2765b4f2abf522fd7", "pipeline": "GAG alpha/trim source -> deterministic Lanczos downscale", "binding": "merge2248_presenter.GAG_TOKEN_TEXTURES[0]", "first_visible_beat": "ordinary opening board; repeated on every value-2 slot", "shipped": true},
+    {"path": "assets/art/merge2248/gag/candy_tart_gag_v3.png", "dimensions": [256, 214], "bytes": 76244, "sha256": "3047892e018d3c247fad28cd89a027d08cd0930b16910e8a5c5fa8a771b49d25", "pipeline": "GAG alpha/trim source -> deterministic Lanczos downscale", "binding": "merge2248_presenter.GAG_TOKEN_TEXTURES[1]", "first_visible_beat": "ordinary opening board; repeated on every value-4 slot", "shipped": true},
+    {"path": "assets/art/merge2248/gag/candy_lozenge_gag_v3.png", "dimensions": [256, 256], "bytes": 92146, "sha256": "272067feab4621a0c13d4da07490a76339a50b4d49363aee35ece7db8275970b", "pipeline": "GAG alpha/trim source -> deterministic Lanczos downscale", "binding": "merge2248_presenter.GAG_TOKEN_TEXTURES[2]", "first_visible_beat": "ordinary opening board when value 8 is present", "shipped": true},
+    {"path": "assets/art/merge2248/gag/candy_flower_gag_v3.png", "dimensions": [256, 252], "bytes": 104460, "sha256": "91a9b8e949a06de034c48f96403451981bb359c19ef136817738191dd7e9da4c", "pipeline": "GAG alpha/trim source -> deterministic Lanczos downscale", "binding": "merge2248_presenter.GAG_TOKEN_TEXTURES[3]", "first_visible_beat": "ordinary board progression for values 16 and above", "shipped": true},
+    {"path": "assets/art/merge2248/gag/caramel_cream_burst_gag_v3.png", "dimensions": [320, 316], "bytes": 163134, "sha256": "ca256751e82b6cc546e78568490f0d993660ce463568073ea7aacc9498e7360a", "pipeline": "GAG alpha/trim source -> deterministic Lanczos downscale", "binding": "merge2248_presenter.GAG_MERGE_BURST_TEXTURE", "first_visible_beat": "grade-3 or grade-4 authoritative merge impact", "shipped": true},
+    {"path": "assets/audio/merge2248/gag/candy_merge_gag_v3.ogg", "bytes": 7621, "sha256": "2a73db4e3540b95026a92f64940374bf9dc59b7361f96bf6b60cc80f4528d181", "duration_seconds": 0.330729, "sample_rate": 48000, "channels": 1, "measured_lufs": null, "measured_true_peak_db": -3.5, "pipeline": "selected GAG WAV variation 2 -> +2.0 dB -> limiter 0.70 level=false -> Vorbis q5", "binding": "main._merge2248_release; every legal release", "shipped": true},
+    {"path": "assets/audio/merge2248/gag/recipe_mastery_gag_v3.ogg", "bytes": 13454, "sha256": "31d6eb4615ffb52a7520ef45bdca686a6b7bf0bd164efa0f5d9dda977cf869f8", "duration_seconds": 0.832729, "sample_rate": 48000, "channels": 1, "measured_lufs": -18.3, "measured_true_peak_db": -2.6, "pipeline": "selected GAG WAV variation 2 -> +3.5 dB -> limiter 0.70 level=false -> Vorbis q5", "binding": "main._merge2248_release; grade 3 and 4 layer", "shipped": true}
+  ],
+  "shipping_boundary": {
+    "source_masters_in_repository": 0,
+    "rejected_candidates_in_repository": 0,
+    "generated_text_or_numerals": 0,
+    "runtime_derivatives": 7,
+    "ephemeral_download_urls": "omitted because GAG signed asset URLs expire",
+    "deployment_status": "intentionally not merged or deployed while GB Snake remains the current one-at-a-time review game"
+  }
+}

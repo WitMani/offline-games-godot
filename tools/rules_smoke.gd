@@ -8,6 +8,7 @@ func _init() -> void:
 
 func _run() -> void:
 	game = load("res://main.tscn").instantiate()
+	game.merge2248_persistence_enabled = false
 	root.add_child(game)
 	await process_frame
 	_test_arrow_rule()

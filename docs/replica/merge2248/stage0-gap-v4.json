@@ -1,0 +1,69 @@
+{
+  "schema": "offline-games.replica-stage0-gap.v1",
+  "game": "merge2248",
+  "target": {
+    "product": "Offline Games - No Wifi Games",
+    "apple_app_id": 6448104157,
+    "apple_bundle_id": "com.JindoBlu.OfflineGamesIOS",
+    "android_package": "com.JindoBlu.OfflineGames",
+    "observed_version": "3.14.1",
+    "captured_at": "2026-08-20"
+  },
+  "verdict": "FAIL",
+  "art_gate": "CLOSED",
+  "public_review_game": false,
+  "claims": {
+    "first_party_facts": [
+      "the current product listing explicitly includes 2248",
+      "the official 2248 image shows a five-column board",
+      "the official phone image shows seven rows",
+      "Score, All Time and a 512 preview/result affordance are visible"
+    ],
+    "secondary_runtime_observations": [
+      "Easy Mode is visibly five by eight",
+      "Hard Mode is visibly five by six",
+      "Undo and reset controls are visible",
+      "runs continue with values and scores far beyond 2048"
+    ],
+    "unverified": [
+      "exact path extension rule",
+      "exact long-chain result rounding",
+      "backtracking behavior",
+      "exact refill distribution",
+      "Medium and Extra Hard row mappings",
+      "exact loss or recovery behavior",
+      "undo depth and RNG semantics"
+    ],
+    "local_compatibility_decisions": [
+      "sum a released chain and round upward to a power of two",
+      "reject repeated cells",
+      "treat absence of an equal adjacent pair as terminal until better evidence exists"
+    ]
+  },
+  "gaps": {
+    "identity_and_width": "PASS",
+    "difficulty": "FAIL",
+    "path_input": "PARTIAL",
+    "release_result": "UNKNOWN",
+    "long_run_numeric_range": "FAIL",
+    "terminal_behavior": "FAIL",
+    "persistence": "FAIL",
+    "undo": "FAIL",
+    "restart": "PARTIAL",
+    "reduced_effects": "FAIL",
+    "existing_gag_runtime_art": "FROZEN"
+  },
+  "hard_contradictions": [
+    {
+      "implementation": "result >= 2048 sets status to won",
+      "evidence": "secondary runtime captures show active boards and scores many orders of magnitude beyond 2048"
+    }
+  ],
+  "release_permissions": {
+    "merge": false,
+    "push": false,
+    "deploy": false,
+    "new_gag_generation": false,
+    "comparative_original_claim": false
+  }
+}

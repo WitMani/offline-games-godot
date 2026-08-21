@@ -1,0 +1,133 @@
+{
+  "schema": "offline-games/gag-asset-ledger-supplement/v4",
+  "created_at": "2026-08-20T21:05:00Z",
+  "game_id": "merge2248",
+  "stage0_commit": "b4fb321",
+  "mechanics_candidate_commit": "46cd36b1d36e2875c648848dabb09b9315e86705",
+  "mechanics_model": {
+    "path": "models/merge2248_model.gd",
+    "sha256": "ae92f43c8f801a6f48503aa3611910fc003b3c7698fc8723598de434c99adf8c",
+    "contract_version": 4,
+    "model_assertions": 896,
+    "integration_assertions": 36,
+    "persistence_assertions": 13,
+    "status": "hard observed contradictions corrected; unresolved original rules remain labelled compatibility"
+  },
+  "historical_production_ledger": {
+    "path": "docs/art-direction/merge2248-gag-v3.asset-ledger.json",
+    "sha256": "0518f4449c8a611bbb1d779041b4f04960906e04ada67da3e300883aa4f5f144",
+    "policy": "preserved as production history; its old mechanics freeze is superseded by this supplement"
+  },
+  "current_service_verification": {
+    "observed_at": "2026-08-20T20:55:56Z",
+    "endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+    "transport": "streamable HTTP over Tailscale HTTPS",
+    "initialize_protocol": "2025-03-26",
+    "server": "game-assets-generator",
+    "server_version": "1.29.0",
+    "main_service_gpu_detected": false,
+    "main_service_pytorch": "not installed; pure API available",
+    "providers_enabled": [
+      "gemini",
+      "fal",
+      "elevenlabs",
+      "removebg",
+      "openrouter"
+    ],
+    "local_inference_used_for_v4": false,
+    "billable_generation_used_for_v4": false,
+    "decision": "reuse the byte-identical reviewed v3 family; do not generate novelty without a gameplay or art-role need"
+  },
+  "remote_archive_reverification": [
+    {
+      "role": "fal token-family source master",
+      "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/merge2248/gag-v3/generated_images__20260821_004833_FAL.ai.png",
+      "sha256": "8ed16548a3ff2c7c90b0aca9ddfb5f9c900bc8d737d62d41c80e62c30273782f"
+    },
+    {
+      "role": "fal hollow-burst source master",
+      "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/merge2248/gag-v3/generated_images__20260821_005009_FAL.ai.png",
+      "sha256": "4c89a87c2997c2ed115bb10fd098689b68ace1f8f3afa558a81db5c19d13adb1"
+    },
+    {
+      "role": "wrapped runtime source",
+      "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/merge2248/gag-v3/token_q0_runtime_source.png",
+      "sha256": "adef2ca5bd473bf042374c5a12483ab91f3896d58f25047b4e9acd14fcd34301"
+    },
+    {
+      "role": "tart runtime source",
+      "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/merge2248/gag-v3/token_q1_runtime_source.png",
+      "sha256": "1d1f4242f88a40cf9c64db72e5116d37620b20b89ecbbad3a68390b91ca9e821"
+    },
+    {
+      "role": "lozenge runtime source",
+      "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/merge2248/gag-v3/token_q2_runtime_source.png",
+      "sha256": "d1bb389c785e0b90e47405f2115146cd972697a4ee498d91552d28ced27cc3e3"
+    },
+    {
+      "role": "flower runtime source",
+      "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/merge2248/gag-v3/token_q3_runtime_source.png",
+      "sha256": "4c16ced5355253ee037916c1538580833179aefe47657ab3e263f0ebab2690ff"
+    },
+    {
+      "role": "hollow-burst runtime source",
+      "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/merge2248/gag-v3/merge_burst_runtime_source.png",
+      "sha256": "b01da184f607087d5140c092d0c15b44786657a39267c9920214bad611f677b8"
+    },
+    {
+      "role": "selected ElevenLabs frequent-merge WAV",
+      "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/merge2248/gag-v3/sfx/sfx/merge2248_candy_merge/v1/merge2248_candy_merge_02_master.wav",
+      "sha256": "5d6ccd11f22a07f3e8283da05ff01340d250b3e1c2aaa2078b85862b66c91721"
+    },
+    {
+      "role": "selected ElevenLabs mastery WAV",
+      "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/merge2248/gag-v3/sfx/sfx/merge2248_recipe_mastery/v1/merge2248_recipe_mastery_02_master.wav",
+      "sha256": "fd4dd7bee3fdf41e949dfb76ba64e3a7bdada2ca223f7dfcb3b5cf00df42c751"
+    }
+  ],
+  "runtime_assets": [
+    {
+      "path": "assets/art/merge2248/gag/candy_wrapped_gag_v3.png",
+      "sha256": "96114935b5d715de786ae2d90ba040c7f443090ca68557e2765b4f2abf522fd7",
+      "runtime_role": "ordinary token family index 0"
+    },
+    {
+      "path": "assets/art/merge2248/gag/candy_tart_gag_v3.png",
+      "sha256": "3047892e018d3c247fad28cd89a027d08cd0930b16910e8a5c5fa8a771b49d25",
+      "runtime_role": "ordinary token family index 1"
+    },
+    {
+      "path": "assets/art/merge2248/gag/candy_lozenge_gag_v3.png",
+      "sha256": "272067feab4621a0c13d4da07490a76339a50b4d49363aee35ece7db8275970b",
+      "runtime_role": "ordinary token family index 2"
+    },
+    {
+      "path": "assets/art/merge2248/gag/candy_flower_gag_v3.png",
+      "sha256": "91a9b8e949a06de034c48f96403451981bb359c19ef136817738191dd7e9da4c",
+      "runtime_role": "ordinary token family index 3 and higher-power cycle"
+    },
+    {
+      "path": "assets/art/merge2248/gag/caramel_cream_burst_gag_v3.png",
+      "sha256": "ca256751e82b6cc546e78568490f0d993660ce463568073ea7aacc9498e7360a",
+      "runtime_role": "grade 3/4 authoritative destination impact"
+    },
+    {
+      "path": "assets/audio/merge2248/gag/candy_merge_gag_v3.ogg",
+      "sha256": "2a73db4e3540b95026a92f64940374bf9dc59b7361f96bf6b60cc80f4528d181",
+      "runtime_role": "every legal release"
+    },
+    {
+      "path": "assets/audio/merge2248/gag/recipe_mastery_gag_v3.ogg",
+      "sha256": "31d6eb4615ffb52a7520ef45bdca686a6b7bf0bd164efa0f5d9dda977cf869f8",
+      "runtime_role": "grade 3/4 mastery layer"
+    }
+  ],
+  "shipping_boundary": {
+    "runtime_derivatives": 7,
+    "source_masters_in_repository": 0,
+    "source_masters_in_fingerprinted_pck": 0,
+    "generated_text_or_numbers": 0,
+    "private_reference_assets_in_repository_or_pck": 0,
+    "public_deployment": false
+  }
+}

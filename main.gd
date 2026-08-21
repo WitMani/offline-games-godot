@@ -73,6 +73,7 @@ const SNAKES_ARENA_RULES = preload("res://models/snakes_arena_model.gd")
 const MERGE2248_RULES = preload("res://models/merge2248_model.gd")
 const WATERMELON_RULES = preload("res://models/watermelon_physics_model.gd")
 const MERGE2248_PRESENTATION = preload("res://presentation/merge2248_presenter.gd")
+const MERGE2248_SAVE_PATH := "user://offline_games_merge2248_v4.json"
 const MERGE2048_CLASSIC_PRESENTATION = preload("res://presentation/merge2048_classic_presenter.gd")
 const CATALOG_ART_DIRECTION = preload("res://presentation/catalog_art_director.gd")
 const WATERMELON_PRESENTATION = preload("res://presentation/watermelon_presenter.gd")
@@ -91,6 +92,8 @@ const SFX_FRUIT_CASCADE: AudioStream = preload("res://assets/audio/2048balls/fru
 const SFX_2048_SLIDE: AudioStream = preload("res://assets/audio/merge2048/tile_slide.ogg")
 const SFX_2048_MERGE: AudioStream = preload("res://assets/audio/merge2048/tile_merge.ogg")
 const SFX_2048_MILESTONE: AudioStream = preload("res://assets/audio/merge2048/tile_milestone.ogg")
+const SFX_MERGE2248_GAG_MERGE: AudioStream = preload("res://assets/audio/merge2248/gag/candy_merge_gag_v3.ogg")
+const SFX_MERGE2248_GAG_MASTERY: AudioStream = preload("res://assets/audio/merge2248/gag/recipe_mastery_gag_v3.ogg")
 const SFX_LOGIC_SELECT: AudioStream = preload("res://assets/audio/logic/paper_select.wav")
 const SFX_LOGIC_CONFIRM: AudioStream = preload("res://assets/audio/logic/ink_confirm.wav")
 const SFX_LOGIC_ERROR: AudioStream = preload("res://assets/audio/logic/correction_scratch.wav")
@@ -108,7 +111,7 @@ const SFX_ARROW_GO_GAG_KITE_STEP: AudioStream = preload("res://assets/audio/cata
 const SFX_ARROW_GO_GAG_HARBOR_DOCK: AudioStream = preload("res://assets/audio/catalog/path_games/gag/arrow_go_harbor_dock_gag_v1.ogg")
 
 var catalog: Array = [
-	{"id":"merge2248", "title":"2248", "subtitle":"数字连线", "group":"数字", "accent":Color("ffbf2f"), "desc":"八方向连接数字，把相邻数合成到 2048"},
+	{"id":"merge2248", "title":"2248", "subtitle":"数字连线", "group":"数字", "accent":Color("ffbf2f"), "desc":"八方向连接数字，延续你的最高配方"},
 	{"id":"merge2048", "title":"2048", "subtitle":"滑动合成", "group":"数字", "accent":Color("f4b860"), "desc":"用四个方向合成更大的数字"},
 	{"id":"watermelon", "title":"2048 Balls", "subtitle":"合成大西瓜", "group":"数字", "accent":Color("ff6b8a"), "desc":"落下水果，让相同水果合体"},
 	{"id":"meowdoku", "title":"Meowdoku", "subtitle":"猫咪数独", "group":"数独", "accent":Color("f39ac7"), "desc":"轻松填完九宫格，零网络也能玩"},
@@ -201,6 +204,10 @@ var merge2248_juice_grade := 0
 var merge2248_juice_destination := Vector2.ZERO
 var merge2248_score_started := -10.0
 var merge2248_score_grade := 1
+var merge2248_persistence_enabled := true
+var merge2248_save_path := MERGE2248_SAVE_PATH
+var merge2248_reduced_effects_override: Variant = null
+var merge2248_reduced_effects := false
 var merge2048_motion: Dictionary = {}
 var snake_ghosts: Array[Dictionary] = []
 var snake_pixels: Array[Dictionary] = []
@@ -270,6 +277,7 @@ func _ready() -> void:
 	if cjk_font:
 		cjk_font.fallbacks = [LATIN_FONT, SYMBOL_FONT]
 	fallback_font = UI_FONT
+	merge2248_reduced_effects = _detect_merge2248_reduced_effects()
 	logger = get_node_or_null("/root/Logger")
 	action_executor = get_node_or_null("/root/ActionExecutor")
 	if logger:
@@ -291,7 +299,9 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	elapsed += delta
 	tick += 1
-	var current_score := int(state.get("score", 0))
+	# Merge 2248 owns an arbitrary-length score string; move count is its safe
+	# monotonic pulse signal. Other cartridges retain their numeric score path.
+	var current_score := int(state.get("moves", 0)) if game_id == "merge2248" else int(state.get("score", 0))
 	if screen == "game" and current_score > last_score:
 		score_pulse_until = elapsed + 0.28
 	last_score = current_score
@@ -570,6 +580,14 @@ func _input(event: InputEvent) -> void:
 			_reset_current()
 			get_viewport().set_input_as_handled()
 			return
+		if event.keycode == KEY_U and screen == "game" and game_id == "merge2248":
+			_merge2248_undo()
+			get_viewport().set_input_as_handled()
+			return
+		if event.keycode == KEY_M and screen == "game" and game_id == "merge2248":
+			_merge2248_cycle_mode()
+			get_viewport().set_input_as_handled()
+			return
 		if screen != "game":
 			return
 		if event.keycode in [KEY_UP, KEY_W]:
@@ -674,7 +692,7 @@ func _open_game(id: String) -> void:
 	catalog_fx.clear()
 	rng.seed = abs(id.hash()) + 17
 	_start_game_state()
-	last_score = int(state.get("score", 0))
+	last_score = int(state.get("moves", 0)) if game_id == "merge2248" else int(state.get("score", 0))
 	_begin_transition(1.0)
 	_build_game_buttons()
 	_log_event("game_opened", {"game_id":game_id})
@@ -694,6 +712,9 @@ func _build_game_buttons() -> void:
 		_add_button("首页", Rect2(16, 24, 76, 48), Callable(self, "_build_home"), SURFACE_2, 15)
 		_add_button("重开", Rect2(448, 24, 76, 48), Callable(self, "_reset_current"), SURFACE_2, 15)
 	match game_id:
+		"merge2248":
+			_add_button("难度 · %s" % _merge2248_mode_label(), Rect2(16, 878, 96, 44), Callable(self, "_merge2248_cycle_mode"), Color("23585a"), 12)
+			_add_button("撤销", Rect2(444, 878, 80, 44), Callable(self, "_merge2248_undo"), Color("23585a"), 13)
 		"merge2048":
 			_add_button("左", Rect2(170, 826, 58, 52), Callable(self, "_merge_move").bind(Vector2i.LEFT), SURFACE_2, 16)
 			_add_button("下", Rect2(241, 878, 58, 52), Callable(self, "_merge_move").bind(Vector2i.DOWN), SURFACE_2, 16)
@@ -729,7 +750,7 @@ func _reset_current() -> void:
 		return
 	catalog_fx.clear()
 	rng.seed = abs(game_id.hash()) + 17
-	_start_game_state()
+	_start_game_state(true)
 	_log_event("game_reset", {"game_id":game_id})
 	_capture("reset_%s" % game_id)
 	if game_id == "snake_classic":
@@ -1262,8 +1283,10 @@ func _draw_score_panel() -> void:
 	var compact := state.has("mistakes")
 	_draw_text("得分", Vector2(31, 142), 10, secondary_text)
 	var score_scale := 1.0 + (0.16 * clampf((score_pulse_until - elapsed) / 0.28, 0.0, 1.0))
+	if candy_mode and _merge2248_reduced_effects_active():
+		score_scale = 1.0
 	var score_color := INK
-	if candy_mode:
+	if candy_mode and not _merge2248_reduced_effects_active():
 		var score_age := elapsed - merge2248_score_started
 		var score_duration := 0.30 + float(merge2248_score_grade) * 0.07
 		if score_age >= 0.0 and score_age < score_duration:
@@ -1271,7 +1294,9 @@ func _draw_score_panel() -> void:
 			var score_kick := sin(score_t * PI) * (0.04 + float(merge2248_score_grade) * 0.025)
 			score_scale += score_kick
 			score_color = _merge2248_grade_color(merge2248_score_grade).lerp(INK, score_t)
-	_draw_center_font(NUMBER_FONT, str(int(state.get("score", 0))), Vector2(72, 159), int(21 * score_scale), score_color)
+	var score_text := str(state.get("score_label", "0")) if candy_mode else str(int(state.get("score", 0)))
+	var score_font_size := 17 if candy_mode and score_text.length() > 7 else 21
+	_draw_center_font(NUMBER_FONT, score_text, Vector2(72, 159), int(score_font_size * score_scale), score_color)
 	draw_line(Vector2(112, 134), Vector2(112, 166), Color(INK, 0.10), 1.0)
 	_draw_text("步数", Vector2(127, 142), 10, secondary_text)
 	_draw_center_font(NUMBER_FONT, str(int(state.get("moves", 0))), Vector2(164, 159), 21, INK)
@@ -1286,7 +1311,7 @@ func _draw_score_panel() -> void:
 
 func _objective_status() -> String:
 	match game_id:
-		"merge2248": return "最高 %s / 2048" % _merge2248_highest_label()
+		"merge2248": return "历史 %s · %s" % [str(state.get("all_time_label", "0")), _merge2248_mode_label()]
 		"merge2048": return "目标 2048"
 		"watermelon": return "目标 %d" % int(state.get("target_value", 256))
 		"snake_classic": return "长度 %d / %d" % [int(state.get("score", 4)), int(state.get("target_length", 120))]
@@ -1390,7 +1415,8 @@ func _draw_result_overlay(won: bool) -> void:
 	draw_circle(Vector2(270, 382), 27, Color(color, 0.18))
 	draw_arc(Vector2(270, 382), 24, 0, TAU, 40, color, 3.0)
 	_draw_center("胜利" if won else "本局结束", Vector2(270, 438), 32, color)
-	_draw_center("得分 %d · 步数 %d" % [int(state.get("score", 0)), int(state.get("moves", 0))], Vector2(270, 478), 16, INK)
+	var result_score := str(state.get("score_label", state.get("score", "0"))) if game_id == "merge2248" else str(int(state.get("score", 0)))
+	_draw_center("得分 %s · 步数 %d" % [result_score, int(state.get("moves", 0))], Vector2(270, 478), 16, INK)
 	_draw_center("点击右上角“重开”继续挑战", Vector2(270, 524), 13, BRIGHT_MUTED)
 
 func _draw_game_world(_accent: Color) -> void:
@@ -1690,12 +1716,12 @@ func _catalog_item(id: String) -> Dictionary:
 			return item
 	return {"id":id, "title":id, "subtitle":"", "group":"游戏", "accent":CYAN, "desc":""}
 
-func _start_game_state() -> void:
+func _start_game_state(force_reset := false) -> void:
 	state = {"status":"playing", "score":0, "moves":0, "game_id":game_id}
 	selected_cell = Vector2i(-1, -1)
 	snake_clock = 0.0
 	match game_id:
-		"merge2248": _init_merge2248()
+		"merge2248": _init_merge2248(force_reset)
 		"merge2048": _init_merge()
 		"watermelon": _init_watermelon()
 		"sudoku", "meowdoku": _init_sudoku()
@@ -1721,8 +1747,15 @@ func _new_grid(width: int, height: int, value: Variant = 0) -> Array:
 # Number Connect / 2248
 # -----------------------------------------------------------------------------
 
-func _init_merge2248() -> void:
-	merge2248_model.reset(abs(game_id.hash()) + 17, 8)
+func _init_merge2248(force_reset := false) -> void:
+	var restored := false
+	if not force_reset and merge2248_persistence_enabled:
+		restored = _load_merge2248_progress()
+	if not restored:
+		var retained_mode := str(merge2248_model.mode)
+		if retained_mode not in [MERGE2248_RULES.MODE_EASY, MERGE2248_RULES.MODE_HARD]:
+			retained_mode = MERGE2248_RULES.MODE_EASY
+		merge2248_model.reset(abs(game_id.hash()) + 17, retained_mode, true)
 	merge2248_drag_active = false
 	merge2248_fx.clear()
 	merge2248_chain_pulse = -10.0
@@ -1735,6 +1768,8 @@ func _init_merge2248() -> void:
 	merge2248_score_started = -10.0
 	merge2248_score_grade = 1
 	_sync_merge2248_state()
+	if force_reset:
+		_save_merge2248_progress()
 
 func _sync_merge2248_state() -> void:
 	state.merge2248 = merge2248_model.snapshot()
@@ -1744,6 +1779,81 @@ func _sync_merge2248_state() -> void:
 	state.moves = state.merge2248.moves
 	state.status = state.merge2248.status
 	state.preview = state.merge2248.preview
+	state.preview_power = state.merge2248.preview_power
+	state.preview_label = state.merge2248.preview_label
+	state.score_label = state.merge2248.score_label
+	state.all_time = state.merge2248.all_time
+	state.all_time_label = state.merge2248.all_time_label
+	state.mode = state.merge2248.mode
+	state.mode_evidence_verified = state.merge2248.mode_evidence_verified
+	state.can_undo = state.merge2248.can_undo
+	state.reduced_effects = _merge2248_reduced_effects_active()
+
+func _save_merge2248_progress() -> bool:
+	if not merge2248_persistence_enabled:
+		return false
+	var file := FileAccess.open(merge2248_save_path, FileAccess.WRITE)
+	if file == null:
+		return false
+	file.store_string(JSON.stringify(merge2248_model.serialize()))
+	file.flush()
+	return true
+
+func _load_merge2248_progress() -> bool:
+	if not merge2248_persistence_enabled or not FileAccess.file_exists(merge2248_save_path):
+		return false
+	var file := FileAccess.open(merge2248_save_path, FileAccess.READ)
+	if file == null:
+		return false
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	return parsed is Dictionary and merge2248_model.restore(parsed)
+
+func _merge2248_cycle_mode() -> void:
+	if game_id != "merge2248":
+		return
+	var next_mode := MERGE2248_RULES.MODE_HARD if merge2248_model.mode == MERGE2248_RULES.MODE_EASY else MERGE2248_RULES.MODE_EASY
+	var mode_seed: int = abs(game_id.hash()) + (181 if next_mode == MERGE2248_RULES.MODE_HARD else 17)
+	merge2248_model.reset(mode_seed, next_mode, true)
+	merge2248_drag_active = false
+	merge2248_fx.clear()
+	merge2248_chain_grade = 0
+	merge2248_juice_grade = 0
+	_sync_merge2248_state()
+	_save_merge2248_progress()
+	_build_game_buttons()
+	_flash_feedback("难度切换 · %s" % _merge2248_mode_label(), Color("f1bd68"))
+	_log_event("merge2248_mode", {"mode":merge2248_model.mode, "rows":merge2248_model.height, "evidence_verified":merge2248_model.is_mode_evidence_verified()})
+	queue_redraw()
+
+func _merge2248_mode_label() -> String:
+	return "简单" if merge2248_model.mode == MERGE2248_RULES.MODE_EASY else "困难"
+
+func _merge2248_undo() -> void:
+	if game_id != "merge2248":
+		return
+	if not merge2248_model.undo():
+		_flash_feedback("暂无可撤销配方", Color("d7e5d8"))
+		return
+	merge2248_drag_active = false
+	merge2248_fx.clear()
+	merge2248_chain_grade = 0
+	merge2248_juice_grade = 0
+	_sync_merge2248_state()
+	_save_merge2248_progress()
+	_flash_feedback("已撤销上一份配方", Color("82cd64"))
+	_log_event("merge2248_undo", {"score":state.score, "moves":state.moves, "mode":state.mode})
+	queue_redraw()
+
+func _detect_merge2248_reduced_effects() -> bool:
+	if not OS.has_feature("web"):
+		return false
+	var preference: Variant = JavaScriptBridge.eval("window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches", true)
+	return bool(preference)
+
+func _merge2248_reduced_effects_active() -> bool:
+	if merge2248_reduced_effects_override != null:
+		return bool(merge2248_reduced_effects_override)
+	return merge2248_reduced_effects
 
 func _merge2248_board_rect() -> Rect2:
 	return Rect2(50, 224, 440, 640)
@@ -1762,7 +1872,8 @@ func _merge2248_begin_at(screen_pos: Vector2) -> bool:
 		merge2248_chain_pulse = elapsed
 		merge2248_chain_grade = 0
 		_play_sfx(SFX_SNAKE_KEY, -18.0, 1.12)
-		_haptic(4)
+		if not _merge2248_reduced_effects_active():
+			_haptic(4)
 		_sync_merge2248_state()
 		queue_redraw()
 	return began
@@ -1772,26 +1883,32 @@ func _merge2248_extend_at(screen_pos: Vector2) -> void:
 	if merge2248_model.extend(_merge2248_cell_at(screen_pos)):
 		merge2248_chain_pulse = elapsed
 		var previous_grade := merge2248_chain_grade
-		merge2248_chain_grade = _merge2248_feedback_grade(merge2248_model.selected.size(), merge2248_model.preview_result())
+		merge2248_chain_grade = _merge2248_feedback_grade(merge2248_model.selected.size(), merge2248_model.preview_power())
 		var chain_pitch := 1.0 + minf(float(merge2248_model.selected.size()), 9.0) * 0.055
 		_play_sfx(SFX_SNAKE_KEY, -17.0, chain_pitch)
-		_haptic(6 + merge2248_chain_grade * 3 + (4 if merge2248_chain_grade > previous_grade else 0))
+		if not _merge2248_reduced_effects_active():
+			_haptic(6 + merge2248_chain_grade * 3 + (4 if merge2248_chain_grade > previous_grade else 0))
 		_sync_merge2248_state()
 		queue_redraw()
 
 func _merge2248_release() -> void:
 	# Preserve presentation inputs before the authoritative model consumes the
 	# path. These copies never influence legality, score, gravity, or refill.
-	var path_values: Array[int] = []
+	var path_powers: Array[int] = []
+	var path_labels: Array[String] = []
 	for selected in merge2248_model.selected:
-		path_values.append(int(merge2248_model.board[selected.y][selected.x]))
+		var power := int(merge2248_model.board[selected.y][selected.x])
+		path_powers.append(power)
+		path_labels.append(merge2248_model.power_label(power))
 	var outcome: Dictionary = merge2248_model.release()
 	_sync_merge2248_state()
 	if bool(outcome.get("changed", false)):
-		var gained := int(outcome.gained)
-		var result_value := int(outcome.result)
+		var gained := str(outcome.gained)
+		var gained_label := str(outcome.gained_label)
+		var result_power := int(outcome.result_power)
+		var result_label := str(outcome.result_label)
 		var chain_length := int(outcome.path.size())
-		var feedback_grade := _merge2248_feedback_grade(chain_length, result_value)
+		var feedback_grade := _merge2248_feedback_grade(chain_length, result_power)
 		var path_points: Array[Vector2] = []
 		for path_cell in outcome.path:
 			path_points.append(_merge2248_cell_center(path_cell))
@@ -1799,34 +1916,40 @@ func _merge2248_release() -> void:
 		merge2248_fx.append({
 			"started": elapsed,
 			"points": path_points,
-			"values": path_values,
-			"result": result_value,
-			"color": _merge2248_color(result_value),
+			"powers": path_powers,
+			"labels": path_labels,
+			"result_power": result_power,
+			"result_label": result_label,
+			"color": _merge2248_color(result_power),
 			"grade": feedback_grade,
 			"chain_length": chain_length,
 			"gained": gained,
-			"duration": 0.76 + float(feedback_grade) * 0.11,
+			"gained_label": gained_label,
+			"reduced_effects": _merge2248_reduced_effects_active(),
+			"duration": 0.44 if _merge2248_reduced_effects_active() else 0.76 + float(feedback_grade) * 0.11,
 		})
 		_merge2248_start_juice(feedback_grade, destination)
-		_play_sfx(SFX_SNAKE_EAT, -8.0 + float(feedback_grade - 1) * 1.2, 0.90 + minf(float(chain_length), 9.0) * 0.035)
+		_play_sfx(SFX_MERGE2248_GAG_MERGE, -11.5 + float(feedback_grade - 1) * 1.15, 0.92 + minf(float(chain_length), 9.0) * 0.028)
 		if feedback_grade >= 3:
-			_play_sfx(SFX_SNAKE_EAT, -15.0, 0.58 + float(feedback_grade) * 0.045)
-		_haptic_pattern(_merge2248_release_haptic(feedback_grade))
+			_play_sfx(SFX_MERGE2248_GAG_MASTERY, -12.0 + float(feedback_grade - 3) * 1.8, 0.97 + float(feedback_grade - 3) * 0.035)
+		if not _merge2248_reduced_effects_active():
+			_haptic_pattern(_merge2248_release_haptic(feedback_grade))
 		var grade_label := _merge2248_grade_label(feedback_grade)
-		_flash_feedback("%s ×%d · +%d → %d" % [grade_label, chain_length, gained, result_value], _merge2248_grade_color(feedback_grade))
+		_flash_feedback("%s ×%d · +%s → %s" % [grade_label, chain_length, gained_label, result_label], _merge2248_grade_color(feedback_grade))
 		feedback_until = elapsed + 0.78 + float(feedback_grade) * 0.12
-		_log_event("merge2248_connect", {"length":chain_length, "gained":gained, "result":result_value, "feedback_grade":feedback_grade})
+		_save_merge2248_progress()
+		_log_event("merge2248_connect", {"length":chain_length, "gained":gained, "result_power":result_power, "result_label":result_label, "feedback_grade":feedback_grade, "mode":merge2248_model.mode})
 		if state.status != "playing":
-			_capture("win_merge2248" if state.status == "won" else "game_over_merge2248")
+			_capture("game_over_merge2248")
 	queue_redraw()
 
-func _merge2248_feedback_grade(chain_length: int, result_value: int) -> int:
+func _merge2248_feedback_grade(chain_length: int, result_power: int) -> int:
 	var grade := 1
-	if chain_length >= 3 or result_value >= 16:
+	if chain_length >= 3 or result_power >= 4:
 		grade = 2
-	if chain_length >= 5 or result_value >= 128:
+	if chain_length >= 5 or result_power >= 7:
 		grade = 3
-	if chain_length >= 8 or result_value >= 512:
+	if chain_length >= 8 or result_power >= 9:
 		grade = 4
 	return grade
 
@@ -1864,15 +1987,16 @@ func _merge2248_start_juice(grade: int, destination: Vector2) -> void:
 	merge2248_juice_grade = clampi(grade, 1, 4)
 	merge2248_juice_destination = destination
 	merge2248_settle_grade = merge2248_juice_grade
-	merge2248_settle_started = elapsed + 0.10 + float(merge2248_juice_grade) * 0.018
+	merge2248_settle_started = elapsed if _merge2248_reduced_effects_active() else elapsed + 0.10 + float(merge2248_juice_grade) * 0.018
 	merge2248_score_started = elapsed
 	merge2248_score_grade = merge2248_juice_grade
 	score_pulse_until = elapsed + 0.28 + float(merge2248_juice_grade) * 0.07
 	merge2248_chain_grade = 0
-	_impact(destination, _merge2248_grade_color(merge2248_juice_grade), 0.54 + float(merge2248_juice_grade) * 0.27)
+	if not _merge2248_reduced_effects_active():
+		_impact(destination, _merge2248_grade_color(merge2248_juice_grade), 0.54 + float(merge2248_juice_grade) * 0.27)
 
 func _merge2248_shake_offset() -> Vector2:
-	if merge2248_juice_grade <= 0:
+	if merge2248_juice_grade <= 0 or _merge2248_reduced_effects_active():
 		return Vector2.ZERO
 	var age := elapsed - merge2248_juice_started - 0.055
 	var duration := 0.08 + float(merge2248_juice_grade) * 0.085
@@ -1891,6 +2015,8 @@ func _merge2248_shake_offset() -> Vector2:
 	return (direction * longitudinal + tangent * lateral * 0.58) * amplitude * envelope
 
 func _merge2248_board_juice_transform(rect: Rect2) -> Transform2D:
+	if _merge2248_reduced_effects_active():
+		return Transform2D.IDENTITY
 	var center := rect.get_center()
 	var scale_value := Vector2.ONE
 	var rotation := 0.0
@@ -1921,33 +2047,22 @@ func _merge2248_cell_center(cell_position: Vector2i) -> Vector2:
 	return rect.position + Vector2((cell_position.x + 0.5) * cell.x, (cell_position.y + 0.5) * cell.y)
 
 func _merge2248_highest_label() -> String:
-	var highest := 0
-	for row in merge2248_model.board:
-		for value in row:
-			highest = maxi(highest, int(value))
-	return str(highest)
+	return merge2248_model.power_label(merge2248_model.highest_power())
 
-func _merge2248_color(value: int) -> Color:
-	match value:
-		2: return Color("ff7777")
-		4: return Color("a876f3")
-		8: return Color("ffc801")
-		16: return Color("82cd64")
-		32: return Color("64c7fe")
-		64: return Color("ffb177")
-		128: return Color("598cdd")
-		256: return Color("aa8364")
-		512: return Color("00ddaa")
-		1024: return Color("8787f9")
-		2048: return Color("77faff")
-		_: return Color("8290ab")
+func _merge2248_color(power: int) -> Color:
+	var palette := [
+		Color("ff7777"), Color("a876f3"), Color("ffc801"), Color("82cd64"),
+		Color("64c7fe"), Color("ffb177"), Color("598cdd"), Color("aa8364"),
+		Color("00ddaa"), Color("8787f9"), Color("77faff"), Color("ff8fbe"),
+	]
+	return palette[posmod(maxi(power, 1) - 1, palette.size())]
 
 func _draw_merge2248() -> void:
 	var rect := _merge2248_board_rect()
 	var rows: int = merge2248_model.height
 	var cell := Vector2(rect.size.x / 5.0, rect.size.y / float(rows))
 	var selected_cells: Array = merge2248_model.selected
-	_draw_section_heading("糖果配方", "同值起步 · 八向拉糖", Color("f1bd68"))
+	_draw_section_heading("糖果配方 · %s" % _merge2248_mode_label(), "同值起步 · 八向拉糖", Color("f1bd68"))
 	var juice_transform := _merge2248_board_juice_transform(rect)
 	var juice_scale := juice_transform.get_scale()
 	var juice_rotation := juice_transform.get_rotation()
@@ -1958,15 +2073,17 @@ func _draw_merge2248() -> void:
 	var path_points: Array[Vector2] = []
 	for selected_cell_position in selected_cells:
 		path_points.append(juice_transform * _merge2248_cell_center(selected_cell_position))
-	var preview := merge2248_model.preview_result()
-	var preview_grade := _merge2248_feedback_grade(selected_cells.size(), preview) if preview > 0 else maxi(1, merge2248_chain_grade)
-	var ribbon_color := _merge2248_color(preview) if preview > 0 else Color("efb85f")
-	merge2248_presenter.draw_ribbon(self, path_points, juice_transform * merge2248_pointer, merge2248_drag_active, elapsed, ribbon_color, preview_grade)
+	var preview_power := merge2248_model.preview_power()
+	var preview_label := merge2248_model.preview_label()
+	var preview_grade := _merge2248_feedback_grade(selected_cells.size(), preview_power) if preview_power > 0 else maxi(1, merge2248_chain_grade)
+	var ribbon_color := _merge2248_color(preview_power) if preview_power > 0 else Color("efb85f")
+	merge2248_presenter.draw_ribbon(self, path_points, juice_transform * merge2248_pointer, merge2248_drag_active, elapsed, ribbon_color, preview_grade, _merge2248_reduced_effects_active())
 
 	for y in range(rows):
 		for x in range(5):
 			var center := rect.position + Vector2((x + 0.5) * cell.x, (y + 0.5) * cell.y)
-			var value := int(merge2248_model.board[y][x])
+			var power := int(merge2248_model.board[y][x])
+			var label := merge2248_model.power_label(power)
 			var selected_now := Vector2i(x, y) in selected_cells
 			var selection_index := selected_cells.find(Vector2i(x, y))
 			var token_scale := Vector2.ONE
@@ -1978,7 +2095,7 @@ func _draw_merge2248() -> void:
 			var settle_delay := float(y) * 0.018 + float(x) * 0.012
 			var settle_age := elapsed - merge2248_settle_started - settle_delay
 			var settle_duration := 0.40 + float(merge2248_settle_grade) * 0.04
-			if settle_age >= 0.0 and settle_age < settle_duration:
+			if not _merge2248_reduced_effects_active() and settle_age >= 0.0 and settle_age < settle_duration:
 				var settle_t := clampf(settle_age / settle_duration, 0.0, 1.0)
 				var fall := 1.0 - pow(1.0 - settle_t, 3.0)
 				token_offset.y = lerpf(-16.0 - float(merge2248_settle_grade) * 5.0, 0.0, fall)
@@ -1987,9 +2104,9 @@ func _draw_merge2248() -> void:
 				token_scale *= Vector2(1.0 + contact * contact_strength, 1.0 - contact * contact_strength)
 
 			if selected_now:
-				var pulse := sin(elapsed * 6.8 - float(maxi(selection_index, 0)) * 0.48)
-				var accepted_age := clampf((elapsed - merge2248_chain_pulse) / 0.18, 0.0, 1.0)
-				var accepted_pop := sin(accepted_age * PI) * 0.10
+				var pulse := 0.0 if _merge2248_reduced_effects_active() else sin(elapsed * 6.8 - float(maxi(selection_index, 0)) * 0.48)
+				var accepted_age := 1.0 if _merge2248_reduced_effects_active() else clampf((elapsed - merge2248_chain_pulse) / 0.18, 0.0, 1.0)
+				var accepted_pop := 0.0 if _merge2248_reduced_effects_active() else sin(accepted_age * PI) * 0.10
 				token_scale *= Vector2(1.08 + accepted_pop + pulse * 0.012, 0.96 - accepted_pop * 0.32 - pulse * 0.008)
 				if selection_index == selected_cells.size() - 1 and merge2248_drag_active:
 					token_rotation = clampf((merge2248_pointer.x - center.x) / 900.0, -0.075, 0.075)
@@ -1997,8 +2114,9 @@ func _draw_merge2248() -> void:
 			merge2248_presenter.draw_token(
 				self,
 				juice_transform * (center + token_offset),
-				value,
-				_merge2248_color(value),
+				power,
+				label,
+				_merge2248_color(power),
 				selected_now,
 				NUMBER_FONT,
 				elapsed,
@@ -2007,11 +2125,11 @@ func _draw_merge2248() -> void:
 			)
 
 	var helper := "连接相邻同值糖果，再追踪同值或双倍数字"
-	if preview > 0:
+	if preview_power > 0:
 		var label_width: float = [178.0, 210.0, 234.0, 258.0][preview_grade - 1]
-		merge2248_presenter.draw_recipe_label(self, Rect2(270.0 - label_width * 0.5, 879, label_width, 40), preview, DISPLAY_FONT, preview_grade, selected_cells.size(), elapsed)
+		merge2248_presenter.draw_recipe_label(self, Rect2(270.0 - label_width * 0.5, 879, label_width, 40), preview_label, DISPLAY_FONT, preview_grade, selected_cells.size(), elapsed, _merge2248_reduced_effects_active())
 	else:
-		_draw_panel(Rect2(101, 884, 338, 30), Color("17484a", 0.90), Color("f3d59d", 0.26), 15, 1)
+		_draw_panel(Rect2(118, 884, 320, 30), Color("17484a", 0.90), Color("f3d59d", 0.26), 15, 1)
 		_draw_center(helper, Vector2(270, 903), 11, Color("fff1ce", 0.94))
 	_draw_merge2248_fx(juice_transform)
 
@@ -2042,7 +2160,9 @@ func _init_merge() -> void:
 	board[1][2] = 4
 	board[2][1] = 4
 	state["board"] = board
-	state["target"] = 2248 if game_id == "merge2248" else 2048
+	# This route is classic 2048 only. Number Connect / 2248 owns the separate
+	# renderer-independent model above and must never inherit a score target.
+	state["target"] = 2048
 	state["score"] = 0
 	_spawn_merge_tile()
 	_spawn_merge_tile()
@@ -2212,8 +2332,6 @@ func _merge_impact_position(before: Array, after: Array, direction: Vector2i, ga
 	return Vector2(42, 236) + Vector2(best.x + 0.5, best.y + 0.5) * 109.0
 
 func _merge_has_target() -> bool:
-	if game_id == "merge2248":
-		return int(state.get("score", 0)) >= 2248
 	for row in state["board"]:
 		for value in row:
 			if int(value) >= _merge_target_tile():

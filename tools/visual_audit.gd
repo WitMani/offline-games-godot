@@ -14,6 +14,7 @@ func _init() -> void:
 
 func _run() -> void:
 	game = load("res://main.tscn").instantiate()
+	game.merge2248_persistence_enabled = false
 	root.add_child(game)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(output_dir))
 	await _settle(0.45)
@@ -47,8 +48,8 @@ func _exercise(id: String) -> void:
 		"merge2248":
 			var rect: Rect2 = game._merge2248_board_rect()
 			var cell := rect.size / Vector2(5, 8)
-			game.merge2248_model.board[7][0] = 2
-			game.merge2248_model.board[7][1] = 2
+			game.merge2248_model.board[7][0] = 1
+			game.merge2248_model.board[7][1] = 1
 			game._sync_merge2248_state()
 			game._merge2248_begin_at(rect.position + Vector2(cell.x * 0.5, cell.y * 7.5))
 			game.merge2248_drag_active = true

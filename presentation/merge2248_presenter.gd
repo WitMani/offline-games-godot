@@ -14,6 +14,13 @@ const FELT_DARK := Color("0b3e43")
 const WOOD := Color("a45c32")
 const WOOD_DARK := Color("60351f")
 const HONEY := Color("e4a84e")
+const GAG_TOKEN_TEXTURES := [
+	preload("res://assets/art/merge2248/gag/candy_wrapped_gag_v3.png"),
+	preload("res://assets/art/merge2248/gag/candy_tart_gag_v3.png"),
+	preload("res://assets/art/merge2248/gag/candy_lozenge_gag_v3.png"),
+	preload("res://assets/art/merge2248/gag/candy_flower_gag_v3.png"),
+]
+const GAG_MERGE_BURST_TEXTURE: Texture2D = preload("res://assets/art/merge2248/gag/caramel_cream_burst_gag_v3.png")
 
 var _rounded_style_cache: Dictionary = {}
 
@@ -35,7 +42,8 @@ func draw_board(canvas: CanvasItem, rect: Rect2, cell: Vector2) -> void:
 	for lane in range(1, 5):
 		var x := rect.position.x + float(lane) * cell.x
 		_draw_dashed_line(canvas, Vector2(x, rect.position.y + 18), Vector2(x, rect.end.y - 18), Color(CREAM, 0.065), 7.0, 7.0, 1.2)
-	for row in range(1, 8):
+	var row_count := maxi(1, roundi(rect.size.y / maxf(cell.y, 1.0)))
+	for row in range(1, row_count):
 		var y := rect.position.y + float(row) * cell.y
 		_draw_dashed_line(canvas, Vector2(rect.position.x + 18, y), Vector2(rect.end.x - 18, y), Color("052f33", 0.14), 8.0, 9.0, 1.0)
 
@@ -47,7 +55,8 @@ func draw_ribbon(
 	drag_active: bool,
 	time: float,
 	accent: Color,
-	grade: int = 1
+	grade: int = 1,
+	reduced_effects: bool = false
 ) -> void:
 	if points.is_empty():
 		return
@@ -58,14 +67,15 @@ func draw_ribbon(
 			var a := points[i - 1]
 			var b := points[i]
 			_draw_ribbon_segment(canvas, a, b, accent, 1.0, width_scale)
-			var travel := fposmod(time * 1.75 + float(i) * 0.21, 1.0)
-			var pulse := a.lerp(b, travel)
-			canvas.draw_circle(pulse + Vector2(0, 2), 5.6 * width_scale, Color(COCOA_DARK, 0.32))
-			canvas.draw_circle(pulse, 4.4 * width_scale, accent.lightened(0.22))
-			canvas.draw_circle(pulse - Vector2(1.2, 1.2), 1.7, CREAM_LIGHT)
-			if grade_value >= 3:
-				var second_pulse := a.lerp(b, fposmod(travel + 0.46, 1.0))
-				canvas.draw_circle(second_pulse, 2.6 + float(grade_value - 3), Color(CREAM_LIGHT, 0.82))
+			if not reduced_effects:
+				var travel := fposmod(time * 1.75 + float(i) * 0.21, 1.0)
+				var pulse := a.lerp(b, travel)
+				canvas.draw_circle(pulse + Vector2(0, 2), 5.6 * width_scale, Color(COCOA_DARK, 0.32))
+				canvas.draw_circle(pulse, 4.4 * width_scale, accent.lightened(0.22))
+				canvas.draw_circle(pulse - Vector2(1.2, 1.2), 1.7, CREAM_LIGHT)
+				if grade_value >= 3:
+					var second_pulse := a.lerp(b, fposmod(travel + 0.46, 1.0))
+					canvas.draw_circle(second_pulse, 2.6 + float(grade_value - 3), Color(CREAM_LIGHT, 0.82))
 	if drag_active:
 		var tail_from := points[-1]
 		var max_tail := minf(tail_from.distance_to(pointer), 82.0)
@@ -76,7 +86,8 @@ func draw_ribbon(
 func draw_token(
 	canvas: CanvasItem,
 	center: Vector2,
-	value: int,
+	power: int,
+	label: String,
 	body_color: Color,
 	selected: bool,
 	font: Font,
@@ -85,20 +96,25 @@ func draw_token(
 	rotation: float = 0.0,
 	alpha: float = 1.0
 ) -> void:
-	var exponent := maxi(1, int(round(log(float(maxi(value, 2))) / log(2.0))))
+	var exponent := maxi(1, power)
 	var kind := _shape_kind(exponent)
 	var rim_color := CREAM_LIGHT if selected else body_color.darkened(0.46)
 	var lifted := 4.0 if selected else 0.0
 	canvas.draw_set_transform(center - Vector2(0, lifted), rotation, scale_value)
 
-	# The full material stack remains readable if every transient FX layer is
-	# removed: contact shadow, silhouette, body, inset, highlight, numeral.
+	# The code-native silhouette is the value-colored structural backplate. The
+	# GAG confection is the visible, frequently repeated material surface; live
+	# numerals remain authoritative and are never baked into the bitmap.
 	_draw_token_shape(canvas, kind, Color(COCOA_DARK, 0.42 * alpha), Vector2(0, 7.0 + lifted), 2.6)
 	if selected:
 		_draw_token_shape(canvas, kind, _with_alpha(CREAM_LIGHT, alpha), Vector2.ZERO, 5.0)
 	_draw_token_shape(canvas, kind, _with_alpha(rim_color, alpha), Vector2.ZERO, 2.2)
-	_draw_token_shape(canvas, kind, _with_alpha(body_color, alpha), Vector2.ZERO, -0.3)
-	_draw_token_shape(canvas, kind, _with_alpha(body_color.lightened(0.13), alpha), Vector2(-1.0, -2.0), -5.1)
+	_draw_token_shape(canvas, kind, _with_alpha(body_color, alpha), Vector2.ZERO, 0.2)
+	var token_texture: Texture2D = GAG_TOKEN_TEXTURES[kind]
+	var token_rect := _token_texture_rect(kind)
+	canvas.draw_texture_rect(token_texture, Rect2(token_rect.position + Vector2(0, 5.0), token_rect.size), false, Color(COCOA_DARK, 0.20 * alpha))
+	canvas.draw_texture_rect(token_texture, token_rect, false, Color(1.0, 1.0, 1.0, alpha))
+	canvas.draw_arc(Vector2(0, 1), 28.5, 0.25, 2.89, 22, _with_alpha(body_color.darkened(0.10), 0.74 * alpha), 2.2, true)
 
 	# Tier details add a second signal beyond hue and numeral.
 	if exponent >= 6:
@@ -116,38 +132,42 @@ func draw_token(
 		var sparkle := Vector2(cos(time * 3.4), sin(time * 3.4)) * 29.0
 		_draw_spark(canvas, sparkle, 4.0, _with_alpha(CREAM_LIGHT, 0.88 * alpha))
 
-	_draw_token_number(canvas, font, value, alpha)
+	_draw_token_number(canvas, font, label, alpha)
 	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 func draw_merge_fx(canvas: CanvasItem, effect: Dictionary, now: float, number_font: Font, label_font: Font) -> void:
 	var age := now - float(effect.get("started", now))
 	var points: Array = effect.get("points", [])
-	var values: Array = effect.get("values", [])
+	var powers: Array = effect.get("powers", [])
+	var labels: Array = effect.get("labels", [])
 	if points.is_empty():
 		return
 	var destination: Vector2 = points[-1]
-	var result := int(effect.get("result", 2))
+	var result_power := int(effect.get("result_power", 1))
+	var result_label := str(effect.get("result_label", "2"))
 	var color: Color = effect.get("color", Color("ff7777"))
 	var grade := clampi(int(effect.get("grade", 1)), 1, 4)
 	var chain_length := int(effect.get("chain_length", points.size()))
-	var gained := int(effect.get("gained", result))
+	var gained_label := str(effect.get("gained_label", "0"))
 	var intensity := float(grade)
+	var reduced_effects := bool(effect.get("reduced_effects", false))
 
 	# Gather: retained path candies converge toward the destination. The model
 	# has already transitioned; these are strictly short-lived visual echoes.
 	var gather_duration := 0.18 + intensity * 0.014
-	if age < gather_duration + 0.03:
+	if not reduced_effects and age < gather_duration + 0.03:
 		var gather := _ease_in_cubic(clampf(age / gather_duration, 0.0, 1.0))
 		for i in range(maxi(0, points.size() - 1)):
 			var delay := float(i) * 0.012
 			var local_t := _ease_in_cubic(clampf((age - delay) / gather_duration, 0.0, 1.0))
 			var arc_offset := Vector2(0, -sin(local_t * PI) * (10.0 + intensity * 3.0 + float(i % 3) * 4.0))
-			var token_value := int(values[i]) if i < values.size() else maxi(2, result / 2)
+			var token_power := int(powers[i]) if i < powers.size() else maxi(1, result_power - 1)
+			var token_label := str(labels[i]) if i < labels.size() else "2^%d" % token_power
 			var echo_position: Vector2 = points[i].lerp(destination, local_t) + arc_offset
 			if grade >= 3:
 				canvas.draw_line(echo_position, destination, Color(CREAM, (1.0 - local_t) * 0.14), 2.0 + intensity * 0.5, true)
-			draw_token(canvas, echo_position, token_value, _value_color(token_value), false, number_font, now, Vector2.ONE * lerpf(0.96, 0.29 + intensity * 0.015, local_t), sin(local_t * PI) * 0.018 * float(grade - 1) * (-1.0 if i % 2 == 0 else 1.0), 1.0 - local_t * 0.46)
+			draw_token(canvas, echo_position, token_power, token_label, _power_color(token_power), false, number_font, now, Vector2.ONE * lerpf(0.96, 0.29 + intensity * 0.015, local_t), sin(local_t * PI) * 0.018 * float(grade - 1) * (-1.0 if i % 2 == 0 else 1.0), 1.0 - local_t * 0.46)
 		var pinch_alpha := 1.0 - gather
 		canvas.draw_circle(destination, 13.0 + gather * (17.0 + intensity * 3.0), Color(CREAM, (0.12 + intensity * 0.025) * pinch_alpha))
 
@@ -156,13 +176,22 @@ func draw_merge_fx(canvas: CanvasItem, effect: Dictionary, now: float, number_fo
 	var impact_duration := 0.38 + intensity * 0.055
 	var impact_t := clampf((age - 0.085) / impact_duration, 0.0, 1.0)
 	if age >= 0.085 and impact_t < 1.0:
-		var result_scale := _graded_pop_scale(impact_t, grade)
-		var result_rotation := _graded_pop_rotation(impact_t, grade, result)
-		draw_token(canvas, destination, result, color, false, number_font, now, result_scale, result_rotation)
-		if grade >= 3 and age < 0.19:
+		var result_scale := Vector2.ONE if reduced_effects else _graded_pop_scale(impact_t, grade)
+		var result_rotation := 0.0 if reduced_effects else _graded_pop_rotation(impact_t, grade, result_power)
+		if grade >= 3 and not reduced_effects:
+			var material_t := clampf((age - 0.085) / (0.43 + intensity * 0.035), 0.0, 1.0)
+			var material_scale := lerpf(0.24, 1.10 + intensity * 0.055, _ease_out_cubic(material_t))
+			var material_alpha := pow(1.0 - material_t, 0.72) * (0.72 + intensity * 0.055)
+			var material_size := (104.0 + intensity * 14.0) * material_scale
+			var material_rect := Rect2(destination - Vector2.ONE * material_size * 0.5, Vector2.ONE * material_size)
+			canvas.draw_texture_rect(GAG_MERGE_BURST_TEXTURE, material_rect, false, Color(1.0, 1.0, 1.0, material_alpha))
+		draw_token(canvas, destination, result_power, result_label, color, false, number_font, now, result_scale, result_rotation)
+		if reduced_effects:
+			canvas.draw_arc(destination, 38.0, 0.0, TAU, 32, Color(CREAM_LIGHT, (1.0 - impact_t) * 0.42), 2.4, true)
+		if grade >= 3 and age < 0.19 and not reduced_effects:
 			var flash := sin(clampf((age - 0.085) / 0.105, 0.0, 1.0) * PI)
 			canvas.draw_circle(destination, 45.0 + intensity * 9.0, Color(CREAM_LIGHT, flash * (0.035 + intensity * 0.018)))
-		var ring_count := grade
+		var ring_count := 0 if reduced_effects else grade
 		for ring in range(ring_count):
 			var ring_t := _ease_out_cubic(clampf((age - 0.10 - float(ring) * 0.045) / (0.38 + intensity * 0.035), 0.0, 1.0))
 			var ring_fade := 1.0 - ring_t
@@ -170,9 +199,9 @@ func draw_merge_fx(canvas: CanvasItem, effect: Dictionary, now: float, number_fo
 				canvas.draw_arc(destination, 22.0 + ring_t * (42.0 + intensity * 7.0 + float(ring) * 8.0), 0.0, TAU, 40, Color(CREAM_LIGHT if ring % 2 == 0 else color.lightened(0.26), (0.72 - float(ring) * 0.08) * ring_fade), 4.3 - float(ring) * 0.45, true)
 		var burst := _ease_out_cubic(clampf((age - 0.105) / (0.42 + intensity * 0.045), 0.0, 1.0))
 		var fade := 1.0 - burst
-		var crumb_count := 6 + grade * 4
+		var crumb_count := 0 if reduced_effects else 6 + grade * 4
 		for i in range(crumb_count):
-			var angle := float(i) / float(crumb_count) * TAU + float(result % 7) * 0.13
+			var angle := float(i) / float(crumb_count) * TAU + float(result_power % 7) * 0.13
 			var distance := 17.0 + burst * (23.0 + intensity * 5.0 + float(i % 3) * 8.0)
 			var crumb := destination + Vector2(cos(angle), sin(angle)) * distance
 			if i % 2 == 0:
@@ -192,24 +221,24 @@ func draw_merge_fx(canvas: CanvasItem, effect: Dictionary, now: float, number_fo
 		var badge_rect := Rect2(badge_center - Vector2(badge_width * 0.5, 15.0), Vector2(badge_width, 30.0)).grow((1.0 - badge_in) * -5.0)
 		_draw_rounded_box(canvas, Rect2(badge_rect.position + Vector2(0, 3), badge_rect.size), 15.0, Color(COCOA_DARK, 0.42 * badge_fade))
 		_draw_rounded_box(canvas, badge_rect, 15.0, _with_alpha(_grade_color(grade), 0.96 * badge_fade))
-		var badge_label := "%s ×%d  +%d" % [_grade_label(grade), chain_length, gained]
+		var badge_label := "%s ×%d  +%s" % [_grade_label(grade), chain_length, gained_label]
 		var badge_size := 11 + grade
 		var badge_text := label_font.get_string_size(badge_label, HORIZONTAL_ALIGNMENT_LEFT, -1, badge_size)
 		canvas.draw_string(label_font, badge_center + Vector2(-badge_text.x * 0.5, badge_size * 0.35), badge_label, HORIZONTAL_ALIGNMENT_LEFT, -1, badge_size, Color(COCOA, badge_fade))
 
 
-func draw_recipe_label(canvas: CanvasItem, rect: Rect2, preview: int, font: Font, grade: int = 1, chain_length: int = 2, time: float = 0.0) -> void:
+func draw_recipe_label(canvas: CanvasItem, rect: Rect2, preview_label: String, font: Font, grade: int = 1, chain_length: int = 2, time: float = 0.0, reduced_effects: bool = false) -> void:
 	var grade_value := clampi(grade, 1, 4)
-	var pulse := (0.5 + sin(time * (4.0 + float(grade_value) * 0.35)) * 0.5) * float(grade_value - 1) * 0.7
+	var pulse := 0.0 if reduced_effects else (0.5 + sin(time * (4.0 + float(grade_value) * 0.35)) * 0.5) * float(grade_value - 1) * 0.7
 	var visual_rect := rect.grow(pulse)
 	var grade_color := _grade_color(grade_value)
 	var label_shadow := Rect2(visual_rect.position + Vector2(0, 4 + grade_value), visual_rect.size)
 	_draw_rounded_box(canvas, label_shadow, visual_rect.size.y * 0.5, Color(COCOA_DARK, 0.36 + float(grade_value) * 0.035))
 	_draw_rounded_box(canvas, visual_rect, visual_rect.size.y * 0.5, Color(CREAM_LIGHT, 0.99))
 	_draw_rounded_box(canvas, visual_rect.grow(-3.0), maxf(2.0, visual_rect.size.y * 0.5 - 3.0), grade_color)
-	var label := "松开 · 熬成 %d" % preview
+	var label := "松开 · 熬成 %s" % preview_label
 	if grade_value >= 2:
-		label = "%s ×%d · 熬成 %d" % [_grade_label(grade_value), chain_length, preview]
+		label = "%s ×%d · 熬成 %s" % [_grade_label(grade_value), chain_length, preview_label]
 	var font_size := 12 if grade_value >= 3 else 13
 	var text_size := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
 	canvas.draw_string(font, visual_rect.get_center() + Vector2(-text_size.x * 0.5, font_size * 0.36), label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, COCOA)
@@ -227,13 +256,25 @@ func _draw_ribbon_segment(canvas: CanvasItem, a: Vector2, b: Vector2, accent: Co
 	canvas.draw_circle(b, 7.0 * width_scale, Color(CREAM, 0.98 * alpha))
 
 
-func _draw_token_number(canvas: CanvasItem, font: Font, value: int, alpha: float) -> void:
-	var label := str(value)
-	var font_size := 20 if value < 1000 else (16 if value < 10000 else 13)
+func _draw_token_number(canvas: CanvasItem, font: Font, label: String, alpha: float) -> void:
+	var font_size := 20 if label.length() <= 3 else (16 if label.length() <= 5 else 13)
 	var size := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
 	var origin := Vector2(-size.x * 0.5, font_size * 0.35)
-	canvas.draw_string(font, origin + Vector2(0, 2.4), label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(COCOA_DARK, 0.62 * alpha))
-	canvas.draw_string(font, origin, label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(CREAM_LIGHT, 0.98 * alpha))
+	for outline in [Vector2(-1.4, 0), Vector2(1.4, 0), Vector2(0, -1.4), Vector2(0, 1.4)]:
+		canvas.draw_string(font, origin + outline, label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(CREAM_LIGHT, 0.92 * alpha))
+	canvas.draw_string(font, origin + Vector2(0, 1.2), label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(COCOA_DARK, 0.98 * alpha))
+
+
+func _token_texture_rect(kind: int) -> Rect2:
+	match kind:
+		0:
+			return Rect2(-37.0, -27.0, 74.0, 53.8)
+		1:
+			return Rect2(-32.5, -27.0, 65.0, 54.3)
+		2:
+			return Rect2(-31.0, -31.0, 62.0, 62.0)
+		_:
+			return Rect2(-32.0, -31.5, 64.0, 63.0)
 
 
 func _shape_kind(exponent: int) -> int:
@@ -344,20 +385,13 @@ func _with_alpha(color: Color, alpha: float) -> Color:
 	return Color(color.r, color.g, color.b, color.a * alpha)
 
 
-func _value_color(value: int) -> Color:
-	match value:
-		2: return Color("ff7777")
-		4: return Color("a876f3")
-		8: return Color("ffc801")
-		16: return Color("82cd64")
-		32: return Color("64c7fe")
-		64: return Color("ffb177")
-		128: return Color("598cdd")
-		256: return Color("aa8364")
-		512: return Color("00ddaa")
-		1024: return Color("8787f9")
-		2048: return Color("77faff")
-	return Color("8290ab")
+func _power_color(power: int) -> Color:
+	var palette := [
+		Color("ff7777"), Color("a876f3"), Color("ffc801"), Color("82cd64"),
+		Color("64c7fe"), Color("ffb177"), Color("598cdd"), Color("aa8364"),
+		Color("00ddaa"), Color("8787f9"), Color("77faff"), Color("ff8fbe"),
+	]
+	return palette[posmod(maxi(power, 1) - 1, palette.size())]
 
 
 func _ease_in_cubic(value: float) -> float:
@@ -383,10 +417,10 @@ func _graded_pop_scale(value: float, grade: int) -> Vector2:
 	return Vector2(settled + wobble, settled - wobble * 0.76)
 
 
-func _graded_pop_rotation(value: float, grade: int, result: int) -> float:
+func _graded_pop_rotation(value: float, grade: int, result_power: int) -> float:
 	if grade <= 1:
 		return 0.0
-	var turn := -1.0 if int(round(log(float(maxi(result, 2))) / log(2.0))) % 2 == 0 else 1.0
+	var turn := -1.0 if result_power % 2 == 0 else 1.0
 	return sin(value * PI * (1.4 + float(grade) * 0.26)) * pow(1.0 - value, 1.25) * 0.018 * float(grade - 1) * turn
 
 
