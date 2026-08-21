@@ -1,0 +1,200 @@
+{
+  "schema_version": "offline-games-gag-reuse-audit/v1",
+  "audited_at": "2026-08-20T20:20:00Z",
+  "scope": ["mahjong"],
+  "exact_baseline": "3e561fb3c55f3b0b813da2b9ee9468cd4d290bae",
+  "gag": {
+    "endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+    "transport": "MCP Streamable HTTP through direct local Python client",
+    "server": "game-assets-generator",
+    "reported_server_version": "0.2.0",
+    "listed_tools": 21,
+    "system_info_sha256": "adc40b3686162272724931f972496a8c5809174b47ee76d56f5e8f79856ed1ad",
+    "health": {
+      "gpu_detected_by_main_service": false,
+      "main_service_pytorch_installed": false,
+      "pure_api_available": true,
+      "enabled_relevant_providers": ["gemini", "elevenlabs", "removebg", "fal"],
+      "disabled_relevant_providers": ["openai", "stable_diffusion"]
+    }
+  },
+  "fresh_semantic_searches": [
+    {
+      "id": "ordinary_stable_tile",
+      "query": "single blank ivory jade mahjong solitaire tile body no text no glyph front view cartoon teahouse ordinary live tile transparent game asset",
+      "kind": "image",
+      "limit": 12,
+      "raw_evidence_sha256": "529607d96f3861b5ec55c3d027dc820fe047c51a4d96abeb7ffeebaeb7a5fa7f",
+      "reviewed_candidates": [
+        {
+          "name": "generated_images__20260820_183609_FAL.ai.png",
+          "score": 0.44330114033889917,
+          "decision": "reject",
+          "reason": "Pseudo-glyph/key-fret ornament and oversized jade frame violate the live-symbol boundary."
+        },
+        {
+          "name": "generated_images__20260820_183729_FAL.ai_nobg_20260820_183822.png",
+          "score": 0.43567697142197853,
+          "decision": "compatible derivative",
+          "reason": "Clean blank ivory body and leaf signature; source provenance is verified below."
+        },
+        {
+          "name": "token_q2_runtime_source.png",
+          "score": 0.411997824306504,
+          "decision": "reject",
+          "reason": "Merge2248 token; wrong game and semantic role."
+        },
+        {
+          "name": "generated_images__20260820_183729_FAL.ai.png",
+          "score": 0.40355773355430435,
+          "decision": "select archived master",
+          "reason": "One blank orthographic ivory/jade tile, clear code-native face area, no baked text."
+        },
+        {
+          "name": "card-frame-n.png",
+          "score": 0.40169064240086805,
+          "decision": "reject",
+          "reason": "Generic card chrome; wrong material and silhouette."
+        }
+      ]
+    },
+    {
+      "id": "state_feedback_role",
+      "query": "mahjong solitaire blocked free tile selection jade ceramic pair gather clear reward transparent cartoon game asset",
+      "kind": "image",
+      "limit": 12,
+      "raw_evidence_sha256": "a4e498150cded5f93f67f83338f236de30979f7378f74387cb6fc3d7f9d40eb2",
+      "reviewed_candidates": [
+        {
+          "name": "generated_images__20260820_184012_FAL.ai_nobg_20260820_184123.png",
+          "score": 0.4389618700688093,
+          "decision": "reject",
+          "reason": "A baked 3x3 match-3 badge atlas with symbols; wrong game family and gameplay authority."
+        },
+        {
+          "name": "20260109_012326_game_success_result_gemini.png",
+          "score": 0.42267969983374615,
+          "decision": "reject",
+          "reason": "Large English VICTORY panel, incompatible style and generated text."
+        },
+        {
+          "name": "orchard_recipe_tray_runtime.png",
+          "score": 0.4121698724435864,
+          "decision": "reject",
+          "reason": "2048 Balls orchard UI; wrong game and role."
+        },
+        {
+          "name": "conquest-vfx-atlas-v2.png",
+          "score": 0.40618918227760203,
+          "decision": "reject",
+          "reason": "Generic VFX atlas cannot express authoritative free/blocked/selected state."
+        }
+      ],
+      "decision": "no generation",
+      "reason": "All state authority remains code-native on the selected stable tile family; no asset-role gap remains."
+    },
+    {
+      "id": "broad_pair_audio",
+      "query": "short ivory mahjong tile pair clack jade chime resonance clear board game sound effect no music no voice",
+      "kind": "audio",
+      "limit": 12,
+      "raw_evidence_sha256": "5a6d81d39e793dd386036cf718f856278a2662b15a131da155a98ca622e9a26a",
+      "reviewed_candidates": [
+        ["music_20260330_002207_peaceful_ambient_exploration_m_loop.mp3", 0.6420436357238779, "reject: music"],
+        ["accept.wav", 0.641847545743402, "reject: generic confirmation"],
+        ["tripeaks_streak_peak_gag_v1_01_master.wav", 0.6371529231509193, "reject: other game"],
+        ["warning.wav", 0.6350928648964035, "reject: generic negative cue"],
+        ["sfx_20251213_092835_sword_slash_whoosh_i_1.wav", 0.6330250035704443, "reject: wrong material"],
+        ["fruit_cascade_reward_01_master.wav", 0.6298816671999938, "reject: other game"],
+        ["sfx-match.mp3", 0.6273536884003764, "reject: generic match"]
+      ]
+    },
+    {
+      "id": "path_constrained_pair_audio",
+      "query": "jade tile pair resonance clack chime",
+      "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/tile_games/gag_v1/mahjong",
+      "kind": "audio",
+      "limit": 12,
+      "result_count": 2,
+      "raw_evidence_sha256": "69ccfe78fa6f20c90e48c2b38a4806a6bca7ca2e22886128ed567615744f2c03",
+      "reviewed_candidates": [
+        ["jade_pair_resonance_01_master.wav", 0.46584375997914756, "select exact archived master"],
+        ["jade_pair_resonance_02_master.wav", 0.46223126240078743, "compatible alternate; reject to retain verified runtime continuity"]
+      ]
+    }
+  ],
+  "reused_image": {
+    "historical_asset_id": "gag-image-20260820-183729-fal",
+    "provider": "fal.ai",
+    "model": "fal-ai/flux-pro/v1.1",
+    "seed": null,
+    "provenance_source": "docs/art-direction/mahjong-v2.gag-asset-ledger.json; master independently reselected and hash-verified through the live endpoint",
+    "source_master": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/tile_games/gag_v1/mahjong/generated_images__20260820_183729_FAL.ai.png",
+    "source_master_sha256": "95aca2558e805ede5140a31bc799fe84d82cdef2943c30715c369e14efba45bb",
+    "prompt": "Isolated production-ready 2D cartoon mobile game asset, exactly one single blank front-facing mahjong tile centered, tall rounded rectangle in straight orthographic view. Warm ivory ceramic face inset into a translucent deep jade-green base, clean simple double-line frame, one small natural bamboo leaf sprig at lower right only, tactile premium toy proportions, coherent soft contact shadow, crisp bevel, restrained pearly edge highlight, subtle mineral grain, large completely empty central face reserved for live code-drawn glyph. Absolutely no writing and no character-like ornaments: no Chinese characters, no letters, no numbers, no pips, no symbols, no key-fret, no meander, no maze motif, no text, no logo, no UI, no hands, no scene, no multiple objects. Plain neutral gray studio background with strong silhouette separation for later background removal.",
+    "derivatives": [
+      {
+        "tool": "remove_background",
+        "provider": "removebg",
+        "sha256": "62f919da6ec61cbe3a3e9c95600798594938530599b83c6fe6ae539f2f48889b",
+        "size": [500, 500]
+      },
+      {
+        "tool": "crop_image",
+        "mode": "auto_trim",
+        "padding": 8,
+        "sha256": "7ddfb512f1bde4c9c46447d92121b2e3c766e19e6d13a5a332cc52ba0ed1cdbc",
+        "size": [275, 408]
+      }
+    ],
+    "runtime_asset": "res://assets/art/catalog/tile_games/gag/mahjong_tile_blank_gag_v1.png",
+    "runtime_sha256": "7ddfb512f1bde4c9c46447d92121b2e3c766e19e6d13a5a332cc52ba0ed1cdbc",
+    "actual_runtime_bindings": [
+      "main.gd::MAHJONG_GAG_TILE_TEXTURE preload",
+      "main.gd::_draw_mahjong_tile",
+      "all active ordinary live tiles on stable opening board (36 instances)",
+      "selected/free/blocked/mismatch state bodies",
+      "pair/near/final gather ghosts",
+      "terminal result tile"
+    ]
+  },
+  "reused_audio": {
+    "asset_id": "jade_pair_resonance",
+    "version": "v1",
+    "provider": "elevenlabs",
+    "model": "eleven_text_to_sound_v2",
+    "seed": null,
+    "provenance_source": "docs/art-direction/mahjong-v2.gag-asset-ledger.json; exact master independently found and downloaded through the live endpoint",
+    "prompt": "A short tactile mobile puzzle game sound effect: two warm ivory mahjong tiles make a precise soft clack, immediately followed by a delicate jade chime resonance and one tiny celebratory sparkle. Premium, clean, cozy teahouse tone, fast attack, short decay, no voice, no speech, no music, no ambience.",
+    "source_master": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/tile_games/gag_v1/mahjong/audio/sfx/jade_pair_resonance/v1/jade_pair_resonance_01_master.wav",
+    "source_master_sha256": "205cdbb86682665230d5235d660b73c2d4e877ecfb1ccc55a8958423e9583e15",
+    "alternate_master_sha256": "6637878bcc8080c039067175ddc0037f173f950cfb6111db1184e210a2892dfb",
+    "source_technical": {"codec": "pcm_s16le", "sample_rate": 48000, "channels": 1, "duration_seconds": 0.699625},
+    "derivation": "ffmpeg loudnorm I=-16:TP=-1.5:LRA=7; 48 kHz mono; libvorbis q5",
+    "runtime_asset": "res://assets/audio/catalog/tile_games/gag/jade_pair_resonance_gag_v1.ogg",
+    "runtime_sha256": "fe213b4ff0241ff6b3936adc02cd1830f2b9ff7563161b1ce25d85fc0a511472",
+    "runtime_technical": {"codec": "vorbis", "sample_rate": 48000, "channels": 1, "duration_seconds": 0.699625},
+    "actual_runtime_bindings": [
+      "main.gd::SFX_MAHJONG_GAG_PAIR preload",
+      "main.gd::_catalog_event_sfx for jade_pair",
+      "ordinary pair grade 2",
+      "near-clear pair grade 3",
+      "final pair grade 4"
+    ]
+  },
+  "project_authored_support": {
+    "path": "res://assets/art/catalog/tile_games/mahjong_tile_base.svg",
+    "sha256": "88ae2dba64f3c832a20f3c086ed94219d2b6939c5a693fb7c94427dfaafc9fbd",
+    "role": "jade/contact backing beneath GAG ivory body",
+    "gag": false
+  },
+  "decision": {
+    "new_generation_performed": false,
+    "role_gap": false,
+    "reason": "The verified stable tile family covers the ordinary board and object feedback, the verified audio covers pair outcomes, and generated state art would weaken code-native authority.",
+    "source_masters_in_repository": 0,
+    "rejected_candidates_in_repository": 0,
+    "signed_download_urls_recorded_in_repository": false,
+    "only_runtime_derivatives_ship": true
+  }
+}

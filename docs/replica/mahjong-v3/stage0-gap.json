@@ -1,0 +1,38 @@
+{
+  "schema": "offline-games-stage0-gap/v1",
+  "game_id": "mahjong",
+  "audited_commit": "3e561fb3c55f3b0b813da2b9ee9468cd4d290bae",
+  "target": "Vita Mahjong 3.34.0 (Apple US id 6468921495)",
+  "result": "FAIL_MATERIAL_CONTRADICTION",
+  "gag_gate": "CLOSED",
+  "facts": [
+    "matching identical eligible tiles removes them",
+    "clearing all tiles succeeds",
+    "eligible tiles are described as not concealed or blocked",
+    "hints, undo and shuffle are advertised features"
+  ],
+  "observations": [
+    "first-party screenshots show overlapping layers",
+    "first-party screenshots show bright and dim live tile states",
+    "first-party screenshots show pair rail and three tool controls"
+  ],
+  "material_gaps": [
+    "flat 20-tile grid",
+    "no layer or occlusion geometry",
+    "any unremoved matching value can pair",
+    "no blocked resolver or topmost hit ownership",
+    "no deadlock, hint, shuffle or undo",
+    "no strict recovery",
+    "no Mahjong keyboard tile route"
+  ],
+  "unknown_original_rules": [
+    "exact free-tile geometry",
+    "exact layout generator",
+    "special-tile equivalence",
+    "deadlock and shuffle timing",
+    "tool economy",
+    "loss rule",
+    "scoring and combo formula"
+  ],
+  "next_gate": "renderer-free Mahjong Solitaire model probes"
+}

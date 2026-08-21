@@ -1,0 +1,75 @@
+{
+  "schema": "offline-games-replica-probes/v1",
+  "game_id": "mahjong",
+  "target": {
+    "name": "Vita Mahjong",
+    "platform": "Apple App Store US",
+    "version": "3.34.0",
+    "resource_id": "6468921495",
+    "bundle_id": "com.vitastudio.mahjong",
+    "evidence_acquired_utc": "2026-08-20"
+  },
+  "baseline_commit": "3e561fb3c55f3b0b813da2b9ee9468cd4d290bae",
+  "stage_order": [
+    "identity_and_claim_boundary",
+    "renderer_free_mechanics",
+    "runtime_integration",
+    "gag_provenance_and_visibility",
+    "presentation",
+    "web_release_integrity"
+  ],
+  "mechanics_gate": [
+    "canonical_layout_and_geometry",
+    "distinct_tile_ids_and_exact_pair_multiset",
+    "higher_layer_occlusion",
+    "same_layer_left_right_availability",
+    "topmost_hit_ownership",
+    "legal_select_deselect",
+    "blocked_select_is_non_mutating",
+    "unequal_pair_is_non_removing",
+    "equal_free_pair_removes_exactly_two",
+    "removed_tile_is_inert",
+    "available_pair_enumeration",
+    "deadlock_detection",
+    "deterministic_hint",
+    "deterministic_reshuffle_preserves_multiset",
+    "single_pair_undo",
+    "win_and_terminal_freeze",
+    "restart_determinism",
+    "strict_snapshot_recovery_and_invalid_rejection",
+    "mouse_touch_keyboard_route_parity"
+  ],
+  "art_gate_requires_mechanics_pass": true,
+  "presentation_gate": [
+    "gag_master_and_runtime_hash_reverification",
+    "fresh_semantic_search_and_candidate_rejection",
+    "signature_tile_body_visible_on_ordinary_stable_board",
+    "selected_and_blocked_authority",
+    "pair_intent_impact_settle_result_sequence",
+    "deadlock_or_shuffle_feedback",
+    "near_clear_final_pair_and_win_sequence",
+    "reduced_effects_suppresses_travel_shake_haptic",
+    "cjk_and_mahjong_face_font_coverage",
+    "matched_stable_to_peak_evidence",
+    "continuous_peak_sequence",
+    "llvmpipe_busy_performance_comparison"
+  ],
+  "release_gate": [
+    "clean_implementation_commit_archive",
+    "clean_fingerprinted_web_export",
+    "pck_sha256_and_inventory",
+    "no_store_evidence_or_source_masters_or_full_cjk_fonts_in_pck",
+    "real_chrome_select_blocked_match_hint_shuffle_undo_restart_reload_reduced",
+    "ready_state_and_zero_console_errors",
+    "headers_range_and_full_transfer"
+  ],
+  "forbidden_claims": [
+    "exact_vita_board_generator",
+    "exact_vita_free_tile_geometry",
+    "exact_vita_tool_economy",
+    "original_loss_rule",
+    "all_modes_or_levels_aligned",
+    "deployed_or_online_visible",
+    "surpasses_original_before_user_review"
+  ]
+}

@@ -145,9 +145,14 @@ func _test_tripeaks_streak() -> void:
 
 func _test_mahjong_completion() -> void:
 	game._open_game("mahjong")
-	game.state["removed"] = range(1, 10) + range(11, 20)
-	game.state["selected"] = 0
-	game._mahjong_tap(Vector2(50, 242 + 2 * 112 + 10))
+	var guard := 0
+	while game.mahjong_model.status == "playing" and guard < 20:
+		var pairs: Array = game.mahjong_model.available_pairs()
+		if pairs.is_empty():
+			break
+		game._mahjong_resolve_index(int(pairs[0][0]), "catalog_smoke")
+		game._mahjong_resolve_index(int(pairs[0][1]), "catalog_smoke")
+		guard += 1
 	_expect_event("mahjong", "jade_pair", 4)
 
 
