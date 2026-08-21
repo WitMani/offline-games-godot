@@ -1,0 +1,203 @@
+{
+  "schema": "offline-games.snakes-gag-v2.asset-ledger.v1",
+  "game_id": "snake_io",
+  "gag": {
+    "endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+    "transport": "streamable-http",
+    "protocol": "2025-06-18",
+    "server": {"name": "game-assets-generator", "version": "1.29.0", "tools_count": 21},
+    "health_checked_at_utc": "2026-08-20",
+    "health": {
+      "gpu": "not detected",
+      "main_service_pytorch": "not installed; pure API available",
+      "enabled_providers": ["gemini", "doubao", "mock", "elevenlabs", "removebg", "fal", "openrouter", "tripo", "codex"],
+      "production_route": "pure API: fal.ai + Remove.bg + ElevenLabs"
+    }
+  },
+  "semantic_searches": [
+    {
+      "role": "persistent_player_head",
+      "query": "top-down friendly soft gummy snake mascot head, clear forward direction, oversized expressive eyes, bold dark outline, candy carnival game sprite, isolated transparent background, readable at 56 pixels",
+      "kinds": ["image"],
+      "limit": 8,
+      "reviewed": [
+        {"name": "generated_images__20260820_235159_FAL.ai.png", "score": 0.4384422473877816, "decision": "reject", "reason": "GB Snake monochrome pixel/LCD identity, not soft gummy."},
+        {"name": "20260606_213631_OpenRouter.png", "score": 0.4158825271726077, "actual": "PNG 1024x1024 RGB", "sha256": "202f2596fd84583189c8cdd333ad985ea3a0393d57fec11fb5d1531cded6b7c6", "visual_review": "front-facing green pixel blob on white", "decision": "reject", "reason": "pixel vocabulary and no directional snake-head silhouette."},
+        {"name": "enemy_cobra_attack_spritesheet.png", "score": 0.41396212077071537, "decision": "reject", "reason": "hostile cobra, fixed full-body animation conflicts with authoritative continuous path."}
+      ]
+    },
+    {
+      "role": "persistent_prize_bean",
+      "query": "soft gummy prize beans jelly candy pellets, bold silhouette, low detail, colorful cohesive casual arena collectible family, isolated transparent background, readable at 18 pixels",
+      "kinds": ["image"],
+      "limit": 8,
+      "reviewed": [
+        {"name": "Character_Player_Hornet_sam.png", "score": 0.40035094768751495, "actual": "PNG 1080x608 RGBA", "sha256": "6ddf35dd9ef5f94a4cfdbc2b64611bd6eb32d027afb6face1d8681672e4dc063", "visual_review": "Hollow Knight-style combat screenshot", "decision": "reject", "reason": "not a collectible object and wrong fantasy."},
+        {"name": "token_q3_runtime_source.png", "score": 0.3972036657846353, "decision": "reject", "reason": "2248-owned confection token; too large and detailed for repeated 18 px food."},
+        {"name": "token_q0_runtime_source.png", "score": 0.3957670554746868, "decision": "reject", "reason": "cross-game 2248 identity."}
+      ]
+    },
+    {
+      "role": "hero_knockout_burst",
+      "query": "hollow sugar ribbon knockout burst, gummy candy shards scattering around empty center, cartoon arena impact VFX, transparent background",
+      "kinds": ["image"],
+      "limit": 8,
+      "reviewed": [
+        {"name": "VFX_Slash_Dash.png", "score": 0.4397206009869956, "actual": "PNG 1344x768 RGBA", "sha256": "58aa47e0e07d220250b3f0993e2a9e8bb38033c7123654f98c09b16d692cdcfd", "visual_review": "long white weapon slash on black", "decision": "reject", "reason": "weapon/energy language, opaque dark field and no gummy material."},
+        {"name": "vfx-energy-ring-bot.png", "score": 0.4319758172448161, "actual": "PNG 256x256 RGBA", "sha256": "16b84c820cbef9f381a8d75ba6b31f062a3343c4e4fc63b4995ffcb277215a36", "visual_review": "red spiked energy ring", "decision": "reject", "reason": "hostile generic energy, not candy cause-and-consequence."},
+        {"name": "impact-base-human.png", "score": 0.42696671415049625, "decision": "reject", "reason": "generic combat impact."}
+      ]
+    },
+    {
+      "role": "event_audio_family",
+      "query": "short cartoon gummy candy eat pop, elastic boost fizz, jelly scatter knockout and crown rank takeover game sound effects",
+      "kinds": ["audio"],
+      "limit": 10,
+      "reviewed": [
+        {"name": "music_20260330_002207_peaceful_ambient_exploration_m_loop.mp3", "score": 0.6990574333109397, "decision": "reject", "reason": "ambient loop, not an object cue."},
+        {"name": "sfx_20251213_095733_magic_spell_cast_spa_1.wav", "score": 0.6969384754870234, "decision": "reject", "reason": "magic semantics do not convey chew, elastic boost or candy scatter."},
+        {"name": "fruit_cascade_reward_01_master.wav", "score": 0.6928514088911284, "decision": "reject", "reason": "2048 Balls source master and wrong event role."}
+      ]
+    }
+  ],
+  "style_reference_prompt": "Soft-gummy carnival mobile game art. Rounded jelly material, bold deep-navy outline, cream highlights, saturated lime cyan yellow coral and magenta palette, chunky low-detail silhouettes, polished 2D orthographic top-down game sprite, friendly competitive energy. No photorealism, no pixel art, no text, no watermark.",
+  "generation_iterations": [
+    {
+      "role": "player_head_v1",
+      "provider": "fal",
+      "provider_model": "fal-ai/flux-pro/v1.1",
+      "size": "square_hd",
+      "prompt": "One single top-down 2D casual mobile game sprite of a friendly gummy worm head, viewed directly from above and facing RIGHT. Lime jelly-candy head only: no neck, no body, no tail. Rounded squashed teardrop silhouette pointing right, two oversized white eyes arranged vertically, deep navy pupils looking right, tiny smiling mouth at the right-facing nose, tiny coral cheeks, glossy cream jelly highlight, soft inner translucency and a thick deep-navy outline. Centered isolated on a pure flat white background with generous empty padding. No cast shadow, no ground, no scenery, no text, no letters, no UI, no duplicate, no frame. Clean low detail designed to stay readable at 56 pixels.",
+      "source_master": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/snakes/gag-v2/generated_images__20260821_015901_FAL.ai.png",
+      "actual": "JPEG content 1024x1024 RGB despite .png suffix",
+      "sha256": "7dfd6eb731f205b7e9bbd03a1f5670eadc6d4604b0b2196ce771eb2b32298643",
+      "decision": "reject",
+      "reason": "polished material but vertical front portrait; insufficient right-facing silhouette."
+    },
+    {
+      "role": "prize_bean_atlas_v1",
+      "provider": "fal",
+      "provider_model": "fal-ai/flux-pro/v1.1",
+      "size": "square_hd",
+      "prompt": "A clean 2 by 3 game-sprite atlas containing exactly six separate prize-bean candies. Each cell contains one whole rounded jelly bean, centered and never touching another cell: cyan, sunshine yellow, lime, coral red, magenta, and cream-gold. Every bean has the same soft gummy material, thick deep-navy outline, one broad cream highlight and one tiny sugar sparkle. Strong simple silhouette and very low detail, designed to read at 18 pixels. Pure flat white background. No labels, no numbers, no text, no letters, no UI, no border, no plate, no shadow, no scenery, no extra candy, no cropping.",
+      "source_master": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/snakes/gag-v2/generated_images__20260821_020018_FAL.ai.png",
+      "actual": "JPEG content 1024x1024 RGB despite .png suffix",
+      "sha256": "d2f0320abf372aeb8fca656883b58c11172d12e09a9058d9c6203edbcf4ddb7f",
+      "decision": "reject",
+      "reason": "ignored atlas contract and produced a crowded edge-to-edge bean pile."
+    },
+    {
+      "role": "player_head_v2_selected",
+      "provider": "fal",
+      "provider_model": "fal-ai/flux-pro/v1.1",
+      "size": "square_hd",
+      "style_reference_image": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/snakes/gag-v2/generated_images__20260821_015901_FAL.ai.png",
+      "prompt": "ONE single top-down game sprite of a friendly gummy worm HEAD ONLY, seen directly from above, facing RIGHT at 3 o'clock. The head silhouette is horizontal and longer left-to-right than top-to-bottom: flat attachment edge at 9 o'clock, rounded pointed nose at 3 o'clock. Exactly two oversized white eyes sit one above the other near the right-facing nose, with navy pupils looking right; a tiny smile is at the far-right nose. Lime and cyan translucent jelly, coral cheeks, cream highlight, bold deep-navy outline. Centered on flat pure white with wide empty margin. No neck, no body, no tail, no front-facing portrait, no vertical droplet, no cast shadow, no text, no letters, no duplicate, no scene. Simple enough for 56 px.",
+      "source_master": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/snakes/gag-v2/generated_images__20260821_020228_FAL.ai.png",
+      "actual": "JPEG content 1024x1024 RGB despite .png suffix",
+      "sha256": "75190e9b0b8da51ab46c9664f84b8b4c85f7822f82e52a2ec0555313fe14eb9d",
+      "visual_review": "single right-facing cyan/lime gummy mascot head with a legible nose and eye direction; no text",
+      "decision": "select"
+    },
+    {
+      "role": "prize_bean_v2_selected_after_repair",
+      "provider": "fal",
+      "provider_model": "fal-ai/flux-pro/v1.1",
+      "size": "square_hd",
+      "style_reference_image": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/snakes/gag-v2/generated_images__20260821_015901_FAL.ai.png",
+      "prompt": "ONE single whole prize-bean candy game sprite, isolated and centered. A plump horizontal jelly bean with a slight crescent pinch, neutral cream-gold gummy body suitable for runtime color tinting, thick deep-navy outline, one broad white jelly highlight and one tiny sugar sparkle. Extremely simple strong silhouette, no face, readable at 18 pixels. Pure flat white background with generous blank margin. Exactly one bean only: no pile, no group, no extra candy, no plate, no shadow, no floor, no text, no letters, no UI, no border, no cropping.",
+      "source_master": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/snakes/gag-v2/generated_images__20260821_020242_FAL.ai.png",
+      "actual": "JPEG content 1024x1024 RGB despite .png suffix",
+      "sha256": "4fa7ed130257cdaf522bb35936b5a955030c7983a3da0ea6a3e7ebf8ef6fa7c9",
+      "visual_review": "one strong bean but a generated footer watermark/text was present below the object",
+      "decision": "select_only_after_text_area_is_removed_before_background removal"
+    },
+    {
+      "role": "knockout_burst_v1_selected",
+      "provider": "fal",
+      "provider_model": "fal-ai/flux-pro/v1.1",
+      "size": "square_hd",
+      "style_reference_image": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/snakes/gag-v2/generated_images__20260821_015901_FAL.ai.png",
+      "prompt": "One single hollow knockout burst for a top-down casual arena game: an open circular sugar ribbon snapping outward around a completely empty center, with eight chunky gummy shards and six round candy droplets radiating outward. Cyan, lime, yellow, coral and magenta jelly colors, thick deep-navy contour, cream specular highlights, elastic candy material, clearly radial and readable at 140 pixels. Centered on a pure flat white background with generous padding. No explosion smoke, no fire, no magic energy, no weapon slash, no characters, no text, no letters, no UI, no frame, no cast shadow, no scenery.",
+      "source_master": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/snakes/gag-v2/generated_images__20260821_020031_FAL.ai.png",
+      "actual": "JPEG content 1024x1024 RGB despite .png suffix",
+      "sha256": "ddf2fce56ecc15bd7b51fec0d57a6215793df5e569086051c9d416344fa26ff4",
+      "visual_review": "radial candy material with a genuinely hollow center; no characters or text",
+      "decision": "select"
+    }
+  ],
+  "image_derivations": [
+    {
+      "role": "player_head",
+      "pipeline": [
+        {"tool": "remove_background", "provider": "removebg", "output": "snakes_player_head_v2_nobg.png", "size": [500, 500], "sha256": "621efdfa1cfcee2695c3283b496321fc627d81d64b733a13b3e194af3eedccb3"},
+        {"tool": "deterministic Godot Image derivation", "operations": ["largest alpha component", "fill enclosed alpha holes", "alpha trim + 10 px padding", "Lanczos fit"], "runtime": "assets/art/snakes/gag-v2/snakes_player_head_gag_v2.png", "size": [192, 192], "bytes": 53581, "sha256": "bbed38ae8418b931577b25c525bd9c678f35f8e70469e9fc57e64c281ae99ec9"}
+      ],
+      "runtime_reference": "main.gd:SNAKES_GAG_PLAYER_HEAD_TEXTURE -> _draw_snakes_arena_snake(player=true), 50-58 logical px every ordinary frame"
+    },
+    {
+      "role": "prize_bean",
+      "pipeline": [
+        {"tool": "crop_image", "mode": "manual", "crop_box": "0,0,1024,900", "reason": "remove generated footer watermark/text before any runtime derivation", "output": "snakes_prize_bean_v2_clean_crop.png", "size": [1024, 900], "sha256": "fa99f796dafdc31d0ff52423769d092230c645cbca4b07f9b0b2b53875afca2d"},
+        {"tool": "remove_background", "provider": "removebg", "attempt_1": "Server disconnected without sending a response", "attempt_2": "success", "output": "snakes_prize_bean_v2_nobg.png", "size": [533, 468], "sha256": "d361c322452dccb45d97afedc3060bd60bdca4de4213d62e5b462ea8ea1f7d33"},
+        {"tool": "deterministic Godot Image derivation", "operations": ["largest alpha component removes detached shadow", "fill enclosed highlight holes", "desaturate for runtime tint", "alpha trim + 8 px padding", "Lanczos fit"], "runtime": "assets/art/snakes/gag-v2/snakes_prize_bean_gag_v2.png", "size": [128, 112], "bytes": 17453, "sha256": "f1769c0bdd7d2ba294df7e9f2ebfbaa472f20caaf287687739b93626a6ebdc6c"}
+      ],
+      "runtime_reference": "main.gd:SNAKES_GAG_PRIZE_BEAN_TEXTURE -> _draw_snakes_arena_pellet, 16-22 logical px for all ambient/boost/debris food"
+    },
+    {
+      "role": "knockout_burst",
+      "pipeline": [
+        {"tool": "remove_background", "provider": "removebg", "output": "snakes_knockout_burst_v1_nobg.png", "size": [500, 500], "sha256": "602984c7d25c8c5de7236aa0b99f51291a367e41a83c0250fdcc226b261366fc"},
+        {"tool": "deterministic Godot Image derivation", "operations": ["alpha trim + 4 px padding", "Lanczos fit; preserve detached droplets"], "runtime": "assets/art/snakes/gag-v2/snakes_knockout_burst_gag_v2.png", "size": [256, 256], "bytes": 116196, "sha256": "e149b09f7d91317eec53bc0868721691491298e335c2e6f83741d0bdff170cc1"}
+      ],
+      "runtime_reference": "main.gd:SNAKES_GAG_KNOCKOUT_BURST_TEXTURE -> _draw_snakes_arena_knockout_material, 58 px compression to 144 px impact to 112 px settle"
+    }
+  ],
+  "audio_generation": [
+    {
+      "asset_id": "snakes_gummy_chomp", "version": "v2", "provider": "elevenlabs", "model": "eleven_text_to_sound_v2", "duration_requested": 0.9,
+      "prompt": "A compact 0.35-second mobile game collect sound with three clearly audible phases: a tiny elastic gummy squish anticipation, one warm tactile candy bite impact, then a bright sugar click settle. Friendly, dry and close, no music, no voice, no ambience, no reverb tail, not a single click.",
+      "source_master": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/snakes/gag-v2/sfx/sfx/snakes_gummy_chomp/v2/snakes_gummy_chomp_master.wav",
+      "source_master_sha256": "4c405fa1bcd3e199a0f2638b418897866dbba5e36d008faac9c6e92b7c658441",
+      "gag_ogg_sha256": "b957cff482d2960809ee2a4fcd78c31d37a97062c881c69bc335ef0a972ab534",
+      "gag_report": {"status": "issues_detected", "failed": ["loudness"], "duration": 0.676021, "sample_rate": 48000, "channels": 1, "lufs": -24.12, "true_peak_db": -1.41},
+      "repair": "ffmpeg acompressor threshold=0.02 ratio=10 attack=2 release=45 makeup=12 knee=4, then alimiter limit=0.84 level=false; Vorbis q5 mono 48k",
+      "runtime": "assets/audio/snakes/gag-v2/gummy_chomp_gag_v2.ogg", "runtime_sha256": "636f0616cfa6f01487362c0178958563aad9dfd473a6fddfc67f97bc09801ece", "runtime_lufs": -20.1, "runtime_true_peak_db": -1.8,
+      "runtime_reference": "player_ate"
+    },
+    {
+      "asset_id": "snakes_gummy_boost", "version": "v1", "provider": "elevenlabs", "model": "eleven_text_to_sound_v2", "duration_requested": 0.8,
+      "prompt": "Short elastic gummy stretch launch with a fizzy candy rush for starting a speed boost in a cheerful mobile arena game. Fast soft whoosh, rubber tension release, subtle sugar sparkle, no engine, no explosion, no music, no voice, no ambience.",
+      "source_master": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/snakes/gag-v2/sfx/sfx/snakes_gummy_boost/v1/snakes_gummy_boost_master.wav", "source_master_sha256": "5008c11ce74e65f623020429785f9e9b45915f580b0e193c4dae5d1898b28c00", "gag_ogg_sha256": "f84f7079c3ec99ace69d3fbc1cd955a230ad4a725a6d880d215a87c22b51a670",
+      "gag_report": {"status": "issues_detected", "failed": ["loudness"], "duration": 0.390958, "sample_rate": 48000, "channels": 1, "lufs": null, "true_peak_db": -3.41},
+      "repair": "ffmpeg loudnorm I=-18 LRA=7 TP=-1.5; short-event EBU integrated loudness remains non-measurable, true peak verified",
+      "runtime": "assets/audio/snakes/gag-v2/gummy_boost_gag_v2.ogg", "runtime_sha256": "3e2aba7130176c2c90a565f3f88300a9118de2b3e957ab48a71868c1c7d6d6c2", "runtime_true_peak_db": -1.9,
+      "runtime_reference": "boost_started"
+    },
+    {
+      "asset_id": "snakes_gummy_knockout", "version": "v1", "provider": "elevenlabs", "model": "eleven_text_to_sound_v2", "duration_requested": 1.15,
+      "prompt": "Short punchy gummy candy knockout: elastic jelly compression, thick soft snap, then colorful candy beans scattering across a tabletop. Cheerful competitive mobile game impact, strong but not violent, no glass, no weapon, no explosion, no music, no voice, no ambience.",
+      "source_master": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/snakes/gag-v2/sfx/sfx/snakes_gummy_knockout/v1/snakes_gummy_knockout_master.wav", "source_master_sha256": "9dab3c76561998818ebab353d18015138b9cc2c0a8d6c1d4ca9bc7124969a6a8", "gag_ogg_sha256": "0458d6e5d79539d78d154731d4bf4e734661f98f0c544fa3f3da14813b5a0350",
+      "gag_report": {"status": "issues_detected", "failed": ["loudness"], "duration": 0.466292, "sample_rate": 48000, "channels": 1, "lufs": -24.25, "true_peak_db": -1.02},
+      "repair": "ffmpeg acompressor threshold=0.03 ratio=8 attack=2 release=45 makeup=8 knee=4, then alimiter limit=0.84 level=false; Vorbis q5 mono 48k",
+      "runtime": "assets/audio/snakes/gag-v2/gummy_knockout_gag_v2.ogg", "runtime_sha256": "9a23d746b0a856bf5982a29a9f62e6f7f390db44702566fe7a0797b16a83583f", "runtime_lufs": -18.2, "runtime_true_peak_db": -1.5,
+      "runtime_reference": "bot_died and player_died gummy layer"
+    },
+    {
+      "asset_id": "snakes_leader_takeover", "version": "v1", "provider": "elevenlabs", "model": "eleven_text_to_sound_v2", "duration_requested": 1.25,
+      "prompt": "Short triumphant leaderboard takeover stinger for a cheerful gummy candy arena game: three quick bright candy bell notes rising into one warm crown ping, playful and prestigious, no melody loop, no voice, no crowd, no ambience, clean short tail.",
+      "source_master": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/snakes/gag-v2/sfx/sfx/snakes_leader_takeover/v1/snakes_leader_takeover_master.wav", "source_master_sha256": "48ba2acc8eb06b9d3bc556f06c4336bcca2c2dd3462c4e677b0114f71e1e09bc", "gag_ogg_sha256": "ba0ddfba75a023e72af750c248248738712a5ce68a0d23a9d125755b7fd977ba",
+      "gag_report": {"status": "issues_detected", "failed": ["loudness"], "duration": 0.821854, "sample_rate": 48000, "channels": 1, "lufs": -17.68, "true_peak_db": -1.33},
+      "repair": "ffmpeg loudnorm I=-18 LRA=7 TP=-1.5; Vorbis q5 mono 48k",
+      "runtime": "assets/audio/snakes/gag-v2/leader_takeover_gag_v2.ogg", "runtime_sha256": "c007cb704f3843304205b6c5306842ba7c9ca4536c6b2077ed9839a5612bf128", "runtime_lufs": -18.0, "runtime_true_peak_db": -1.5,
+      "runtime_reference": "leader id changes to player"
+    }
+  ],
+  "review_scope": {
+    "visual": "all selected image masters, Remove.bg outputs, final runtime derivatives and 540x960 runtime frames inspected",
+    "audio": "GAG quality reports, file/container metadata, duration, waveform images, EBU R128 and true peak inspected; no subjective listening claim because no audio reviewer was available",
+    "first_visible_beat": "PASS: player head and 96 prize beans are present in stable-core.png",
+    "continuous_event": "docs/audit/snakes-gag-v2/candidate/knockout-continuous.webm, 28 frames at 30 fps",
+    "source_master_policy": "PASS: masters and GAG intermediate outputs remain in the GAG archive; only deterministic runtime derivatives ship"
+  }
+}

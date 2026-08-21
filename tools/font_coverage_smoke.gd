@@ -33,6 +33,14 @@ const MEOWDOKU_V3_COPY := [
 	"抱回这只猫", "找到猫咪", "这里没有猫", "失去一颗心", "爱心用尽", "全员到齐",
 	"单击选格或标记", "双击放猫", "题面提示猫", "重开再试一次", "已恢复猫咪手账",
 ]
+const SNAKES_FEEDBACK_COPY := [
+	"Snakes", "蛇群竞技", "自由转向、冲刺截击，争夺竞技场第一名",
+	"收盒", "再来", "你", "抢豆", "我的位次", "排行榜", "体量",
+	"新的第一名", "位次 ↑ 1", "彩豆散开！", "抢食 +4.0", "还吃不动！",
+	"指向任意方向 · 按住右下冲刺", "撞到了！", "最终位次",
+	"撞到竞技场边缘", "和游蛇撞了个满怀", "撞到其他游蛇",
+	"点右上角“再来”回到蛇群", "冲刺",
+]
 const SYMBOL_COPY := ["♥♠◆♣"]
 const TILE_NUMBER_COPY := ["0123456789"]
 
@@ -46,10 +54,11 @@ func _init() -> void:
 	# an arbitrary fallback font that happens to contain the glyphs.
 	_check_font(UI_FONT, CATALOG_EVENT_COPY, "catalog_event_display")
 	_check_font(UI_FONT, MEOWDOKU_V3_COPY, "meowdoku_v3_ui_cjk")
+	_check_font(UI_FONT, SNAKES_FEEDBACK_COPY, "snakes_live_ui")
 	_check_font(NUMBER_FONT, [NUMBER_COPY], "number_font")
 	_check_font(TILE_NUMBER_FONT, TILE_NUMBER_COPY, "tile_number_font")
 	_check_font(SYMBOL_FONT, SYMBOL_COPY, "symbol_font")
-	print("FONT_COVERAGE_SMOKE=%d" % (MERGE_FEEDBACK_COPY.size() + CATALOG_EVENT_COPY.size() + MEOWDOKU_V3_COPY.size() + TILE_NUMBER_COPY.size() + SYMBOL_COPY.size() + 1))
+	print("FONT_COVERAGE_SMOKE=%d" % (MERGE_FEEDBACK_COPY.size() + CATALOG_EVENT_COPY.size() + MEOWDOKU_V3_COPY.size() + SNAKES_FEEDBACK_COPY.size() + TILE_NUMBER_COPY.size() + SYMBOL_COPY.size() + 1))
 	print("FONT_COVERAGE_RESULT=%s" % ("PASS" if failures.is_empty() else "FAIL " + ",".join(failures)))
 	quit(0 if failures.is_empty() else 1)
 

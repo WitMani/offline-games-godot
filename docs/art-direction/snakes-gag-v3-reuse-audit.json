@@ -1,0 +1,125 @@
+{
+  "schema": "offline-games.snakes-gag-v3-reuse-audit.v1",
+  "audited_at_utc": "2026-08-20",
+  "candidate_branch": "codex/align-snakes-v3",
+  "mechanics_gate": "docs/replica/snakes-v3/mechanics-gate.json:gag_production_authorized=true",
+  "historical_feature": {
+    "branch": "codex/art-snakes-gag-v2",
+    "feature_commit": "80c8ed96db4aef6dd03b0c4908615930d8b7529d",
+    "evidence_commit": "6d4ca1147d49112e85074a5b48aac4c9ed722a0f",
+    "status": "never merged or deployed; evidence is historical and is not reused as v3 runtime proof",
+    "provenance_ledger": "docs/art-direction/snakes-gag-v2.asset-ledger.json"
+  },
+  "live_gag_health": {
+    "endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+    "transport": "streamable HTTP via HOME-WSL MCP client",
+    "server": "game-assets-generator 1.29.0",
+    "tools_count": 21,
+    "gpu": "not detected",
+    "main_pytorch": "not installed",
+    "mode": "pure API available",
+    "enabled_providers": ["gemini", "doubao", "mock", "elevenlabs", "removebg", "fal", "openrouter", "tripo", "codex"],
+    "selected_historical_image_provider_model": "fal / fal-ai/flux-pro/v1.1 with Remove.bg alpha derivation",
+    "selected_historical_audio_provider_model": "ElevenLabs / eleven_text_to_sound_v2"
+  },
+  "fresh_semantic_searches": [
+    {
+      "role": "persistent_player_head",
+      "query": "top-down soft gummy snake mascot head clear forward direction bold outline candy arena sprite readable at 56 pixels",
+      "top_reviewed": [
+        {"name": "GB Snake pixel art", "score": 0.437798, "decision": "reject", "reason": "wrong game and pixel/LCD material"},
+        {"name": "cobra attack", "score": 0.428296, "decision": "reject", "reason": "hostile fixed full-body combat asset"},
+        {"name": "cobra idle", "score": 0.421531, "decision": "reject", "reason": "hostile full-body family"},
+        {"name": "cobra death variants", "score": 0.420508, "decision": "reject", "reason": "peak-only hostile family and wrong runtime role"}
+      ]
+    },
+    {
+      "role": "persistent_prize_bean",
+      "query": "single soft gummy prize bean candy pellet bold silhouette tintable low detail readable at 18 pixels transparent game sprite",
+      "top_reviewed": [
+        {"name": "merge2248 token q2", "score": 0.425336, "decision": "reject", "reason": "cross-game token and wrong repeated-object role"},
+        {"name": "generic animation frames", "decision": "reject", "reason": "not a stable repeated collectible"},
+        {"name": "merge2248 token q0", "score": 0.418826, "decision": "reject", "reason": "cross-game identity"},
+        {"name": "merge2248 token q3", "score": 0.418691, "decision": "reject", "reason": "cross-game identity"}
+      ]
+    },
+    {
+      "role": "hero_knockout_burst",
+      "query": "hollow sugar ribbon knockout burst gummy candy shards empty center cartoon arena impact transparent background",
+      "top_reviewed": [
+        {"name": "VFX Slash Dash", "score": 0.441847, "decision": "reject", "reason": "weapon slash language"},
+        {"name": "merge2248 burst", "score": 0.429806, "decision": "reject", "reason": "cross-game identity"},
+        {"name": "2048 Balls juice burst", "score": 0.428914, "decision": "reject", "reason": "cross-game fruit material"},
+        {"name": "generic reward and impact bursts", "score": 0.4275, "decision": "reject", "reason": "generic rather than gummy cause-and-consequence"}
+      ]
+    },
+    {
+      "role": "eat_boost_knockout_leader_audio",
+      "query": "short cartoon gummy candy eat pop elastic boost fizz jelly scatter knockout crown rank takeover game sound effects",
+      "top_reviewed": [
+        {"name": "ambient music result A", "score": 0.632492, "decision": "reject", "reason": "music loop, not a semantic object cue"},
+        {"name": "ambient music result B", "score": 0.623855, "decision": "reject", "reason": "music loop"},
+        {"name": "2048 Balls cascade", "score": 0.623454, "decision": "reject", "reason": "cross-game reward role"},
+        {"name": "magic SFX", "score": 0.618048, "decision": "reject", "reason": "wrong material semantics"},
+        {"name": "idle MP3", "score": 0.617672, "decision": "reject", "reason": "not an event cue"}
+      ]
+    }
+  ],
+  "archive_read_boundary": {
+    "path_constrained_searches_for_historical_source_master_directory": 0,
+    "source_master_paths_and_hashes": "ledger-recorded in snakes-gag-v2.asset-ledger.json; not freshly byte-read because the archive path is not exposed by the indexed read API",
+    "runtime_derivatives": "freshly byte-hashed in this worktree",
+    "claim_boundary": "endpoint and provider health were reverified; no claim of fresh source-master byte verification"
+  },
+  "selected_runtime_derivatives": [
+    {
+      "role": "ordinary stable player head",
+      "path": "assets/art/snakes/gag-v2/snakes_player_head_gag_v2.png",
+      "sha256": "bbed38ae8418b931577b25c525bd9c678f35f8e70469e9fc57e64c281ae99ec9",
+      "runtime_reference": "main.gd:SNAKES_GAG_PLAYER_HEAD_TEXTURE -> _draw_snakes_arena_snake(player=true), 50-58 logical px"
+    },
+    {
+      "role": "ordinary stable collectible and settled debris family",
+      "path": "assets/art/snakes/gag-v2/snakes_prize_bean_gag_v2.png",
+      "sha256": "f1769c0bdd7d2ba294df7e9f2ebfbaa472f20caaf287687739b93626a6ebdc6c",
+      "runtime_reference": "main.gd:SNAKES_GAG_PRIZE_BEAN_TEXTURE -> _draw_snakes_arena_pellet, 16-22 logical px"
+    },
+    {
+      "role": "peak knockout material",
+      "path": "assets/art/snakes/gag-v2/snakes_knockout_burst_gag_v2.png",
+      "sha256": "e149b09f7d91317eec53bc0868721691491298e335c2e6f83741d0bdff170cc1",
+      "runtime_reference": "main.gd:SNAKES_GAG_KNOCKOUT_BURST_TEXTURE -> _draw_snakes_arena_knockout_material, 58/86 anticipation to 144 impact to 112 settle"
+    },
+    {
+      "role": "collect audio",
+      "path": "assets/audio/snakes/gag-v2/gummy_chomp_gag_v2.ogg",
+      "sha256": "636f0616cfa6f01487362c0178958563aad9dfd473a6fddfc67f97bc09801ece",
+      "runtime_reference": "player_ate"
+    },
+    {
+      "role": "boost audio",
+      "path": "assets/audio/snakes/gag-v2/gummy_boost_gag_v2.ogg",
+      "sha256": "3e2aba7130176c2c90a565f3f88300a9118de2b3e957ab48a71868c1c7d6d6c2",
+      "runtime_reference": "player boost_started"
+    },
+    {
+      "role": "knockout and death gummy layer",
+      "path": "assets/audio/snakes/gag-v2/gummy_knockout_gag_v2.ogg",
+      "sha256": "9a23d746b0a856bf5982a29a9f62e6f7f390db44702566fe7a0797b16a83583f",
+      "runtime_reference": "bot_died and player_died"
+    },
+    {
+      "role": "player reaches rank one",
+      "path": "assets/audio/snakes/gag-v2/leader_takeover_gag_v2.ogg",
+      "sha256": "c007cb704f3843304205b6c5306842ba7c9ca4536c6b2077ed9839a5612bf128",
+      "runtime_reference": "leader id changes to player"
+    }
+  ],
+  "decision": {
+    "reuse": "yes; coherent compatible runtime family already fills every identified role",
+    "new_generation": false,
+    "reason": "fresh semantic review found no stronger compatible candidate and no uncovered runtime role",
+    "generated_text": "none",
+    "code_native_roles": ["all game text", "numbers", "leaderboard state", "snake paths", "collision and pellet ownership"]
+  }
+}

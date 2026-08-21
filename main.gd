@@ -58,6 +58,9 @@ const SNAKE_GB_GAG_HEAD_TEXTURE: Texture2D = preload("res://assets/art/snakes/ga
 const SNAKE_GB_GAG_LURE_TEXTURE: Texture2D = preload("res://assets/art/snakes/gag/gb_snake_lure_gag_v2.png")
 const SNAKE_GB_GAG_FIELD_SEAL_TEXTURE: Texture2D = preload("res://assets/art/snakes/gag/gb_snake_field_seal_gag_v2.png")
 const SNAKES_DOODLE_TEXTURE: Texture2D = preload("res://assets/art/snakes/arena_doodles.webp")
+const SNAKES_GAG_PLAYER_HEAD_TEXTURE: Texture2D = preload("res://assets/art/snakes/gag-v2/snakes_player_head_gag_v2.png")
+const SNAKES_GAG_PRIZE_BEAN_TEXTURE: Texture2D = preload("res://assets/art/snakes/gag-v2/snakes_prize_bean_gag_v2.png")
+const SNAKES_GAG_KNOCKOUT_BURST_TEXTURE: Texture2D = preload("res://assets/art/snakes/gag-v2/snakes_knockout_burst_gag_v2.png")
 const SOLITAIRE_CARD_BACK_TEXTURE: Texture2D = preload("res://assets/art/cards/solitaire_card_back_gag_v1.webp")
 const TRIPEAKS_CARD_BACK_TEXTURE: Texture2D = preload("res://assets/art/cards/tripeaks_card_back_gag_v1.webp")
 const MAHJONG_TILE_BASE_TEXTURE: Texture2D = preload("res://assets/art/catalog/tile_games/mahjong_tile_base.svg")
@@ -93,6 +96,10 @@ const SFX_SNAKE_CRASH: AudioStream = preload("res://assets/audio/snake/crash.wav
 const SFX_SNAKE_WIN: AudioStream = preload("res://assets/audio/snake/win.wav")
 const SFX_SNAKE_GB_GAG_COLLECT: AudioStream = preload("res://assets/audio/snake/gag/gb_snake_specimen_collect_gag_v2.ogg")
 const SFX_SNAKE_GB_GAG_COMPLETE: AudioStream = preload("res://assets/audio/snake/gag/gb_snake_field_log_complete_gag_v2.ogg")
+const SFX_SNAKES_GAG_CHOMP: AudioStream = preload("res://assets/audio/snakes/gag-v2/gummy_chomp_gag_v2.ogg")
+const SFX_SNAKES_GAG_BOOST: AudioStream = preload("res://assets/audio/snakes/gag-v2/gummy_boost_gag_v2.ogg")
+const SFX_SNAKES_GAG_KNOCKOUT: AudioStream = preload("res://assets/audio/snakes/gag-v2/gummy_knockout_gag_v2.ogg")
+const SFX_SNAKES_GAG_LEADER: AudioStream = preload("res://assets/audio/snakes/gag-v2/leader_takeover_gag_v2.ogg")
 const SFX_FRUIT_DROP: AudioStream = preload("res://assets/audio/2048balls/fruit_drop.ogg")
 const SFX_FRUIT_MERGE: AudioStream = preload("res://assets/audio/2048balls/fruit_merge.ogg")
 const SFX_FRUIT_CASCADE: AudioStream = preload("res://assets/audio/2048balls/fruit_cascade.ogg")
@@ -297,6 +304,12 @@ var arena_death_heading := 0.0
 var arena_eat_started := -10.0
 var arena_eat_world := Vector2.ZERO
 var arena_eat_value := 0.0
+var arena_restart_requested := false
+var arena_recovered_from_snapshot := false
+var arena_knockout_started := -10.0
+var arena_knockout_world := Vector2.ZERO
+var arena_knockout_killer_id := -1
+var snakes_reduced_effects := false
 
 func _ready() -> void:
 	set_process(true)
@@ -307,6 +320,10 @@ func _ready() -> void:
 	if merge2048_save_path == MERGE2048_SAVE_PATH and _merge2048_tool_runtime():
 		merge2048_persistence_enabled = false
 	_setup_accessibility_preferences()
+	snakes_reduced_effects = reduced_effects or OS.get_environment("SNAKES_REDUCED_EFFECTS") == "1"
+	if OS.has_feature("web"):
+		var snakes_browser_preference: Variant = JavaScriptBridge.eval("window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : 0", true)
+		snakes_reduced_effects = snakes_reduced_effects or int(snakes_browser_preference) == 1
 	var cjk_font := UI_FONT as FontFile
 	if cjk_font:
 		cjk_font.fallbacks = [LATIN_FONT, SYMBOL_FONT]
@@ -344,6 +361,7 @@ func _set_reduced_effects(value: bool) -> void:
 	reduced_effects = value
 	reduced_effects_enabled = value
 	sudoku_reduced_effects = value
+	snakes_reduced_effects = value
 	haptics_enabled = not value
 	if reduced_effects:
 		catalog_fx.clear()
@@ -400,6 +418,8 @@ func _play_sfx(stream: AudioStream, volume_db := -7.0, pitch := 1.0) -> void:
 func _haptic(duration_ms: int) -> void:
 	if reduced_effects or _merge2048_effects_reduced() or not haptics_enabled:
 		return
+	if game_id == "snake_io" and snakes_reduced_effects:
+		return
 	haptic_requests_sent += 1
 	if OS.has_feature("web"):
 		JavaScriptBridge.eval("if (navigator.vibrate) navigator.vibrate(%d);" % duration_ms)
@@ -408,6 +428,8 @@ func _haptic(duration_ms: int) -> void:
 
 func _haptic_pattern(pattern: Array[int]) -> void:
 	if pattern.is_empty() or reduced_effects or _merge2048_effects_reduced() or not haptics_enabled:
+		return
+	if game_id == "snake_io" and snakes_reduced_effects:
 		return
 	haptic_requests_sent += 1
 	if OS.has_feature("web"):
@@ -920,8 +942,12 @@ func _reset_current() -> void:
 		_clear_sudoku_web_snapshot()
 	if game_id == "snake_classic":
 		_clear_snake_gb_web_recovery()
+	if game_id == "snake_io":
+		arena_restart_requested = true
+		_clear_snakes_web_snapshot()
 	_start_game_state(true)
 	sudoku_restart_requested = false
+	arena_restart_requested = false
 	if game_id == "merge2048":
 		_build_game_buttons()
 	if game_id == "sudoku":
@@ -934,6 +960,7 @@ func _reset_current() -> void:
 	elif game_id == "snake_io":
 		arena_reset_started = elapsed
 		_play_sfx(SFX_CASE_OPEN, -12.0, 1.14)
+		_persist_snakes_progress()
 	else:
 		_flash_feedback("新局开始", GREEN)
 	queue_redraw()
@@ -1207,7 +1234,10 @@ func _sync_observability(force := false) -> void:
 	var snapshot := state.duplicate(true)
 	snapshot["game_id"] = game_id
 	snapshot["screen"] = screen
-	snapshot["tick"] = tick
+	if game_id == "snake_io":
+		snapshot["shell_tick"] = tick
+	else:
+		snapshot["tick"] = tick
 	if logger:
 		logger.update_entity("Game", snapshot)
 	if action_executor:
@@ -1226,6 +1256,12 @@ func _save_snapshot(snapshot: Dictionary) -> void:
 	if OS.has_feature("web") and str(snapshot.get("game_id", "")) == "snake_classic":
 		var encoded := JSON.stringify(snapshot)
 		JavaScriptBridge.eval("try { localStorage.setItem(%s, %s); true; } catch (_error) { false; }" % [JSON.stringify(SNAKE_GB_WEB_STORAGE_KEY), JSON.stringify(encoded)])
+	if OS.has_feature("web") and str(snapshot.get("game_id", "")) == "snake_io":
+		if str(snapshot.get("phase", "")) == "running" and str(snapshot.get("status", "")) == "playing":
+			var arena_payload := JSON.stringify(snapshot)
+			JavaScriptBridge.eval("window.localStorage.setItem('offline-games-snakes-v3', %s);" % JSON.stringify(arena_payload))
+		else:
+			_clear_snakes_web_snapshot()
 
 func _load_sudoku_web_snapshot() -> Dictionary:
 	if not OS.has_feature("web"):
@@ -1249,6 +1285,30 @@ func _persist_sudoku_progress() -> void:
 	snapshot["game_id"] = game_id
 	snapshot["screen"] = screen
 	snapshot["tick"] = tick
+	_save_snapshot(snapshot)
+
+func _load_snakes_web_snapshot() -> Dictionary:
+	if not OS.has_feature("web"):
+		return {}
+	var raw: Variant = JavaScriptBridge.eval("window.localStorage.getItem('offline-games-snakes-v3') || '';" )
+	if not raw is String or str(raw).is_empty():
+		return {}
+	var parsed: Variant = JSON.parse_string(str(raw))
+	if parsed is Dictionary and str(parsed.get("game_id", "")) == "snake_io" and str(parsed.get("schema", "")) == "snakes-arena-state/v1":
+		return parsed
+	return {}
+
+func _clear_snakes_web_snapshot() -> void:
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("window.localStorage.removeItem('offline-games-snakes-v3');")
+
+func _persist_snakes_progress() -> void:
+	if game_id != "snake_io" or not OS.has_feature("web"):
+		return
+	var snapshot := state.duplicate(true)
+	snapshot["game_id"] = game_id
+	snapshot["screen"] = screen
+	snapshot["shell_tick"] = tick
 	_save_snapshot(snapshot)
 
 func _load_snake_gb_web_recovery() -> Dictionary:
@@ -3581,6 +3641,19 @@ func _snake_gb_emit_pixels(cell: Vector2i, count: int, kind: String) -> void:
 
 func _init_snakes_arena() -> void:
 	snakes_arena_model.reset(abs("snakes_arena".hash()) + 17, 5, 96)
+	arena_recovered_from_snapshot = false
+	if not arena_restart_requested:
+		var saved := _load_snakes_web_snapshot()
+		if not saved.is_empty():
+			arena_recovered_from_snapshot = snakes_arena_model.restore(saved)
+			if not arena_recovered_from_snapshot:
+				_clear_snakes_web_snapshot()
+	if arena_recovered_from_snapshot:
+		# A reload must never synthesize a held boost input.
+		snakes_arena_model.set_player_boost(false)
+		if not snakes_arena_model.snakes.is_empty():
+			snakes_arena_model.snakes[snakes_arena_model.player_index]["boost_requested"] = false
+			snakes_arena_model.snakes[snakes_arena_model.player_index]["boosting"] = false
 	arena_pointer_active = false
 	arena_aim_direction = Vector2.RIGHT
 	arena_boost_active = false
@@ -3603,6 +3676,9 @@ func _init_snakes_arena() -> void:
 	arena_eat_started = -10.0
 	arena_eat_world = Vector2.ZERO
 	arena_eat_value = 0.0
+	arena_knockout_started = -10.0
+	arena_knockout_world = Vector2.ZERO
+	arena_knockout_killer_id = -1
 	_sync_snakes_arena_state()
 	arena_rank_previous = int(state.get("rank", -1))
 	var board: Array = state.get("leaderboard", [])
@@ -3615,8 +3691,25 @@ func _sync_snakes_arena_state() -> void:
 	state = snakes_arena_model.snapshot()
 	state["game_id"] = game_id
 	state["started"] = true
+	state["recovered"] = arena_recovered_from_snapshot
+	state["reduced_effects"] = snakes_reduced_effects
 	state["score"] = roundi(float(state.get("mass", 0.0)))
 	state["moves"] = int(state.get("tick", 0))
+
+func _restore_snakes_snapshot(saved: Dictionary) -> bool:
+	if not snakes_arena_model.restore(saved):
+		return false
+	arena_recovered_from_snapshot = true
+	_clear_arena_boost_requests()
+	if not snakes_arena_model.snakes.is_empty():
+		snakes_arena_model.snakes[snakes_arena_model.player_index]["boost_requested"] = false
+		snakes_arena_model.snakes[snakes_arena_model.player_index]["boosting"] = false
+	_sync_snakes_arena_state()
+	arena_camera = _arena_player_world_position()
+	arena_camera_previous = arena_camera
+	arena_last_player_position = arena_camera
+	queue_redraw()
+	return true
 
 func _snakes_arena_update(delta: float) -> void:
 	var previous_rank := int(state.get("rank", -1))
@@ -3635,6 +3728,9 @@ func _snakes_arena_update(delta: float) -> void:
 		arena_leader_previous_id = previous_leader_id
 		arena_leader_change_name = "你" if current_leader_id == int(state.get("player_id", 0)) else str(current_board[0].get("name", "BOT"))
 		arena_leader_change_until = elapsed + 1.18
+		if current_leader_id == int(state.get("player_id", 0)):
+			_play_sfx(SFX_SNAKES_GAG_LEADER, -5.5, 1.0)
+			_haptic(38)
 	for event in events:
 		if str(event.get("kind", "")) == "player_died":
 			arena_death_segments = previous_player.get("segments", []).duplicate(true)
@@ -3653,7 +3749,7 @@ func _snakes_arena_update(delta: float) -> void:
 		arena_rank_bump_until = elapsed + 0.58
 		var improved := current_rank < previous_rank
 		arena_float_labels.append({"world":player_position, "started":elapsed, "text":"位次 ↑ %d" % current_rank if improved else "位次 %d" % current_rank, "color":Color("ffe28a") if improved else Color("f79a86")})
-		if improved:
+		if improved and current_rank != 1:
 			_play_sfx(SFX_SNAKE_KEY, -12.0, 1.32)
 	if current_rank > 0:
 		arena_rank_previous = current_rank
@@ -3676,13 +3772,14 @@ func _snakes_arena_dispatch(events: Array[Dictionary]) -> void:
 				arena_eat_value = value
 				_snakes_arena_emit_fx("eat", at, Color("ffd92f"), 12)
 				arena_float_labels.append({"world":at, "started":elapsed, "text":"+%.1f 体量" % value, "color":Color("fff1ce")})
-				_play_sfx(SFX_SNAKE_EAT, -9.0, 1.02 + minf(0.18, value * 0.035))
+				_play_sfx(SFX_SNAKES_GAG_CHOMP, -6.5, 0.96 + minf(0.16, value * 0.030))
 				_haptic(14)
 				_log_event("snakes_seed", {"mass":float(state.get("mass", 0.0))})
+				_persist_snakes_progress()
 			"boost_started":
 				if int(event.get("id", -1)) == 0:
 					_snakes_arena_emit_fx("boost", _arena_player_world_position(), Color("06ddea"), 7)
-					_play_sfx(SFX_SNAKE_KEY, -13.0, 1.42)
+					_play_sfx(SFX_SNAKES_GAG_BOOST, -8.0, 1.04)
 					_haptic(10)
 			"boost_rejected":
 				if int(event.get("id", -1)) == 0:
@@ -3695,11 +3792,17 @@ func _snakes_arena_dispatch(events: Array[Dictionary]) -> void:
 					_snakes_arena_emit_fx("shed", _arena_vector(event.get("at", Vector2.ZERO)), Color("06ddea"), 2)
 			"bot_died":
 				var bot_at := _arena_vector(event.get("at", Vector2.ZERO))
+				arena_knockout_started = elapsed
+				arena_knockout_world = bot_at
+				arena_knockout_killer_id = int(event.get("killer_id", -1))
 				arena_competition_world = bot_at
 				arena_competition_until = elapsed + 1.24
 				_snakes_arena_emit_fx("debris", bot_at, Color("ffd92f"), 20)
 				arena_float_labels.append({"world":bot_at, "started":elapsed, "text":"彩豆散开！", "color":Color("fff1ce")})
-				_play_sfx(SFX_SNAKE_CRASH, -13.0, 1.18)
+				_play_sfx(SFX_SNAKES_GAG_KNOCKOUT, -5.5 if arena_knockout_killer_id == int(state.get("player_id", 0)) else -9.0, 1.02)
+				arena_camera_shake = Vector2(5.0, 3.0) if not snakes_reduced_effects else Vector2.ZERO
+				if arena_knockout_killer_id == int(state.get("player_id", 0)):
+					_haptic(34)
 			"bot_ate":
 				var forage_at := _arena_vector(event.get("at", Vector2.ZERO))
 				var forage_value := float(event.get("value", 1.0))
@@ -3707,6 +3810,9 @@ func _snakes_arena_dispatch(events: Array[Dictionary]) -> void:
 				arena_float_labels.append({"world":forage_at, "started":elapsed, "text":"抢食 +%.1f" % forage_value, "color":Color("fff2b8")})
 			"player_died":
 				var player_at := _arena_vector(event.get("at", _arena_player_world_position()))
+				arena_knockout_started = elapsed
+				arena_knockout_world = player_at
+				arena_knockout_killer_id = int(event.get("killer_id", -1))
 				if arena_death_segments.is_empty():
 					var dead_player: Dictionary = state.get("player", {})
 					arena_death_segments = dead_player.get("segments", []).duplicate(true)
@@ -3716,14 +3822,18 @@ func _snakes_arena_dispatch(events: Array[Dictionary]) -> void:
 					arena_death_heading = float(dead_player.get("heading", 0.0))
 				_clear_arena_boost_requests()
 				arena_pointer_active = false
-				arena_result_ready_at = elapsed + 0.72
+				arena_result_ready_at = elapsed if snakes_reduced_effects else elapsed + 0.72
 				_snakes_arena_emit_fx("death", player_at, Color("ff3341"), 28)
-				arena_camera_shake = Vector2(10.0, 6.0)
-				_play_sfx(SFX_SNAKE_CRASH, -4.5, 0.92)
+				arena_camera_shake = Vector2(10.0, 6.0) if not snakes_reduced_effects else Vector2.ZERO
+				_play_sfx(SFX_SNAKES_GAG_KNOCKOUT, -3.5, 0.86)
+				_play_sfx(SFX_SNAKE_CRASH, -11.0, 0.82)
 				_haptic(62)
+				_clear_snakes_web_snapshot()
 				_capture("snakes_player_died")
 
 func _snakes_arena_emit_fx(kind: String, world: Vector2, color: Color, count: int) -> void:
+	if snakes_reduced_effects:
+		return
 	for index in range(count):
 		while arena_fx.size() >= 120:
 			arena_fx.pop_front()
@@ -3736,6 +3846,9 @@ func _snakes_arena_emit_fx(kind: String, world: Vector2, color: Color, count: in
 		})
 
 func _snakes_arena_prune_fx() -> void:
+	if snakes_reduced_effects:
+		arena_fx.clear()
+		arena_camera_shake = Vector2.ZERO
 	for index in range(arena_fx.size() - 1, -1, -1):
 		var fx: Dictionary = arena_fx[index]
 		if elapsed - float(fx.get("started", elapsed)) >= float(fx.get("life", 0.4)):
@@ -4428,7 +4541,7 @@ func _draw_snakes_arena_experience() -> void:
 	_draw_snakes_cartoon_background()
 	var shake_force := arena_camera_shake.length()
 	var shake := Vector2.ZERO
-	if shake_force > 0.1:
+	if not snakes_reduced_effects and shake_force > 0.1:
 		shake = Vector2(sin(elapsed * 93.0), cos(elapsed * 77.0)) * minf(8.0, shake_force)
 	var scale_value := _arena_visual_scale()
 	_draw_snakes_arena_world(scale_value, shake)
@@ -4444,7 +4557,7 @@ func _draw_snakes_arena_experience() -> void:
 	var status := str(state.get("status", "playing"))
 	if status != "playing" and arena_result_ready_at > 0.0 and elapsed >= arena_result_ready_at:
 		_draw_snakes_arena_terminal()
-	if elapsed - arena_reset_started < 0.65:
+	if not snakes_reduced_effects and elapsed - arena_reset_started < 0.65:
 		var reset_progress := clampf((elapsed - arena_reset_started) / 0.65, 0.0, 1.0)
 		var spawn_center := _arena_world_to_screen(_arena_player_world_position(), scale_value, shake)
 		var ring_radius := lerpf(18.0, 86.0, reset_progress)
@@ -4472,13 +4585,14 @@ func _draw_snakes_arena_world(scale_value: float, shake: Vector2) -> void:
 	var pellets: Array = state.get("pellets", [])
 	for pellet in pellets:
 		_draw_snakes_arena_pellet(pellet, scale_value, shake)
-	if elapsed < arena_competition_until:
+	if not snakes_reduced_effects and elapsed < arena_competition_until:
 		var contest_age := maxf(0.0, 1.24 - (arena_competition_until - elapsed))
 		var contest_progress := clampf(contest_age / 1.24, 0.0, 1.0)
 		var contest_center := _arena_world_to_screen(arena_competition_world, scale_value, shake)
 		for ring in range(3):
 			var contest_radius := 18.0 + contest_progress * (48.0 + float(ring) * 15.0)
 			draw_arc(contest_center, contest_radius, 0, TAU, 42, Color("ffe28a", (1.0 - contest_progress) * (0.52 - float(ring) * 0.10)), 1.6)
+	_draw_snakes_arena_knockout_material(scale_value, shake)
 	var snakes: Array = state.get("snakes", [])
 	for snake in snakes:
 		if int(snake.get("id", -1)) != int(state.get("player_id", 0)) and bool(snake.get("alive", false)):
@@ -4505,23 +4619,62 @@ func _draw_snakes_arena_pellet(pellet: Dictionary, scale_value: float, shake: Ve
 		radius += 2.0
 	elif source == "boost":
 		radius -= 1.0
-	var pulse := 1.0 + sin(elapsed * 4.8 + float(int(pellet.get("id", 0)) % 13)) * 0.075
+	var pulse := 1.0 if snakes_reduced_effects else 1.0 + sin(elapsed * 4.8 + float(int(pellet.get("id", 0)) % 13)) * 0.075
 	var draw_radius := radius * pulse
-	draw_circle(p, draw_radius * 2.25, Color(color, 0.11))
+	draw_circle(p, draw_radius * 2.25, Color(color, 0.13 if source == "debris" else 0.09))
+	var bean_width := clampf(draw_radius * 2.05, 16.0, 22.0)
+	var bean_height := bean_width * 0.875
+	var bean_rotation := float(posmod(int(pellet.get("id", 0)) * 37, 29)) * 0.105
 	if source == "debris":
-		var outer_star := PackedVector2Array()
-		var inner_star := PackedVector2Array()
-		for point_index in range(12):
-			var point_angle := float(point_index) / 12.0 * TAU + elapsed * 0.34
-			var point_radius := draw_radius * (1.22 if point_index % 2 == 0 else 0.62)
-			outer_star.append(p + Vector2.from_angle(point_angle) * (point_radius + 2.0))
-			inner_star.append(p + Vector2.from_angle(point_angle) * point_radius)
-		draw_colored_polygon(outer_star, Color("02101b"))
-		draw_colored_polygon(inner_star, color)
+		bean_rotation += 0.0 if snakes_reduced_effects else elapsed * 1.45
+		draw_arc(p, bean_width * 0.68, bean_rotation, bean_rotation + PI * 1.38, 18, Color("fff1ce", 0.62), 1.6)
+	draw_set_transform(p, bean_rotation, Vector2.ONE)
+	draw_texture_rect(
+		SNAKES_GAG_PRIZE_BEAN_TEXTURE,
+		Rect2(Vector2(-bean_width, -bean_height) * 0.5, Vector2(bean_width, bean_height)),
+		false,
+		color.lightened(0.12)
+	)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	if source == "debris":
+		var sparkle := p + Vector2.from_angle(bean_rotation - 0.7) * bean_width * 0.58
+		draw_line(sparkle - Vector2(2.5, 0), sparkle + Vector2(2.5, 0), Color("ffffff", 0.84), 1.5, true)
+		draw_line(sparkle - Vector2(0, 2.5), sparkle + Vector2(0, 2.5), Color("ffffff", 0.84), 1.5, true)
+
+func _draw_snakes_arena_knockout_material(scale_value: float, shake: Vector2) -> void:
+	if snakes_reduced_effects:
+		return
+	var age := elapsed - arena_knockout_started
+	if age < 0.0 or age > 0.92:
+		return
+	var center := _arena_world_to_screen(arena_knockout_world, scale_value, shake)
+	var size_value := 64.0
+	var alpha := 1.0
+	var squash := Vector2(1.16, 0.70)
+	if age < 0.10:
+		var anticipation := clampf(age / 0.10, 0.0, 1.0)
+		size_value = lerpf(58.0, 86.0, anticipation)
+		squash = Vector2(1.22 - anticipation * 0.12, 0.62 + anticipation * 0.28)
+		alpha = lerpf(0.52, 0.94, anticipation)
+	elif age < 0.32:
+		var impact := clampf((age - 0.10) / 0.22, 0.0, 1.0)
+		size_value = lerpf(86.0, 144.0, sin(impact * PI * 0.72))
+		squash = Vector2.ONE * (1.0 + sin(impact * PI) * 0.10)
+		alpha = 1.0
 	else:
-		draw_circle(p, draw_radius + 2.0, Color("02101b"))
-		draw_circle(p, draw_radius, color)
-	draw_circle(p - Vector2(draw_radius * 0.32, draw_radius * 0.34), maxf(1.4, draw_radius * 0.30), Color("ffffff", 0.92))
+		var settle := clampf((age - 0.32) / 0.60, 0.0, 1.0)
+		size_value = lerpf(140.0, 112.0, settle)
+		squash = Vector2.ONE
+		alpha = 1.0 - settle
+	var draw_size := Vector2(size_value, size_value)
+	draw_set_transform(center, age * 0.44, squash)
+	draw_texture_rect(
+		SNAKES_GAG_KNOCKOUT_BURST_TEXTURE,
+		Rect2(-draw_size * 0.5, draw_size),
+		false,
+		Color(1.0, 1.0, 1.0, alpha)
+	)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func _draw_snakes_arena_snake(snake: Dictionary, scale_value: float, shake: Vector2, player: bool) -> void:
 	var segments: Array = snake.get("segments", [])
@@ -4606,51 +4759,67 @@ func _draw_snakes_arena_snake(snake: Dictionary, scale_value: float, shake: Vect
 		if eat_age >= 0.0 and eat_age < 0.28:
 			eat_intensity = sin(clampf(eat_age / 0.28, 0.0, 1.0) * PI)
 	var boost_intensity := 1.0 if bool(snake.get("boosting", false)) else 0.0
+	if snakes_reduced_effects:
+		steer_intensity = 0.0
+		eat_intensity = 0.0
+		boost_intensity = 0.0
 	var head_scale := Vector2(1.10 + steer_intensity * 0.13 + eat_intensity * 0.20 + boost_intensity * 0.08, 1.04 - steer_intensity * 0.09 - eat_intensity * 0.14 - boost_intensity * 0.05)
 	draw_set_transform(head, heading, head_scale)
 	draw_circle(Vector2(3.2, 5.0), head_radius + outline_width + 1.0, Color("01050d", 0.48))
-	draw_circle(Vector2.ZERO, head_radius + outline_width, outline)
-	var head_color: Color = palette.get("head", bands[0])
-	draw_circle(Vector2.ZERO, head_radius, head_color)
-	draw_circle(Vector2(-head_radius * 0.28, -head_radius * 0.35), head_radius * 0.52, Color("ffffff", 0.13))
-	var eye_radius := head_radius * 0.32
-	var eye_gap := float(palette.get("eye_gap", 0.48))
-	var blink_period := 3.15 + float(posmod(int(snake.get("id", 0)) * 7, 13)) * 0.10
-	var blinking := fposmod(elapsed + float(int(snake.get("id", 0))) * 0.71, blink_period) < 0.105
-	var mood := str(snake.get("state", "relaxed"))
-	for eye_sign in [-1.0, 1.0]:
-		var asymmetry: float = 1.0 + float(eye_sign) * float(posmod(int(snake.get("id", 0)), 3) - 1) * 0.035
-		var eye_center := Vector2(head_radius * 0.26, eye_sign * head_radius * eye_gap)
-		if blinking:
-			draw_line(eye_center - Vector2(eye_radius * 0.78, 0), eye_center + Vector2(eye_radius * 0.78, 0), outline, maxf(2.4, eye_radius * 0.28), true)
-		else:
-			draw_circle(eye_center, eye_radius * asymmetry + 2.2, outline)
-			draw_circle(eye_center, eye_radius * asymmetry, Color("ffffff"))
-			var look_offset := Vector2(eye_radius * (0.28 if boost_intensity > 0.0 else 0.20), eye_sign * eye_radius * (0.05 if mood == "scavenging" else 0.0))
-			var pupil_radius := eye_radius * (0.48 if mood == "scavenging" else 0.43)
-			draw_circle(eye_center + look_offset, pupil_radius, Color("02101b"))
-			draw_circle(eye_center + look_offset - Vector2(pupil_radius * 0.26, pupil_radius * 0.32), maxf(0.9, pupil_radius * 0.24), Color("ffffff"))
-	var cheek: Color = palette.get("cheek", Color("ff711a"))
-	draw_circle(Vector2(head_radius * 0.48, head_radius * 0.73), head_radius * 0.13, Color(cheek, 0.72))
-	draw_circle(Vector2(head_radius * 0.48, -head_radius * 0.73), head_radius * 0.13, Color(cheek, 0.72))
-	var smile := PackedVector2Array([
-		Vector2(head_radius * 0.61, -head_radius * 0.16),
-		Vector2(head_radius * 0.70, 0),
-		Vector2(head_radius * 0.61, head_radius * 0.16)
-	])
-	draw_polyline(smile, outline, maxf(1.8, head_radius * 0.10), true)
-	if mood == "chasing":
+	if player:
+		var head_size := clampf(head_radius * 2.76, 50.0, 58.0)
+		draw_texture_rect(
+			SNAKES_GAG_PLAYER_HEAD_TEXTURE,
+			Rect2(Vector2(-head_size, -head_size) * 0.5, Vector2(head_size, head_size)),
+			false
+		)
+	else:
+		draw_circle(Vector2.ZERO, head_radius + outline_width, outline)
+		var head_color: Color = palette.get("head", bands[0])
+		draw_circle(Vector2.ZERO, head_radius, head_color)
+		draw_circle(Vector2(-head_radius * 0.28, -head_radius * 0.35), head_radius * 0.52, Color("ffffff", 0.13))
+		var eye_radius := head_radius * 0.32
+		var eye_gap := float(palette.get("eye_gap", 0.48))
+		var blink_period := 3.15 + float(posmod(int(snake.get("id", 0)) * 7, 13)) * 0.10
+		var blinking := not snakes_reduced_effects and fposmod(elapsed + float(int(snake.get("id", 0))) * 0.71, blink_period) < 0.105
+		var mood := str(snake.get("state", "relaxed"))
 		for eye_sign in [-1.0, 1.0]:
-			var brow_center := Vector2(head_radius * 0.06, eye_sign * head_radius * eye_gap)
-			draw_line(brow_center + Vector2(-2, eye_sign * 3), brow_center + Vector2(eye_radius * 0.9, -eye_sign * 2), outline, 2.2, true)
+			var asymmetry: float = 1.0 + float(eye_sign) * float(posmod(int(snake.get("id", 0)), 3) - 1) * 0.035
+			var eye_center := Vector2(head_radius * 0.26, eye_sign * head_radius * eye_gap)
+			if blinking:
+				draw_line(eye_center - Vector2(eye_radius * 0.78, 0), eye_center + Vector2(eye_radius * 0.78, 0), outline, maxf(2.4, eye_radius * 0.28), true)
+			else:
+				draw_circle(eye_center, eye_radius * asymmetry + 2.2, outline)
+				draw_circle(eye_center, eye_radius * asymmetry, Color("ffffff"))
+				var look_offset := Vector2(eye_radius * (0.28 if boost_intensity > 0.0 else 0.20), eye_sign * eye_radius * (0.05 if mood == "scavenging" else 0.0))
+				var pupil_radius := eye_radius * (0.48 if mood == "scavenging" else 0.43)
+				draw_circle(eye_center + look_offset, pupil_radius, Color("02101b"))
+				draw_circle(eye_center + look_offset - Vector2(pupil_radius * 0.26, pupil_radius * 0.32), maxf(0.9, pupil_radius * 0.24), Color("ffffff"))
+		var cheek: Color = palette.get("cheek", Color("ff711a"))
+		draw_circle(Vector2(head_radius * 0.48, head_radius * 0.73), head_radius * 0.13, Color(cheek, 0.72))
+		draw_circle(Vector2(head_radius * 0.48, -head_radius * 0.73), head_radius * 0.13, Color(cheek, 0.72))
+		var smile := PackedVector2Array([
+			Vector2(head_radius * 0.61, -head_radius * 0.16),
+			Vector2(head_radius * 0.70, 0),
+			Vector2(head_radius * 0.61, head_radius * 0.16)
+		])
+		draw_polyline(smile, outline, maxf(1.8, head_radius * 0.10), true)
+		if mood == "chasing":
+			for eye_sign in [-1.0, 1.0]:
+				var brow_center := Vector2(head_radius * 0.06, eye_sign * head_radius * eye_gap)
+				draw_line(brow_center + Vector2(-2, eye_sign * 3), brow_center + Vector2(eye_radius * 0.9, -eye_sign * 2), outline, 2.2, true)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	if player and steer_intensity > 0.0 and not snakes_reduced_effects:
+		_draw_snakes_arena_steer_wake(head, heading, head_radius, steer_intensity)
+	elif scavenging and not snakes_reduced_effects:
+		_draw_snakes_arena_scavenge_intent(head, _arena_vector(snake.get("position", Vector2.ZERO)), scale_value, shake)
 	var invulnerable := float(snake.get("invulnerable", 0.0))
 	if player and invulnerable > 0.0:
 		var shield_alpha := clampf(invulnerable / 1.15, 0.0, 1.0)
 		draw_circle(head, head_radius + 11.0, Color("ffffff", 0.08 + shield_alpha * 0.08))
 		draw_arc(head, head_radius + 11.0, 0, TAU, 44, Color("ffffff", 0.42 + shield_alpha * 0.22), 2.6)
 		for star_index in range(3):
-			var star_angle := elapsed * 2.2 + float(star_index) * TAU / 3.0
+			var star_angle := (0.0 if snakes_reduced_effects else elapsed * 2.2) + float(star_index) * TAU / 3.0
 			var star_position := head + Vector2.from_angle(star_angle) * (head_radius + 14.0)
 			draw_line(star_position - Vector2(3, 0), star_position + Vector2(3, 0), Color("ffd92f", shield_alpha), 2.0, true)
 			draw_line(star_position - Vector2(0, 3), star_position + Vector2(0, 3), Color("ffd92f", shield_alpha), 2.0, true)
@@ -4659,7 +4828,7 @@ func _draw_snakes_arena_snake(snake: Dictionary, scale_value: float, shake: Vect
 	_draw_center(label, head + Vector2(0, -head_radius - 16.0), 13 if player else 12, label_color)
 
 func _draw_snakes_arena_cartoon_boost(points: PackedVector2Array, body_radius: float, bands: Array, snake_id: int) -> void:
-	if points.size() < 3:
+	if snakes_reduced_effects or points.size() < 3:
 		return
 	for index in range(2, mini(points.size() - 1, 16), 3):
 		var forward := (points[index - 1] - points[index + 1]).normalized()
@@ -4724,6 +4893,8 @@ func _draw_snakes_arena_scavenge_intent(head: Vector2, world: Vector2, scale_val
 		draw_circle(marker_position - direction * 1.2, 1.0, Color("fff7cf", marker_alpha + 0.16))
 
 func _draw_snakes_arena_death_trace(scale_value: float, shake: Vector2) -> void:
+	if snakes_reduced_effects:
+		return
 	var age := elapsed - arena_death_started
 	if arena_death_segments.size() < 2 or age < 0.0 or age > 0.70:
 		return
@@ -4777,7 +4948,8 @@ func _draw_snakes_arena_near_miss(scale_value: float, shake: Vector2) -> void:
 	if nearest >= 34.0 and nearest < 76.0:
 		var danger := 1.0 - (nearest - 34.0) / 42.0
 		var head := _arena_world_to_screen(player_position, scale_value, shake)
-		var alert := head + Vector2(22.0, -27.0 - sin(elapsed * 12.0) * 3.0)
+		var alert_motion := 0.0 if snakes_reduced_effects else sin(elapsed * 12.0) * 3.0
+		var alert := head + Vector2(22.0, -27.0 - alert_motion)
 		draw_circle(alert + Vector2(2, 3), 12.0, Color("01050d", danger * 0.48))
 		draw_circle(alert, 12.0, Color("02101b", danger))
 		draw_circle(alert, 9.0, Color("ffd92f", danger))
@@ -4848,7 +5020,8 @@ func _draw_snakes_arena_fx(scale_value: float, shake: Vector2) -> void:
 	for label in arena_float_labels:
 		var age := elapsed - float(label.get("started", elapsed))
 		var progress := clampf(age / 0.86, 0.0, 1.0)
-		var p := _arena_world_to_screen(_arena_vector(label.get("world", Vector2.ZERO)), scale_value, shake) + Vector2(0, -48.0 - progress * 34.0)
+		var label_rise := 0.0 if snakes_reduced_effects else progress * 34.0
+		var p := _arena_world_to_screen(_arena_vector(label.get("world", Vector2.ZERO)), scale_value, shake) + Vector2(0, -48.0 - label_rise)
 		var label_color: Color = label.get("color", Color("fff2b8"))
 		_draw_center(str(label.get("text", "+1")), p + Vector2(2, 3), 15, Color("02101b", (1.0 - progress) * 0.88))
 		_draw_center(str(label.get("text", "+1")), p, 15, Color(label_color, 1.0 - progress))
@@ -4953,7 +5126,7 @@ func _draw_snakes_arena_boost() -> void:
 	var center := Vector2(472, 874) + pressed_offset
 	var mass := float(state.get("mass", 0.0))
 	var reserve := clampf((mass - 22.0) / 28.0, 0.0, 1.0)
-	var pulse := 1.0 + (sin(elapsed * 13.0) * 0.035 if arena_boost_active else 0.0)
+	var pulse := 1.0 + (sin(elapsed * 13.0) * 0.035 if arena_boost_active and not snakes_reduced_effects else 0.0)
 	draw_circle(center + Vector2(3, 6), 45.0 * pulse, Color("01050d", 0.58))
 	draw_circle(center, 45.0 * pulse, Color("02101b"))
 	draw_circle(center, 39.0 * pulse, Color("06ddea") if reserve > 0.04 else Color("ff3341"))
@@ -4963,7 +5136,8 @@ func _draw_snakes_arena_boost() -> void:
 		var lit := float(segment + 1) / 8.0 <= reserve + 0.001
 		draw_arc(center, 43.0, start_angle, start_angle + TAU / 8.0 - 0.10, 8, Color("ffd92f") if lit else Color("3a2941"), 5.5)
 	if arena_boost_active:
-		draw_arc(center, 31.0 + sin(elapsed * 16.0) * 2.0, 0, TAU, 40, Color("ffffff", 0.72), 3.0)
+		var active_radius := 31.0 if snakes_reduced_effects else 31.0 + sin(elapsed * 16.0) * 2.0
+		draw_arc(center, active_radius, 0, TAU, 40, Color("ffffff", 0.72), 3.0)
 	_draw_center("冲刺", center + Vector2(0, 5), 15, Color("02101b"))
 
 func _draw_snakes_arena_terminal() -> void:

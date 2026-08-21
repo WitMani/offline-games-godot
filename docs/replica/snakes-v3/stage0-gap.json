@@ -1,0 +1,64 @@
+{
+  "schema_version": "offline-games-stage0-gap/v1",
+  "game_id": "snake_io",
+  "target": {
+    "title": "Offline Games - No Wifi Games / Snakes",
+    "ios_track_id": 6448104157,
+    "ios_bundle_id": "com.JindoBlu.OfflineGamesIOS",
+    "ios_version": "3.14.1",
+    "released_at": "2026-08-07T15:42:11Z",
+    "android_package_id": "com.JindoBlu.OfflineGames",
+    "first_named_version": "3.7.2",
+    "public_game_name": "Snakes",
+    "internal_resource_id": null,
+    "legacy_repository_label": "136_SNAKES",
+    "legacy_label_verified": false,
+    "package_sha256": null,
+    "package_not_acquired_reason": "Only public first-party listing, version-history, screenshot, trailer, and promotional-event evidence was acquired."
+  },
+  "replica_starting_head": "3e561fb3c55f3b0b813da2b9ee9468cd4d290bae",
+  "verified_reference_contract": [
+    "distinct Snakes arcade .io game",
+    "eat food",
+    "grow and become the biggest",
+    "avoid other snakes",
+    "offline play is offered"
+  ],
+  "original_unknowns": [
+    "exact steering input and turn rate",
+    "boost availability and cost",
+    "collision ownership and self-collision",
+    "head-to-head and boundary rules",
+    "death, debris, and respawn semantics",
+    "leaderboard and terminal win semantics",
+    "restart and recovery semantics"
+  ],
+  "baseline_gates": {
+    "arena_model": "PASS cases=18",
+    "snake_input": "PASS cases=8",
+    "snake_modes_integration": "PASS cases=5",
+    "catalog": "PASS games=14"
+  },
+  "blocking_gap": "No strict model/runtime restore path; legacy 136_SNAKES label is overclaimed; dedicated target-contract probe is absent.",
+  "required_mechanics_slice": "Correct the resource-ID claim, add strict renderer-free snapshot restore and corrupt rejection, then prove entry, steer, eat/grow, collision/death, respawn, rank-1 nonterminal objective, restart and recovery with dedicated probes.",
+  "resolution": {
+    "mechanics_commit": "27417dd42ff1da5a27462ee417e5cb371358c668",
+    "resource_id_overclaim": "removed",
+    "contract_smoke": "PASS cases=10",
+    "arena_model_smoke": "PASS cases=18",
+    "runtime_smoke": "PASS cases=4",
+    "input_smoke": "PASS cases=8",
+    "modes_integration_smoke": "PASS cases=5",
+    "catalog_smoke": "PASS games=14"
+  },
+  "remaining_gates": [
+    "re-audit HOME-WSL GAG endpoint, provider, source hashes, derivations and runtime roles",
+    "matched ordinary/stable and peak runtime evidence",
+    "continuous knockout evidence and reduced-effects/haptic suppression",
+    "busy-frame performance and font/CJK proof",
+    "clean fingerprinted Web/PCK and real-browser actions/reload/headers/transfers"
+  ],
+  "gag_gate": "open_after_mechanics_pass",
+  "production_authorized": true,
+  "stage_status": "mechanics_pass_art_unblocked"
+}

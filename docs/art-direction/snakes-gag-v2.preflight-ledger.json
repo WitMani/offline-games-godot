@@ -1,0 +1,168 @@
+{
+  "schema": "offline-games.snakes-gag-v2.preflight-ledger.v1",
+  "game_id": "snake_io",
+  "starting_commit": "d9ee2dcbbec523b66169b40140de352cf2b5f213",
+  "status": "preflight_only_no_assets_selected_generated_or_shipped",
+  "production_registration_drift": {
+    "direct_codex_registration": {
+      "reported_gpu": "not detected",
+      "reported_main_pytorch": "not installed",
+      "reported_providers": ["mock"],
+      "decision": "rejected_as_mock_only_not_production"
+    },
+    "verified_service": {
+      "endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+      "host": "desktop-youyuan-wsl.tail17a64.ts.net",
+      "transport": "streamable-http",
+      "health_version": "0.2.0",
+      "mcp_server_name": "game-assets-generator",
+      "mcp_server_version": "1.29.0",
+      "tools_count": 21,
+      "gpu": "not detected",
+      "main_service_pytorch": "not installed; pure API available",
+      "enabled_providers": ["gemini", "doubao", "mock", "elevenlabs", "removebg", "fal", "openrouter", "tripo", "codex"],
+      "selected_route_for_future_production": "pure API via fal/Gemini/OpenRouter, Remove.bg, and ElevenLabs"
+    }
+  },
+  "semantic_searches": [
+    {
+      "role": "stable_player_and_rival_head",
+      "query": "卡通休闲竞技游戏，圆润软糖蛇头吉祥物，夸张眼睛，清晰朝向，深色背景适配，透明或纯色背景，适合48像素运行时精灵",
+      "kinds": ["image"],
+      "reviewed_candidates": [
+        {
+          "name": "enemy_cobra_death_spritesheet.png",
+          "score": 0.44668588482703436,
+          "actual_file": "PNG 2560x2560 RGBA",
+          "bytes": 5672426,
+          "sha256": "58b4e017c5cf2aa77ca5544036dc76f37aa79912f9ee78f39c55758f929a47d5",
+          "visual_review": "Sixteen-frame hostile purple cobra with hood, fangs, scales and magic glow.",
+          "decision": "reject",
+          "reason": "Wrong friendly fantasy, full-body fixed animation cannot follow the authoritative continuous path, excessive detail at 48 px."
+        },
+        {
+          "name": "generated_images__20260820_235159_FAL.ai.png",
+          "score": 0.44568643017789855,
+          "actual_file": "JPEG content 1024x1024 RGB despite .png suffix",
+          "bytes": 104617,
+          "sha256": "7d67f62afe64248c3c807e18b19a6858e54c7e148a3f94f7c6a14d50177accfc",
+          "visual_review": "Single right-facing monochrome pixel/LCD snake head and neck on white background.",
+          "decision": "reject",
+          "reason": "Belongs to GB Snake's handheld vocabulary; wrong gummy material and no alpha."
+        },
+        {
+          "name": "enemy_cobra_attack_spritesheet.png",
+          "score": 0.4451052208219577,
+          "decision": "reject",
+          "reason": "Same hostile cobra family and incompatible fixed full-body animation."
+        }
+      ]
+    },
+    {
+      "role": "stable_repeated_prize_bean",
+      "query": "卡通软糖奖品豆、糖果星星、果冻颗粒，强轮廓低细节，适合16到22像素重复游戏物件，透明背景",
+      "kinds": ["image"],
+      "reviewed_candidates": [
+        {
+          "name": "generated_images__20260820_184012_FAL.ai_nobg_20260820_184123.png",
+          "score": 0.4321741490305527,
+          "actual_file": "PNG 500x500 RGBA",
+          "bytes": 305958,
+          "sha256": "7c34fff62346dce7ff0b9df3a49e8fad90bd06793c7223d81824b151b64d3002",
+          "visual_review": "Nine square stitched fabric badges with leaf, moon, berry, star, crystal and flower motifs.",
+          "decision": "reject",
+          "reason": "Tile Club identity, square fabric material, dense motifs collapse and clutter at 16–22 px."
+        },
+        {
+          "name": "generated_images__20260820_184012_FAL.ai.png",
+          "score": 0.4217826408967126,
+          "decision": "reject",
+          "reason": "Source master for the same Tile Club badge family."
+        },
+        {
+          "name": "generated_images__20260821_004833_FAL.ai.png",
+          "score": 0.4149403949013784,
+          "decision": "reject",
+          "reason": "2248 confection token family belongs to another game and is too large/detailed for repeated arena food."
+        }
+      ]
+    },
+    {
+      "role": "knockout_sugar_burst",
+      "query": "卡通软糖碰撞破裂、糖片爆散、砂糖环、空心中心，竞技游戏击败与抢食反馈，透明背景VFX",
+      "kinds": ["image"],
+      "reviewed_candidates": [
+        {
+          "name": "impact-burst.png",
+          "score": 0.4053870356293077,
+          "actual_file": "PNG 256x256 RGBA",
+          "bytes": 51193,
+          "sha256": "c33ed0de8d1164fb44348ba36739bc6478d593619a9f6a5287430a7d668b7c85",
+          "visual_review": "Generic orange comic starburst with white center and hard shards.",
+          "decision": "reject",
+          "reason": "Readable hollow contact but wrong material and generic explosion vocabulary."
+        },
+        {
+          "name": "juice_merge_burst.png",
+          "score": 0.40387281154556864,
+          "actual_file": "PNG 438x457 RGBA",
+          "bytes": 246798,
+          "sha256": "114645dffd4875a4d2961b2a9555cdf117698ddabd3878f8f33fb44505c227a6",
+          "visual_review": "Hollow orange citrus juice ring with fruit pieces and droplets.",
+          "decision": "reject",
+          "reason": "Strong material construction but explicitly belongs to 2048 Balls and would erase game identity."
+        },
+        {
+          "name": "conquest-vfx-atlas-chroma-v2.png",
+          "score": 0.4268500740519668,
+          "decision": "reject",
+          "reason": "Conquest-specific atlas; unrelated scale and fantasy."
+        }
+      ]
+    },
+    {
+      "role": "eat_boost_crash_and_leader_audio",
+      "query": "cartoon gummy candy eat pop, fizzy boost, candy crash scatter, leaderboard crown reward short game sound effects",
+      "kinds": ["audio"],
+      "reviewed_candidates": [
+        {
+          "name": "music_20260330_002207_peaceful_ambient_exploration_m_loop.mp3",
+          "score": 0.6916878653243729,
+          "decision": "reject",
+          "reason": "Looped ambient music, not a short semantic gameplay cue."
+        },
+        {
+          "name": "sfx_20251213_095733_magic_spell_cast_spa_1.wav",
+          "score": 0.6812012721453282,
+          "decision": "reject",
+          "reason": "Magic spell role does not convey chew, gummy strain, candy scatter, or rank takeover."
+        },
+        {
+          "name": "fruit_cascade_reward_01_master.wav",
+          "score": 0.6789643136397265,
+          "decision": "reject",
+          "reason": "2048 Balls source master; cross-game reuse would blur identity and its role is cascade reward rather than competitive knockout."
+        }
+      ]
+    }
+  ],
+  "decision": {
+    "reuse": [],
+    "generate_later_after_single_game_approval": [
+      "coherent gummy mascot head family",
+      "low-detail prize-bean family",
+      "hollow sugar-ribbon knockout burst",
+      "eat/boost/candy-scatter/leader-takeover short audio families"
+    ],
+    "first_visible_beat_contract": "Player head and prize beans must be visible in the ordinary opening frame; peak-only burst/audio cannot close the art-strengthening gate.",
+    "runtime_size_contract": {
+      "player_head_logical_px": "50-58",
+      "rival_head_logical_px": "42-52",
+      "pellet_logical_px": "16-22",
+      "knockout_burst_logical_px": "110-170"
+    }
+  },
+  "selected_assets": [],
+  "generated_assets": [],
+  "shipped_assets": []
+}

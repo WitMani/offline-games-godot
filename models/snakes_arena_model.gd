@@ -1,14 +1,17 @@
 class_name SnakesArenaModel
 extends RefCounted
 
-## Deterministic, presentation-free continuous arena simulation inspired by
-## Offline Games' separate `136_SNAKES` product contract.  It deliberately
+## Deterministic, presentation-free continuous arena simulation for the
+## catalog's distinct Snakes game. Public first-party evidence verifies the
+## eat/grow/avoid/become-biggest promise, but not the historical repository
+## label `136_SNAKES` or the exact hidden collision/boost rules. It deliberately
 ## shares no grid movement rules with GB Snake / Snake2.
 
 const RUNNING := "running"
 const LOST := "lost"
 const FIXED_DT := 1.0 / 60.0
 const PLAYER_ID := 0
+const SNAPSHOT_SCHEMA := "snakes-arena-state/v1"
 const BOT_NAMES := ["MICA", "RUNE", "TAVI", "NORI", "KITE", "PIP", "ZEST", "LOOP"]
 
 var arena_radius := 920.0
@@ -33,10 +36,12 @@ var player_aim := Vector2.RIGHT * 400.0
 var player_boost_requested := false
 var rng := RandomNumberGenerator.new()
 var next_pellet_id := 1
+var seed := 0
 
 
-func reset(seed: int, bot_count: int = 5, pellet_count: int = 96) -> void:
-	rng.seed = seed
+func reset(start_seed: int, bot_count: int = 5, pellet_count: int = 96) -> void:
+	seed = start_seed
+	rng.seed = start_seed
 	phase = RUNNING
 	terminal_reason = ""
 	elapsed = 0.0
@@ -525,12 +530,24 @@ func snapshot() -> Dictionary:
 		for segment in snake["segments"]:
 			packed_segments.append([float(segment.x), float(segment.y)])
 		var position: Vector2 = snake["position"]
+		var previous_position: Vector2 = snake.get("previous_position", position)
+		var desired_point: Vector2 = snake.get("desired_point", position + Vector2.from_angle(float(snake["heading"])) * 300.0)
+		var respawn_at := float(snake.get("respawn_at", INF))
 		packed_snakes.append({
 			"id":int(snake["id"]), "name":str(snake["name"]), "is_bot":bool(snake["is_bot"]),
 			"alive":bool(snake["alive"]), "position":[position.x, position.y],
+			"previous_position":[previous_position.x, previous_position.y],
+			"desired_point":[desired_point.x, desired_point.y],
 			"heading":float(snake["heading"]), "segments":packed_segments,
 			"mass":float(snake["mass"]), "skin":int(snake["skin"]),
-			"boosting":bool(snake["boosting"]), "invulnerable":float(snake["invulnerable"]),
+			"boost_requested":bool(snake.get("boost_requested", false)),
+			"boosting":bool(snake["boosting"]),
+			"boost_shed_clock":float(snake.get("boost_shed_clock", 0.0)),
+			"boost_reject_latched":bool(snake.get("boost_reject_latched", false)),
+			"speed_scale":float(snake.get("speed_scale", 1.0)),
+			"invulnerable":float(snake["invulnerable"]),
+			"respawn_at":-1.0 if is_inf(respawn_at) else respawn_at,
+			"decision_at":float(snake.get("decision_at", elapsed)),
 			"state":str(snake["state"])
 		})
 	var packed_pellets: Array[Dictionary] = []
@@ -539,7 +556,7 @@ func snapshot() -> Dictionary:
 		packed_pellets.append({
 			"id":int(pellet["id"]), "position":[position.x, position.y],
 			"value":float(pellet["value"]), "palette":int(pellet["palette"]),
-			"source":str(pellet["source"])
+			"source":str(pellet["source"]), "born_at":float(pellet.get("born_at", elapsed))
 		})
 	var leaderboard := _leaderboard()
 	var rank := -1
@@ -549,12 +566,209 @@ func snapshot() -> Dictionary:
 			break
 	var player: Dictionary = packed_snakes[player_index]
 	return {
+		"schema":SNAPSHOT_SCHEMA, "seed":seed,
 		"phase":phase, "status":"over" if phase == LOST else "playing",
 		"terminal_reason":terminal_reason, "arena_radius":arena_radius,
 		"player_id":player_id, "player":player, "mass":float(player["mass"]),
 		"rank":rank, "snakes":packed_snakes, "pellets":packed_pellets,
-		"leaderboard":leaderboard, "elapsed":elapsed, "tick":tick
+		"leaderboard":leaderboard, "elapsed":elapsed, "tick":tick,
+		"accumulator":accumulator, "target_pellet_count":target_pellet_count,
+		"next_pellet_id":next_pellet_id,
+		"player_aim":[player_aim.x, player_aim.y],
+		"player_boost_requested":player_boost_requested,
+		"rng_state":str(rng.state)
 	}
+
+
+func restore(saved: Dictionary) -> bool:
+	if str(saved.get("schema", "")) != SNAPSHOT_SCHEMA:
+		return false
+	if str(saved.get("phase", "")) != RUNNING or str(saved.get("status", "")) != "playing":
+		return false
+	var saved_snakes: Variant = saved.get("snakes", null)
+	var saved_pellets: Variant = saved.get("pellets", null)
+	if not saved_snakes is Array or not saved_pellets is Array:
+		return false
+	if saved_snakes.is_empty() or saved_snakes.size() > 9 or saved_pellets.size() > maximum_pellet_count:
+		return false
+	var saved_elapsed_value: Variant = saved.get("elapsed", null)
+	var saved_accumulator_value: Variant = saved.get("accumulator", null)
+	if not _is_finite_number(saved_elapsed_value) or not _is_finite_number(saved_accumulator_value):
+		return false
+	var saved_elapsed := float(saved_elapsed_value)
+	var saved_accumulator := float(saved_accumulator_value)
+	var saved_tick := int(saved.get("tick", -1))
+	var saved_target := int(saved.get("target_pellet_count", -1))
+	var saved_next_pellet_id := int(saved.get("next_pellet_id", -1))
+	var saved_seed := int(saved.get("seed", 0))
+	if saved_elapsed < 0.0 or saved_elapsed > 31536000.0 or saved_accumulator < 0.0 or saved_accumulator > FIXED_DT + 0.000001:
+		return false
+	if saved_tick < 0 or saved_tick > 2147483647 or saved_target < 0 or saved_target > maximum_pellet_count or saved_next_pellet_id < 1:
+		return false
+	var saved_aim_value: Variant = _decode_vector(saved.get("player_aim", null))
+	if saved_aim_value == null or Vector2(saved_aim_value).length() > arena_radius * 8.0:
+		return false
+	var packed_snakes: Array[Dictionary] = []
+	var snake_ids: Dictionary = {}
+	for snake_index in range(saved_snakes.size()):
+		var packed_value: Variant = saved_snakes[snake_index]
+		if not packed_value is Dictionary:
+			return false
+		var restored_snake := _restore_snake_dictionary(packed_value)
+		if restored_snake.is_empty():
+			return false
+		var restored_id := int(restored_snake["id"])
+		if snake_ids.has(restored_id):
+			return false
+		snake_ids[restored_id] = true
+		if snake_index == 0 and (restored_id != PLAYER_ID or bool(restored_snake["is_bot"]) or not bool(restored_snake["alive"])):
+			return false
+		if snake_index > 0 and (restored_id == PLAYER_ID or not bool(restored_snake["is_bot"])):
+			return false
+		packed_snakes.append(restored_snake)
+	var packed_pellets: Array[Dictionary] = []
+	var pellet_ids: Dictionary = {}
+	var greatest_pellet_id := 0
+	for packed_value in saved_pellets:
+		if not packed_value is Dictionary:
+			return false
+		var restored_pellet := _restore_pellet_dictionary(packed_value, saved_elapsed)
+		if restored_pellet.is_empty():
+			return false
+		var restored_id := int(restored_pellet["id"])
+		if pellet_ids.has(restored_id):
+			return false
+		pellet_ids[restored_id] = true
+		greatest_pellet_id = maxi(greatest_pellet_id, restored_id)
+		packed_pellets.append(restored_pellet)
+	if saved_next_pellet_id <= greatest_pellet_id:
+		return false
+	var rng_state_text := str(saved.get("rng_state", ""))
+	if not rng_state_text.is_valid_int():
+		return false
+	seed = saved_seed
+	phase = RUNNING
+	terminal_reason = ""
+	elapsed = saved_elapsed
+	tick = saved_tick
+	accumulator = saved_accumulator
+	player_index = 0
+	player_id = PLAYER_ID
+	player_aim = Vector2(saved_aim_value)
+	player_boost_requested = bool(saved.get("player_boost_requested", false))
+	target_pellet_count = saved_target
+	next_pellet_id = saved_next_pellet_id
+	snakes = packed_snakes
+	pellets = packed_pellets
+	rng.seed = seed
+	rng.state = int(rng_state_text)
+	return true
+
+
+func _restore_snake_dictionary(packed: Dictionary) -> Dictionary:
+	var id := int(packed.get("id", -1))
+	var mass_value: Variant = packed.get("mass", null)
+	var heading_value: Variant = packed.get("heading", null)
+	var invulnerable_value: Variant = packed.get("invulnerable", null)
+	var speed_scale_value: Variant = packed.get("speed_scale", null)
+	var shed_clock_value: Variant = packed.get("boost_shed_clock", null)
+	var decision_at_value: Variant = packed.get("decision_at", null)
+	var respawn_at_value: Variant = packed.get("respawn_at", null)
+	if id < 0 or id > 100000 or not _is_finite_number(mass_value) or not _is_finite_number(heading_value):
+		return {}
+	if not _is_finite_number(invulnerable_value) or not _is_finite_number(speed_scale_value) or not _is_finite_number(shed_clock_value):
+		return {}
+	if not _is_finite_number(decision_at_value) or not _is_finite_number(respawn_at_value):
+		return {}
+	var mass := float(mass_value)
+	var heading := float(heading_value)
+	var invulnerable := float(invulnerable_value)
+	var speed_scale := float(speed_scale_value)
+	var shed_clock := float(shed_clock_value)
+	var decision_at := float(decision_at_value)
+	var respawn_at := float(respawn_at_value)
+	if mass < 1.0 or mass > 1000000.0 or absf(heading) > TAU * 2.0 or invulnerable < 0.0 or invulnerable > 10.0:
+		return {}
+	if speed_scale < 0.0 or speed_scale > 4.0 or shed_clock < 0.0 or shed_clock > 1.0 or decision_at < 0.0 or decision_at > 31536010.0:
+		return {}
+	if respawn_at < -1.0 or respawn_at > 31536010.0:
+		return {}
+	var position_value: Variant = _decode_vector(packed.get("position", null))
+	var previous_value: Variant = _decode_vector(packed.get("previous_position", null))
+	var desired_value: Variant = _decode_vector(packed.get("desired_point", null))
+	if position_value == null or previous_value == null or desired_value == null:
+		return {}
+	if Vector2(position_value).length() > arena_radius * 4.0 or Vector2(previous_value).length() > arena_radius * 4.0 or Vector2(desired_value).length() > arena_radius * 8.0:
+		return {}
+	var saved_segments: Variant = packed.get("segments", null)
+	if not saved_segments is Array or saved_segments.is_empty() or saved_segments.size() > 72:
+		return {}
+	var restored_segments: Array[Vector2] = []
+	for segment_value in saved_segments:
+		var restored_segment: Variant = _decode_vector(segment_value)
+		if restored_segment == null or Vector2(restored_segment).length() > arena_radius * 4.0:
+			return {}
+		restored_segments.append(Vector2(restored_segment))
+	var skin := int(packed.get("skin", -1))
+	var state_value := str(packed.get("state", ""))
+	if skin < 0 or skin > 7 or state_value not in ["relaxed", "foraging", "scavenging", "chasing", "avoiding"]:
+		return {}
+	var is_bot := bool(packed.get("is_bot", false))
+	var alive := bool(packed.get("alive", false))
+	return {
+		"id":id,
+		"name":"YOU" if not is_bot else BOT_NAMES[(id - 1) % BOT_NAMES.size()],
+		"is_bot":is_bot,
+		"alive":alive,
+		"position":Vector2(position_value),
+		"previous_position":Vector2(previous_value),
+		"heading":heading,
+		"desired_point":Vector2(desired_value),
+		"segments":restored_segments,
+		"mass":mass,
+		"skin":skin,
+		"boost_requested":bool(packed.get("boost_requested", false)),
+		"boosting":bool(packed.get("boosting", false)),
+		"boost_shed_clock":shed_clock,
+		"boost_reject_latched":bool(packed.get("boost_reject_latched", false)),
+		"speed_scale":speed_scale,
+		"invulnerable":invulnerable,
+		"respawn_at":INF if respawn_at < 0.0 else respawn_at,
+		"decision_at":decision_at,
+		"state":state_value,
+	}
+
+
+func _restore_pellet_dictionary(packed: Dictionary, saved_elapsed: float) -> Dictionary:
+	var id := int(packed.get("id", -1))
+	var position_value: Variant = _decode_vector(packed.get("position", null))
+	var value_value: Variant = packed.get("value", null)
+	var born_at_value: Variant = packed.get("born_at", null)
+	if id < 1 or position_value == null or not _is_finite_number(value_value) or not _is_finite_number(born_at_value):
+		return {}
+	var value := float(value_value)
+	var born_at := float(born_at_value)
+	var palette := int(packed.get("palette", -1))
+	var source := str(packed.get("source", ""))
+	if Vector2(position_value).length() > arena_radius * 1.2 or value <= 0.0 or value > 100.0:
+		return {}
+	if palette < 0 or palette > 7 or source not in ["ambient", "boost", "debris"]:
+		return {}
+	if born_at < 0.0 or born_at > saved_elapsed + 0.0001:
+		return {}
+	return {"id":id, "position":Vector2(position_value), "value":value, "palette":palette, "source":source, "born_at":born_at}
+
+
+func _decode_vector(value: Variant) -> Variant:
+	if not value is Array or value.size() != 2:
+		return null
+	if not _is_finite_number(value[0]) or not _is_finite_number(value[1]):
+		return null
+	return Vector2(float(value[0]), float(value[1]))
+
+
+func _is_finite_number(value: Variant) -> bool:
+	return typeof(value) in [TYPE_INT, TYPE_FLOAT] and is_finite(float(value))
 
 
 func _leaderboard() -> Array[Dictionary]:

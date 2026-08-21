@@ -1,0 +1,32 @@
+{
+  "schema_version": "offline-games-mechanics-gate/v1",
+  "game_id": "snake_io",
+  "baseline": "3e561fb3c55f3b0b813da2b9ee9468cd4d290bae",
+  "stage0_commit": "9770a1e1df5d89da5d108f5351ab93f944e82f2b",
+  "mechanics_commit": "27417dd42ff1da5a27462ee417e5cb371358c668",
+  "gates": {
+    "target_identity": "PASS_BOUNDARY_LOCKED",
+    "offline_entry": "PASS",
+    "continuous_steer": "PASS_LOCAL_DECISION",
+    "boost": "PASS_ENHANCEMENT_NOT_REFERENCE_CLAIM",
+    "eat_grow": "PASS_REFERENCE_CONTRACT",
+    "collision_death": "PASS_LOCAL_DECISION",
+    "bot_respawn": "PASS_LOCAL_DECISION",
+    "rank_biggest": "PASS_REFERENCE_OBJECTIVE_LOCAL_NONTERMINAL_POLICY",
+    "restart": "PASS_LOCAL_DECISION",
+    "snapshot_recovery": "PASS_LOCAL_DECISION",
+    "corrupt_rejection": "PASS",
+    "pointer_keyboard_parity": "PASS"
+  },
+  "tests": {
+    "snakes_v3_contract": "PASS cases=10",
+    "snakes_arena_model": "PASS cases=18",
+    "snakes_v3_runtime": "PASS cases=4",
+    "snake_input": "PASS cases=8",
+    "snake_modes_integration": "PASS cases=5",
+    "catalog": "PASS games=14"
+  },
+  "original_unknowns_preserved": true,
+  "gag_production_authorized": true,
+  "merge_push_deploy_authorized": false
+}
