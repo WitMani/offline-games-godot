@@ -52,7 +52,13 @@ func _trigger_peak(id: String) -> void:
 			for position in [Vector2(240, 600), Vector2(270, 600), Vector2(240, 600), Vector2(270, 600)]:
 				game.watermelon_model.inject_ball(1, position, Vector2.ZERO, 77)
 			game._watermelon_update(game.watermelon_model.FIXED_DT)
-		"meowdoku", "sudoku":
+		"meowdoku":
+			var meow_solution: Array[Vector2i] = game.meowdoku_model.solution.duplicate()
+			for index in range(meow_solution.size() - 1):
+				game.meowdoku_model.attempt_cat(meow_solution[index])
+			game._sync_meowdoku_state()
+			game._meowdoku_command("cat", meow_solution[-1])
+		"sudoku":
 			var solution: Array = game.state["solution"]
 			for y in range(3):
 				for x in range(3):

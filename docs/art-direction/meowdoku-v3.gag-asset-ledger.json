@@ -1,0 +1,154 @@
+{
+  "schema": "offline-games.gag-ledger.v2",
+  "game": "meowdoku",
+  "created_utc": "2026-08-20",
+  "policy": {
+    "new_generation": false,
+    "reason": "existing reviewed GAG image and audio fully cover the bounded signature and peak roles; rule-bearing cats remain code-native",
+    "legacy_assets_relabelled": false,
+    "source_masters_shipped": 0
+  },
+  "gag_live_reaudit": {
+    "endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+    "mode": "pure-api",
+    "gpu_detected": false,
+    "main_service_pytorch": false,
+    "available_providers": [
+      "gemini",
+      "doubao",
+      "elevenlabs",
+      "removebg",
+      "fal",
+      "openrouter",
+      "tripo",
+      "codex"
+    ],
+    "local_gpu_required_for_selected_assets": false
+  },
+  "semantic_searches": [
+    {
+      "media": "image",
+      "query": "无文字透明背景的粉色纸艺毛毡猫爪徽章，可爱猫咪逻辑谜题，手账文具完成奖励",
+      "selected": {
+        "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/generated_images/generated_images__20260820_183543_Gemini_nobg_20260820_183903_cropped.png",
+        "score": 0.4995078254179315,
+        "reason": "exact existing reviewed derivative; highest semantic result and matches the current runtime image"
+      },
+      "source_master_result": {
+        "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/logic_games/gag-v1/masters/generated_images__20260820_183543_Gemini.png",
+        "score": 0.47593213176065896
+      },
+      "rejected": [
+        {
+          "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/logic_games/gag-v1/masters/generated_images__20260820_183605_Gemini.png",
+          "score": 0.4694733465007911,
+          "reason": "previously rejected flower-heavy variant weakens the paw silhouette"
+        },
+        {
+          "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/ui_and_icons/reward-new-badge.png",
+          "score": 0.3705909290134017,
+          "reason": "generic badge without cat-stationery identity"
+        },
+        {
+          "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/props_and_env/20260109_011614_cute_cartoon_cat_res_gemini.png",
+          "score": 0.3660776956143706,
+          "reason": "full cat prop would compete with authoritative code-native cats"
+        }
+      ]
+    },
+    {
+      "media": "audio",
+      "query": "soft tactile felt cat paw stamp on paper with warm wooden chimes cute logic puzzle completion",
+      "decision": "generic music, coin, and fruit results were rejected; the exact-name provenance query was used to re-resolve the reviewed master"
+    },
+    {
+      "media": "audio",
+      "query": "offline_games_meowdoku_paw_complete_gag felt paw completion sound",
+      "selected": {
+        "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/logic_games/gag-v1/masters/sfx/offline_games_meowdoku_paw_complete_gag/v1/offline_games_meowdoku_paw_complete_gag_01_master.wav",
+        "score": 0.6628424621235767,
+        "reason": "exact stable asset family and previously reviewed selected master"
+      },
+      "rejected": [
+        {
+          "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/2048balls/v2/sfx/fruit_cascade_reward/v1/fruit_cascade_reward_01_master.wav",
+          "score": 0.6520555475228227,
+          "reason": "fruit cascade is cross-game asset soup"
+        },
+        {
+          "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/audio/sfx_20251213_095805_coin_collect_ding_sp_3.wav",
+          "score": 0.6500507985450202,
+          "reason": "coin reward conflicts with tactile paper/felt metaphor"
+        },
+        {
+          "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/logic_games/gag-v1/masters/sfx/offline_games_meowdoku_paw_complete_gag/v1/offline_games_meowdoku_paw_complete_gag_02_master.wav",
+          "score": 0.6347265415319958,
+          "reason": "alternate master; v1 master 01 remains the reviewed selection"
+        }
+      ]
+    }
+  ],
+  "reused_generation_records": {
+    "image": {
+      "selected_asset_id": "generated_images__20260820_183543_Gemini.png",
+      "provider": "gemini",
+      "model": "gemini-3.1-flash-image",
+      "prompt": "Single isolated game reward emblem, no text, no letters, no numbers. A chunky cat paw stamp made from layered cut paper and soft felt, rose pink pads, cream paper edge, plum ink outline, one tiny gold thread stitch and two small paper confetti pieces. Centered front view, friendly casual logic puzzle asset, handcrafted 2.5D cartoon, clean distinctive silhouette, restrained soft shadow, transparent background, ample padding. No screen, no UI, no grid, no typography, no photorealism.",
+      "source_master": {
+        "location": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/logic_games/gag-v1/masters/generated_images__20260820_183543_Gemini.png",
+        "container_detected": "JPEG/JFIF",
+        "dimensions": [1408, 768],
+        "bytes": 602949,
+        "sha256": "c57fdb6ba0404873e14bb09cdf2c6a457dcacd8b145eb26abf03b0ca529fc701",
+        "shipped_in_repo": false
+      },
+      "transforms": [
+        "GAG Remove.bg to 677x369 RGBA",
+        "auto-trim with 12px padding to 331x297",
+        "preserve transparent RGBA runtime cutout"
+      ],
+      "runtime": {
+        "path": "assets/art/logic/gag-v1/meowdoku_paw_reward.png",
+        "dimensions": [331, 297],
+        "bytes": 149484,
+        "sha256": "1816f55ef6f6a5cff536ebb494fc881c939a4238d6881b4d7462efb18abbceaf",
+        "actual_uses_v3": [
+          "stable header identity",
+          "stable board footer identity",
+          "ordinary correct-cat local stamp",
+          "full-board completion hero",
+          "win and loss result badge"
+        ]
+      }
+    },
+    "audio": {
+      "asset_id": "offline_games_meowdoku_paw_complete_gag",
+      "version": 1,
+      "provider": "elevenlabs",
+      "model": "eleven_text_to_sound_v2",
+      "prompt": "A soft tactile felt cat paw stamp landing on thick paper, followed by three tiny warm wooden chimes. Cozy cute logic puzzle completion reward, clean and dry, short transient with a gentle sparkling tail, no voice, no music bed, no ambience, no harsh impact.",
+      "selected_master": {
+        "location": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/logic_games/gag-v1/masters/sfx/offline_games_meowdoku_paw_complete_gag/v1/offline_games_meowdoku_paw_complete_gag_01_master.wav",
+        "sha256": "92712538fdc526088c025a551144e490e724960753058f42882c8e7633130ccf",
+        "duration_seconds": 0.948625,
+        "integrated_lufs": -18.26,
+        "shipped_in_repo": false
+      },
+      "runtime": {
+        "path": "assets/audio/logic/gag-v1/meowdoku_complete_reward.ogg",
+        "sha256": "34911284fe47fd7ebfcb3f4df0c07642d1e63f3e37159fc269532d2f1ebeac18",
+        "duration_seconds": 0.948625,
+        "integrated_lufs": -20.5,
+        "true_peak_dbtp": -2.8,
+        "actual_use_v3": "full-board completion only"
+      }
+    }
+  },
+  "source_ledger": "docs/audit/meowdoku-v2/gag-asset-ledger.json",
+  "runtime_verification": {
+    "image_sha256_rechecked": true,
+    "audio_sha256_rechecked": true,
+    "stable_and_ordinary_image_visibility": "tools/meowdoku_art_smoke.gd plus visual audit stable/cat frames",
+    "peak_audio_route": "tools/meowdoku_art_smoke.gd completion probe"
+  }
+}

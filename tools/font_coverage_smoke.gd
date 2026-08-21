@@ -28,6 +28,11 @@ const CATALOG_EVENT_COPY := [
 	"玉牌抬起", "同纹共鸣 · +50", "纹样不同", "牌阵清空 · 玉成", "玉阵完成", "叶片入槽", "月片入槽", "莓片入槽", "星片入槽", "花片入槽", "贝片入槽", "晶片入槽", "三枚缝合 · +100", "槽位吃紧 · 余 2 格", "只余一格 · 谨慎落片", "槽位绷满 · 本局结束", "织毯完成 · 清盘", "织毯完成",
 	"逆着箭流", "蓝图有墙", "已到边界", "颜料铺开", "箭流推进", "蓝图点亮", "轨迹 ×10", "全域完成",
 ]
+const MEOWDOKU_V3_COPY := [
+	"猫咪领地", "每行一猫", "每列一猫", "同色一猫", "标记为排除格", "擦去排除标记",
+	"抱回这只猫", "找到猫咪", "这里没有猫", "失去一颗心", "爱心用尽", "全员到齐",
+	"单击选格或标记", "双击放猫", "题面提示猫", "重开再试一次", "已恢复猫咪手账",
+]
 const SYMBOL_COPY := ["♥♠◆♣"]
 const TILE_NUMBER_COPY := ["0123456789"]
 
@@ -40,10 +45,11 @@ func _init() -> void:
 	# assigned to this same CJK resource in main.gd. Gate the live role, not just
 	# an arbitrary fallback font that happens to contain the glyphs.
 	_check_font(UI_FONT, CATALOG_EVENT_COPY, "catalog_event_display")
+	_check_font(UI_FONT, MEOWDOKU_V3_COPY, "meowdoku_v3_ui_cjk")
 	_check_font(NUMBER_FONT, [NUMBER_COPY], "number_font")
 	_check_font(TILE_NUMBER_FONT, TILE_NUMBER_COPY, "tile_number_font")
 	_check_font(SYMBOL_FONT, SYMBOL_COPY, "symbol_font")
-	print("FONT_COVERAGE_SMOKE=%d" % (MERGE_FEEDBACK_COPY.size() + CATALOG_EVENT_COPY.size() + TILE_NUMBER_COPY.size() + SYMBOL_COPY.size() + 1))
+	print("FONT_COVERAGE_SMOKE=%d" % (MERGE_FEEDBACK_COPY.size() + CATALOG_EVENT_COPY.size() + MEOWDOKU_V3_COPY.size() + TILE_NUMBER_COPY.size() + SYMBOL_COPY.size() + 1))
 	print("FONT_COVERAGE_RESULT=%s" % ("PASS" if failures.is_empty() else "FAIL " + ",".join(failures)))
 	quit(0 if failures.is_empty() else 1)
 

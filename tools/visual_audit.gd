@@ -60,7 +60,9 @@ func _exercise(id: String) -> void:
 			game._merge2048_load_fixture([[2, 2, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]])
 			game._merge_move(Vector2i.LEFT)
 		"watermelon": game._handle_tap(Vector2(260, 380))
-		"meowdoku", "sudoku":
+		"meowdoku":
+			game._meowdoku_command("cat", game.meowdoku_model.solution[0])
+		"sudoku":
 			game.state["selected"] = [2, 0]
 			game._sudoku_place(4)
 		"snake_classic":

@@ -41,7 +41,9 @@ func _run() -> void:
 				game.merge2248_drag_active = false
 			"merge2048": game._merge_move(Vector2i.LEFT)
 			"watermelon": game._water_drop(3)
-			"meowdoku", "sudoku":
+			"meowdoku":
+				game._meowdoku_command("cat", game.meowdoku_model.solution[0])
+			"sudoku":
 				game.state["selected"] = [0, 0]
 				game._sudoku_place(5)
 			"snake_classic", "snake_io": game._set_snake_direction(Vector2i.DOWN)

@@ -59,9 +59,11 @@ func _test_watermelon_peak() -> void:
 
 func _test_sudoku_roles() -> void:
 	game._open_game("meowdoku")
-	game.state["selected"] = [2, 0]
-	game._sudoku_place(1)
-	_expect_event("meowdoku_error", "logic_error", 2)
+	var wrong := Vector2i.ZERO
+	if wrong in game.meowdoku_model.solution:
+		wrong = Vector2i(1, 0)
+	game._meowdoku_command("cat", wrong)
+	_expect_event("meowdoku_error", "cat_error", 2)
 	game._open_game("sudoku")
 	var solution: Array = game.state["solution"]
 	for y in range(3):

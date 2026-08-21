@@ -5,6 +5,7 @@ extends Control
 ## independent evaluator can exercise complete player-facing loops.
 
 const VIEW_SIZE := Vector2(540.0, 960.0)
+const MEOWDOKU_WEB_CHECKPOINT_KEY := "offline-games.meowdoku.v3.checkpoint"
 const HEADER_H := 104.0
 const BOARD_TOP := 164.0
 const SNAKE_STEP_INTERVAL := 0.36
@@ -73,12 +74,14 @@ const SNAKES_ARENA_RULES = preload("res://models/snakes_arena_model.gd")
 const MERGE2248_RULES = preload("res://models/merge2248_model.gd")
 const MERGE2048_RULES = preload("res://models/merge2048_model.gd")
 const WATERMELON_RULES = preload("res://models/watermelon_physics_model.gd")
+const MEOWDOKU_RULES = preload("res://models/meowdoku_model.gd")
 const MERGE2248_PRESENTATION = preload("res://presentation/merge2248_presenter.gd")
 const MERGE2248_SAVE_PATH := "user://offline_games_merge2248_v4.json"
 const MERGE2048_CLASSIC_PRESENTATION = preload("res://presentation/merge2048_classic_presenter.gd")
 const CATALOG_ART_DIRECTION = preload("res://presentation/catalog_art_director.gd")
 const WATERMELON_PRESENTATION = preload("res://presentation/watermelon_presenter.gd")
 const LOGIC_GAME_PRESENTATION = preload("res://presentation/logic_game_presenter.gd")
+const MEOWDOKU_PRESENTATION = preload("res://presentation/meowdoku_presenter.gd")
 const SFX_CASE_OPEN: AudioStream = preload("res://assets/audio/ui/case_open.wav")
 const SFX_SNAKE_KEY: AudioStream = preload("res://assets/audio/snake/key.wav")
 const SFX_SNAKE_REJECT: AudioStream = preload("res://assets/audio/snake/reject.wav")
@@ -117,7 +120,7 @@ var catalog: Array = [
 	{"id":"merge2248", "title":"2248", "subtitle":"数字连线", "group":"数字", "accent":Color("ffbf2f"), "desc":"八方向连接数字，延续你的最高配方"},
 	{"id":"merge2048", "title":"2048", "subtitle":"滑动合成", "group":"数字", "accent":Color("f4b860"), "desc":"用四个方向合成更大的数字"},
 	{"id":"watermelon", "title":"2048 Balls", "subtitle":"合成大西瓜", "group":"数字", "accent":Color("ff6b8a"), "desc":"落下水果，让相同水果合体"},
-	{"id":"meowdoku", "title":"Meowdoku", "subtitle":"猫咪数独", "group":"数独", "accent":Color("f39ac7"), "desc":"轻松填完九宫格，零网络也能玩"},
+	{"id":"meowdoku", "title":"Meowdoku", "subtitle":"猫咪领地", "group":"逻辑", "accent":Color("f39ac7"), "desc":"每行、每列、每个色区各找一只猫"},
 	{"id":"sudoku", "title":"Sudoku", "subtitle":"传统数独", "group":"数独", "accent":Color("a78bfa"), "desc":"经典逻辑推理，支持错误提示"},
 	{"id":"snake_classic", "title":"GB Snake", "subtitle":"掌机贪食蛇", "group":"街机", "accent":Color("a8b883"), "desc":"实体方向键操控，成长到长度 120"},
 	{"id":"snake_io", "title":"Snakes", "subtitle":"蛇群竞技", "group":"街机", "accent":Color("06ddea"), "desc":"自由转向、冲刺截击，争夺竞技场第一名"},
@@ -151,6 +154,8 @@ var snapshot_save_next_at := -1.0
 var snake_clock := 0.0
 var selected_cell := Vector2i(-1, -1)
 var pointer_down := Vector2(-1, -1)
+var meowdoku_double_action_consumed := false
+var meowdoku_preliminary_single: Dictionary = {}
 var feedback_text := ""
 var feedback_color := CYAN
 var feedback_until := 0.0
@@ -181,11 +186,17 @@ var snakes_arena_model = SNAKES_ARENA_RULES.new()
 var merge2248_model = MERGE2248_RULES.new()
 var merge2048_model = MERGE2048_RULES.new()
 var watermelon_model = WATERMELON_RULES.new()
+var meowdoku_model = MEOWDOKU_RULES.new()
+var meowdoku_fixture_id := "notebook_5"
+var meowdoku_recovery_enabled := true
+var meowdoku_skip_recovery_once := false
 var merge2248_presenter = MERGE2248_PRESENTATION.new()
 var merge2048_classic_presenter = MERGE2048_CLASSIC_PRESENTATION.new()
 var catalog_art_director = CATALOG_ART_DIRECTION.new()
 var watermelon_presenter = WATERMELON_PRESENTATION.new()
 var logic_game_presenter = LOGIC_GAME_PRESENTATION.new()
+var meowdoku_presenter = MEOWDOKU_PRESENTATION.new()
+var reduced_effects := false
 var mahjong_object_fx: Dictionary = {}
 var tileclub_object_fx: Dictionary = {}
 var amaze_go_object_fx: Dictionary = {}
@@ -287,11 +298,8 @@ func _ready() -> void:
 	# the node enters the tree.
 	if merge2048_save_path == MERGE2048_SAVE_PATH and _merge2048_tool_runtime():
 		merge2048_persistence_enabled = false
-	if OS.has_feature("web"):
-		# The numeric bridge is stable in Godot Web; JavaScript Boolean values can
-		# otherwise arrive as an unexpected Variant type in some export templates.
-		var reduced_preference: Variant = JavaScriptBridge.eval("window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : 0", true)
-		reduced_effects_enabled = int(reduced_preference) == 1
+	_detect_reduced_effects()
+	reduced_effects_enabled = reduced_effects
 	var cjk_font := UI_FONT as FontFile
 	if cjk_font:
 		cjk_font.fallbacks = [LATIN_FONT, SYMBOL_FONT]
@@ -314,6 +322,22 @@ func _ready() -> void:
 	_setup_web_acceptance()
 	_publish_web_state()
 	_capture("boot")
+
+
+func _detect_reduced_effects() -> void:
+	var environment_value := OS.get_environment("OFFLINE_GAMES_REDUCED_EFFECTS").to_lower()
+	reduced_effects = environment_value in ["1", "true", "yes", "on"]
+	if OS.has_feature("web"):
+		# Numeric JS results are stable across Godot Web bridge variants.
+		var browser_preference: Variant = JavaScriptBridge.eval("window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : 0", true)
+		reduced_effects = reduced_effects or int(browser_preference) == 1
+
+
+func _set_reduced_effects(value: bool) -> void:
+	reduced_effects = value
+	if reduced_effects:
+		catalog_fx.clear()
+	queue_redraw()
 
 func _process(delta: float) -> void:
 	elapsed += delta
@@ -364,7 +388,7 @@ func _play_sfx(stream: AudioStream, volume_db := -7.0, pitch := 1.0) -> void:
 	player.play()
 
 func _haptic(duration_ms: int) -> void:
-	if _merge2048_effects_reduced():
+	if reduced_effects or _merge2048_effects_reduced():
 		return
 	if OS.has_feature("web"):
 		JavaScriptBridge.eval("if (navigator.vibrate) navigator.vibrate(%d);" % duration_ms)
@@ -373,6 +397,9 @@ func _haptic(duration_ms: int) -> void:
 
 func _haptic_pattern(pattern: Array[int]) -> void:
 	if _merge2048_effects_reduced() or pattern.is_empty():
+		return
+	if reduced_effects:
+		_haptic(4)
 		return
 	if OS.has_feature("web"):
 		JavaScriptBridge.eval("if (navigator.vibrate) navigator.vibrate(%s);" % JSON.stringify(pattern))
@@ -550,6 +577,8 @@ func _prune_catalog_fx() -> void:
 	catalog_fx = active
 
 func _catalog_shake_offset() -> Vector2:
+	if reduced_effects:
+		return Vector2.ZERO
 	for index in range(catalog_fx.size() - 1, -1, -1):
 		var effect: Dictionary = catalog_fx[index]
 		if str(effect.get("game_id", "")) == game_id:
@@ -557,6 +586,8 @@ func _catalog_shake_offset() -> Vector2:
 	return Vector2.ZERO
 
 func _catalog_result_overlay_ready() -> bool:
+	if reduced_effects:
+		return true
 	# Let the authoritative board consequence and its local event read before a
 	# terminal modal covers the playfield. Rules already ended the game; this is
 	# presentation-only timing and never delays state mutation.
@@ -571,6 +602,9 @@ func _catalog_result_overlay_ready() -> bool:
 	return true
 
 func _begin_transition(direction := 1.0) -> void:
+	if reduced_effects:
+		has_transitioned = false
+		return
 	screen_transition_started = elapsed
 	screen_transition_direction = direction
 	has_transitioned = true
@@ -613,6 +647,28 @@ func _input(event: InputEvent) -> void:
 			return
 		if screen != "game":
 			return
+		if game_id == "meowdoku":
+			var meow_command := ""
+			if event.keycode in [KEY_UP, KEY_W]:
+				_meowdoku_move_selection(Vector2i.UP)
+			elif event.keycode in [KEY_DOWN, KEY_S]:
+				_meowdoku_move_selection(Vector2i.DOWN)
+			elif event.keycode in [KEY_LEFT, KEY_A]:
+				_meowdoku_move_selection(Vector2i.LEFT)
+			elif event.keycode in [KEY_RIGHT, KEY_D]:
+				_meowdoku_move_selection(Vector2i.RIGHT)
+			elif event.keycode in [KEY_SPACE, KEY_X]:
+				meow_command = "mark"
+			elif event.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_C]:
+				meow_command = "cat"
+			elif event.keycode in [KEY_BACKSPACE, KEY_DELETE]:
+				meow_command = "erase"
+			else:
+				return
+			if not meow_command.is_empty():
+				_meowdoku_command(meow_command)
+			get_viewport().set_input_as_handled()
+			return
 		if event.keycode in [KEY_UP, KEY_W] or (game_id == "merge2048" and event.keycode == KEY_K):
 			_direction_input(Vector2i.UP)
 		elif event.keycode in [KEY_DOWN, KEY_S] or (game_id == "merge2048" and event.keycode == KEY_J):
@@ -628,7 +684,10 @@ func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			pointer_down = event.position
-			if screen == "game" and game_id == "merge2248" and _merge2248_begin_at(event.position):
+			if screen == "game" and game_id == "meowdoku" and event.double_click:
+				_meowdoku_pointer_action(event.position, true)
+				meowdoku_double_action_consumed = true
+			elif screen == "game" and game_id == "merge2248" and _merge2248_begin_at(event.position):
 				merge2248_drag_active = true
 			elif screen == "game" and game_id == "snake_io":
 				_snakes_arena_begin_pointer(event.position)
@@ -636,7 +695,9 @@ func _gui_input(event: InputEvent) -> void:
 				_watermelon_aim_at(event.position.x)
 		else:
 			var swipe_delta: Vector2 = event.position - pointer_down
-			if game_id == "merge2248" and merge2248_drag_active:
+			if game_id == "meowdoku" and meowdoku_double_action_consumed:
+				meowdoku_double_action_consumed = false
+			elif game_id == "merge2248" and merge2248_drag_active:
 				_merge2248_extend_at(event.position)
 				_merge2248_release()
 				merge2248_drag_active = false
@@ -663,14 +724,19 @@ func _gui_input(event: InputEvent) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch and event.pressed:
 		pointer_down = event.position
-		if screen == "game" and game_id == "merge2248" and _merge2248_begin_at(event.position):
+		if screen == "game" and game_id == "meowdoku" and event.double_tap:
+			_meowdoku_pointer_action(event.position, true)
+			meowdoku_double_action_consumed = true
+		elif screen == "game" and game_id == "merge2248" and _merge2248_begin_at(event.position):
 			merge2248_drag_active = true
 		elif screen == "game" and game_id == "snake_io":
 			_snakes_arena_begin_pointer(event.position)
 		elif screen == "game" and game_id == "watermelon" and _watermelon_board_rect().has_point(event.position):
 			_watermelon_aim_at(event.position.x)
 	elif event is InputEventScreenTouch and not event.pressed:
-		if game_id == "merge2248" and merge2248_drag_active:
+		if game_id == "meowdoku" and meowdoku_double_action_consumed:
+			meowdoku_double_action_consumed = false
+		elif game_id == "merge2248" and merge2248_drag_active:
 			_merge2248_extend_at(event.position)
 			_merge2248_release()
 			merge2248_drag_active = false
@@ -756,12 +822,16 @@ func _build_game_buttons() -> void:
 				_add_button("右", Rect2(312, 826, 58, 52), Callable(self, "_merge_move").bind(Vector2i.RIGHT), SURFACE_2, 16)
 		"watermelon":
 			_add_button("拖动瞄准 · 松手投放", Rect2(158, 878, 224, 52), Callable(self, "_water_drop_hint"), SURFACE_2, 14)
-		"sudoku", "meowdoku":
+		"sudoku":
 			for n in range(1, 10):
 				var row := (n - 1) / 5
 				var col := (n - 1) % 5
 				_add_button(str(n), Rect2(72 + col * 80, 736 + row * 58, 62, 50), Callable(self, "_sudoku_place").bind(n), SURFACE_2, 17)
 			_add_button("擦除", Rect2(392, 794, 76, 50), Callable(self, "_sudoku_place").bind(0), SURFACE_2, 14)
+		"meowdoku":
+			_add_button("标记 ×", Rect2(90, 804, 104, 52), Callable(self, "_meowdoku_command").bind("mark"), SURFACE_2, 14)
+			_add_button("放置猫", Rect2(218, 804, 104, 52), Callable(self, "_meowdoku_command").bind("cat"), SURFACE_2, 14)
+			_add_button("清除", Rect2(346, 804, 104, 52), Callable(self, "_meowdoku_command").bind("erase"), SURFACE_2, 14)
 		"snake_classic":
 			_add_hardware_button("", Rect2(132, 554, 54, 54), Callable(self, "_set_snake_direction").bind(Vector2i.UP), Vector2i.UP)
 			_add_hardware_button("", Rect2(78, 608, 54, 54), Callable(self, "_set_snake_direction").bind(Vector2i.LEFT), Vector2i.LEFT)
@@ -786,6 +856,8 @@ func _reset_current() -> void:
 	rng.seed = abs(game_id.hash()) + 17
 	if game_id == "merge2048":
 		merge2048_force_new_run = true
+	if game_id == "meowdoku":
+		meowdoku_skip_recovery_once = true
 	_start_game_state(true)
 	if game_id == "merge2048":
 		_build_game_buttons()
@@ -1035,7 +1107,8 @@ func _handle_tap(pos: Vector2) -> void:
 		"watermelon":
 			if _watermelon_board_rect().has_point(pos):
 				_watermelon_drop_at(pos.x)
-		"sudoku", "meowdoku": _sudoku_tap(pos)
+		"sudoku": _sudoku_tap(pos)
+		"meowdoku": _meowdoku_pointer_action(pos, false)
 		"mahjong": _mahjong_tap(pos)
 		"tileclub": _tileclub_tap(pos)
 		"amaze_go", "arrow_go", "amaze": _amaze_tap(pos)
@@ -1049,6 +1122,8 @@ func _direction_input(direction: Vector2i) -> void:
 		_set_snake_direction(direction)
 	elif game_id == "amaze_go" or game_id == "arrow_go" or game_id == "amaze":
 		_amaze_step(direction)
+	elif game_id == "meowdoku":
+		_meowdoku_move_selection(direction)
 
 func _log_event(event_name: String, data: Dictionary = {}) -> void:
 	if logger:
@@ -1188,7 +1263,9 @@ func _draw_game_icon(id: String, center: Vector2, accent: Color, scale := 1.0) -
 			_draw_center("+", center + Vector2(5, 4) * scale, int(10 * scale), accent)
 		"watermelon":
 			watermelon_presenter.draw_fruit(self, center, 3, 14.0 * scale, elapsed, [], false)
-		"meowdoku", "sudoku":
+		"meowdoku":
+			meowdoku_presenter.draw_header_badge(self, center, r * 2.15)
+		"sudoku":
 			logic_game_presenter.draw_header_badge(self, id, center, r * 2.15)
 		"snake_classic", "snake_io":
 			draw_circle(center + Vector2(-9, 2) * scale, 5 * scale, Color(accent, 0.55))
@@ -1243,7 +1320,8 @@ func _draw_game() -> void:
 		"merge2248": _draw_merge2248()
 		"merge2048": _draw_merge()
 		"watermelon": _draw_watermelon()
-		"sudoku", "meowdoku": _draw_sudoku()
+		"sudoku": _draw_sudoku()
+		"meowdoku": _draw_meowdoku()
 		"snake_io": pass
 		"solitaire": _draw_solitaire()
 		"tripeaks": _draw_tripeaks()
@@ -1251,7 +1329,7 @@ func _draw_game() -> void:
 		"tileclub": _draw_tileclub()
 		"amaze_go", "arrow_go", "amaze": _draw_amaze()
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	if state.get("status", "playing") == "over" and _catalog_result_overlay_ready():
+	if state.get("status", "playing") in ["over", "lost"] and _catalog_result_overlay_ready():
 		_draw_result_overlay(false)
 	elif state.get("status", "playing") == "won" and _catalog_result_overlay_ready():
 		_draw_result_overlay(true)
@@ -1308,11 +1386,16 @@ func _game_secondary_text() -> Color:
 	return Color("d7e5d8", 0.88) if game_id == "merge2248" else BRIGHT_MUTED
 
 func _draw_catalog_fx() -> void:
+	if reduced_effects and game_id == "meowdoku":
+		return
 	for effect in catalog_fx:
 		if str(effect.get("game_id", "")) == game_id:
 			catalog_art_director.draw_event_fx(self, effect, elapsed, DISPLAY_FONT, SYMBOL_FONT)
 
 func _draw_score_panel() -> void:
+	if game_id == "meowdoku":
+		_draw_meowdoku_score_panel()
+		return
 	var candy_mode := game_id == "merge2248"
 	var panel_fill := _game_panel_fill()
 	var panel_border := Color("f3d59d", 0.30) if candy_mode else Color(INK, 0.09)
@@ -1347,11 +1430,31 @@ func _draw_score_panel() -> void:
 	elif elapsed >= feedback_until:
 		_draw_text(_objective_status(), Vector2(302, 156), 11, Color(secondary_text, 0.82))
 
+
+func _draw_meowdoku_score_panel() -> void:
+	var panel_fill := Color("6b3854", 0.96)
+	_draw_panel(Rect2(18, 124, 504, 52), panel_fill, Color("ffe9f3", 0.18), 12, 1)
+	_draw_text("关卡", Vector2(31, 142), 10, Color("f2dbe8", 0.82))
+	_draw_center_font(NUMBER_FONT, str(int(state.get("level", 1))), Vector2(70, 159), 20, INK)
+	draw_line(Vector2(108, 134), Vector2(108, 166), Color(INK, 0.12), 1.0)
+	_draw_text("猫咪", Vector2(124, 142), 10, Color("f2dbe8", 0.82))
+	_draw_center_font(NUMBER_FONT, "%d/%d" % [int(state.get("placed", 0)), int(state.get("required", 0))], Vector2(174, 159), 19, INK)
+	draw_line(Vector2(220, 134), Vector2(220, 166), Color(INK, 0.12), 1.0)
+	_draw_text("局势", Vector2(236, 142), 10, Color("f2dbe8", 0.82))
+	_draw_text(_status_label(), Vector2(236, 162), 12, _status_color())
+	draw_line(Vector2(312, 134), Vector2(312, 166), Color(INK, 0.12), 1.0)
+	_draw_text("机会", Vector2(328, 142), 10, Color("f2dbe8", 0.82))
+	var hearts := int(state.get("hearts", 0))
+	for index in range(3):
+		_draw_text_font(SYMBOL_FONT, "♥", Vector2(376 + index * 30, 162), 20, Color("ff7899") if index < hearts else Color("d7b3c1", 0.42))
+	_draw_text("错误 %d" % int(state.get("mistakes", 0)), Vector2(472, 158), 10, Color("ffd6e1") if int(state.get("mistakes", 0)) > 0 else Color("d9f5df"))
+
 func _objective_status() -> String:
 	match game_id:
 		"merge2248": return "历史 %s · %s" % [str(state.get("all_time_label", "0")), _merge2248_mode_label()]
 		"merge2048": return "最佳 %d · 目标 2048" % int(state.get("best", 0))
 		"watermelon": return "目标 %d" % int(state.get("target_value", 256))
+		"meowdoku": return "猫咪 %d / %d" % [int(state.get("placed", 0)), int(state.get("required", 0))]
 		"snake_classic": return "长度 %d / %d" % [int(state.get("score", 4)), int(state.get("target_length", 120))]
 		"snake_io": return "位次 #%d · 体量 %.1f" % [max(1, int(state.get("rank", 1))), float(state.get("mass", 0.0))]
 		"solitaire": return "牌库 %d" % int(state.get("stock", 0))
@@ -1383,17 +1486,28 @@ func _draw_result_overlay(won: bool) -> void:
 		_draw_center_font(UI_FONT, "得分 %d · 最佳 %d" % [int(state.get("score", 0)), int(state.get("best", 0))], Vector2(270, 500), 16, Color("5c3a29"))
 		_draw_center_font(UI_FONT, "可以继续合并，冲击更高数字", Vector2(270, 542), 13, Color("6a4935"))
 		return
-	if game_id in ["sudoku", "meowdoku"]:
-		var meow := game_id == "meowdoku"
-		var paper := Color("fff1f7") if meow else Color("faf3e4")
-		var edge := Color("d55f96") if meow else Color("b78f55")
-		var ink := Color("4b2940") if meow else Color("303745")
-		draw_rect(Rect2(0, 112, 540, 848), Color("231c28", 0.56) if meow else Color("24221f", 0.56))
+	if game_id == "meowdoku":
+		var edge := Color("efba59") if won else Color("d9587b")
+		var ink := Color("4b2940")
+		draw_rect(Rect2(0, 112, 540, 848), Color("231421", 0.62))
+		_draw_panel(Rect2(54, 344, 432, 248), Color("17131a", 0.28), Color.TRANSPARENT, 18, 0)
+		_draw_panel(Rect2(48, 338, 444, 250), Color("fff1f7"), Color(edge, 0.94), 20, 3)
+		draw_line(Vector2(74, 356), Vector2(466, 356), Color("ffffff", 0.72), 2.0, true)
+		meowdoku_presenter.draw_result_badge(self, Vector2(270, 390), won)
+		_draw_center_font(DISPLAY_FONT, "猫咪全员到齐" if won else "爱心用尽", Vector2(270, 456), 29, ink if won else Color("9d2e50"))
+		_draw_center_font(UI_FONT, "找到 %d/%d 只 · 还剩 %d 颗心" % [int(state.get("placed", 0)), int(state.get("required", 0)), int(state.get("hearts", 0))], Vector2(270, 498), 15, Color(ink, 0.86))
+		_draw_center_font(UI_FONT, "点击右上角“重开”再试一次", Vector2(270, 544), 13, Color(ink, 0.68))
+		return
+	if game_id == "sudoku":
+		var paper := Color("faf3e4")
+		var edge := Color("b78f55")
+		var ink := Color("303745")
+		draw_rect(Rect2(0, 112, 540, 848), Color("24221f", 0.56))
 		_draw_panel(Rect2(54, 344, 432, 236), Color("17131a", 0.26), Color.TRANSPARENT, 18, 0)
-		_draw_panel(Rect2(48, 338, 444, 238), paper, Color(edge, 0.92), 18 if meow else 8, 3)
+		_draw_panel(Rect2(48, 338, 444, 238), paper, Color(edge, 0.92), 8, 3)
 		draw_line(Vector2(74, 356), Vector2(466, 356), Color("ffffff", 0.72), 2.0, true)
 		logic_game_presenter.draw_result_badge(self, game_id, Vector2(270, 384))
-		_draw_center_font(DISPLAY_FONT, "手账完成" if meow else "逻辑完成", Vector2(270, 438), 30, ink)
+		_draw_center_font(DISPLAY_FONT, "逻辑完成", Vector2(270, 438), 30, ink)
 		_draw_center_font(UI_FONT, "得分 %d · 步数 %d" % [int(state.get("score", 0)), int(state.get("moves", 0))], Vector2(270, 480), 16, Color(ink, 0.88))
 		_draw_center_font(UI_FONT, "点击右上角“重开”继续挑战", Vector2(270, 526), 13, Color(ink, 0.68))
 		return
@@ -1627,13 +1741,13 @@ func _draw_card_game_object_fx() -> void:
 func _status_label() -> String:
 	match str(state.get("status", "playing")):
 		"won": return "已完成"
-		"over": return "已结束"
+		"over", "lost": return "已结束"
 		_: return "进行中"
 
 func _status_color() -> Color:
 	match str(state.get("status", "playing")):
 		"won": return GREEN
-		"over": return RED
+		"over", "lost": return RED
 		_: return CYAN
 
 func _draw_text(text: String, pos: Vector2, font_size: int, color: Color = INK) -> void:
@@ -1775,7 +1889,8 @@ func _start_game_state(force_reset := false) -> void:
 		"merge2248": _init_merge2248(force_reset)
 		"merge2048": _init_merge()
 		"watermelon": _init_watermelon()
-		"sudoku", "meowdoku": _init_sudoku()
+		"sudoku": _init_sudoku()
+		"meowdoku": _init_meowdoku()
 		"snake_classic": _init_snake_gb()
 		"snake_io": _init_snakes_arena()
 		"solitaire": _init_solitaire()
@@ -2746,7 +2861,209 @@ func _fruit_name(value: int) -> String:
 	return ["", "柠檬", "橙子", "苹果", "葡萄", "西瓜"][_watermelon_visual_value(value)]
 
 # -----------------------------------------------------------------------------
-# Sudoku / Meowdoku
+# Meowdoku: region-cat logic model
+# -----------------------------------------------------------------------------
+
+func _init_meowdoku() -> void:
+	meowdoku_preliminary_single.clear()
+	var loaded: Dictionary = meowdoku_model.load_puzzle(meowdoku_model.fixture(meowdoku_fixture_id))
+	if not bool(loaded.get("ok", false)):
+		push_error("Meowdoku fixture failed validation: %s" % str(loaded.get("error", "unknown")))
+		state = {"status":"over", "score":0, "moves":0, "mistakes":0, "hearts":0}
+		return
+	var recovered := false
+	if meowdoku_recovery_enabled and not meowdoku_skip_recovery_once:
+		recovered = _recover_meowdoku_checkpoint()
+	meowdoku_skip_recovery_once = false
+	_sync_meowdoku_state()
+	meowdoku_presenter.reset(elapsed, meowdoku_model.selected)
+	if recovered:
+		_flash_feedback("已恢复猫咪手账", Color("df77aa"))
+
+
+func _sync_meowdoku_state() -> void:
+	state = meowdoku_model.snapshot()
+	state["score"] = maxi(0, meowdoku_model.cats.size() - meowdoku_model.given_cats.size()) * 100
+	if meowdoku_model.status == meowdoku_model.WON:
+		state["score"] = int(state.score) + meowdoku_model.hearts * 50
+	state["checkpoint"] = meowdoku_model.checkpoint()
+	selected_cell = meowdoku_model.selected
+
+
+func _meowdoku_board_rect() -> Rect2:
+	return meowdoku_presenter.board_rect()
+
+
+func _meowdoku_cell_from_position(position: Vector2) -> Vector2i:
+	var rect := _meowdoku_board_rect()
+	if not rect.has_point(position) or meowdoku_model.size <= 0:
+		return Vector2i(-1, -1)
+	var cell_size := rect.size.x / float(meowdoku_model.size)
+	return Vector2i(
+		clampi(int((position.x - rect.position.x) / cell_size), 0, meowdoku_model.size - 1),
+		clampi(int((position.y - rect.position.y) / cell_size), 0, meowdoku_model.size - 1)
+	)
+
+
+func _meowdoku_cell_center(cell: Vector2i) -> Vector2:
+	var rect := _meowdoku_board_rect()
+	var cell_size := rect.size.x / float(maxi(1, meowdoku_model.size))
+	return rect.position + Vector2((float(cell.x) + 0.5) * cell_size, (float(cell.y) + 0.5) * cell_size)
+
+
+func _meowdoku_pointer_action(position: Vector2, double_action: bool) -> Dictionary:
+	var cell := _meowdoku_cell_from_position(position)
+	if cell.x < 0:
+		return {"changed":false, "event":"outside"}
+	if double_action:
+		var rolled_back := _rollback_meowdoku_preliminary_single(cell)
+		var double_outcome := _meowdoku_command("cat", cell)
+		if rolled_back and not bool(double_outcome.get("changed", false)):
+			_persist_meowdoku_checkpoint()
+		return double_outcome
+	var before := meowdoku_model.checkpoint()
+	var single_outcome: Dictionary
+	if meowdoku_model.selected == cell:
+		single_outcome = _meowdoku_command("mark", cell)
+	else:
+		single_outcome = _meowdoku_command("select", cell)
+	meowdoku_preliminary_single = {
+		"cell":cell,
+		"at_msec":Time.get_ticks_msec(),
+		"checkpoint":before,
+	}
+	return single_outcome
+
+
+func _rollback_meowdoku_preliminary_single(cell: Vector2i) -> bool:
+	if meowdoku_preliminary_single.is_empty():
+		return false
+	var previous := meowdoku_preliminary_single.duplicate(true)
+	meowdoku_preliminary_single.clear()
+	var age_msec := Time.get_ticks_msec() - int(previous.get("at_msec", -10000))
+	if previous.get("cell", Vector2i(-1, -1)) != cell or age_msec < 0 or age_msec > 700:
+		return false
+	var checkpoint: Variant = previous.get("checkpoint", {})
+	if not checkpoint is Dictionary:
+		return false
+	var restored: Dictionary = meowdoku_model.restore_checkpoint(checkpoint)
+	if not bool(restored.get("ok", false)):
+		return false
+	_sync_meowdoku_state()
+	queue_redraw()
+	return true
+
+
+func _meowdoku_move_selection(direction: Vector2i) -> Dictionary:
+	meowdoku_preliminary_single.clear()
+	var changed := meowdoku_model.move_selection(direction)
+	var outcome := {"changed":changed, "event":"select", "cell":meowdoku_model.selected}
+	_sync_meowdoku_state()
+	if changed:
+		_present_meowdoku_outcome(outcome)
+		_persist_meowdoku_checkpoint()
+	return outcome
+
+
+func _meowdoku_command(command: String, cell := Vector2i(-1, -1)) -> Dictionary:
+	if game_id != "meowdoku":
+		return {"changed":false, "event":"wrong_game"}
+	meowdoku_preliminary_single.clear()
+	var outcome: Dictionary = meowdoku_model.apply_command(command, cell)
+	_sync_meowdoku_state()
+	_present_meowdoku_outcome(outcome)
+	if bool(outcome.get("changed", false)):
+		_persist_meowdoku_checkpoint()
+	queue_redraw()
+	return outcome
+
+
+func _present_meowdoku_outcome(outcome: Dictionary) -> void:
+	var event := str(outcome.get("event", "blocked"))
+	var cell: Vector2i = outcome.get("cell", meowdoku_model.selected)
+	var position := _meowdoku_cell_center(cell) if meowdoku_model.in_bounds(cell) else _meowdoku_board_rect().get_center()
+	var accent := Color("df77aa")
+	if event == "select":
+		meowdoku_presenter.select(cell, elapsed)
+	elif event not in ["blocked", "outside", "wrong_game", "unknown_command"]:
+		meowdoku_presenter.present(event, cell, elapsed, outcome)
+	match event:
+		"select":
+			_play_sfx(SFX_LOGIC_SELECT, -20.0, 1.10)
+			_haptic(4)
+		"mark":
+			_flash_feedback("标记为排除格", Color("8d70bb"))
+			_start_catalog_event("cat_mark", position, Color("9b82c7"), 1, "排除", 0.46, {"semantic":"cat_mark"})
+		"unmark", "erase_mark":
+			_flash_feedback("擦去排除标记", accent)
+			_start_catalog_event("cat_erase", position, accent, 1, "擦去标记", 0.48, {"semantic":"cat_erase"})
+		"erase_cat":
+			_flash_feedback("抱回这只猫", accent)
+			_start_catalog_event("cat_erase", position, accent, 1, "抱回猫咪", 0.52, {"semantic":"cat_erase"})
+		"cat":
+			_flash_feedback("找到猫咪 · %d/%d" % [meowdoku_model.cats.size(), meowdoku_model.size], accent)
+			_start_catalog_event("cat_found", position, accent, 2, "找到猫咪", 0.66, {"semantic":"cat_found", "placed":meowdoku_model.cats.size()})
+		"error":
+			_flash_feedback("这里没有猫 · 还剩 %d 颗心" % meowdoku_model.hearts, RED)
+			_start_catalog_event("cat_error", position, RED, 2, "失去一颗心", 0.72, {"semantic":"cat_error", "hearts":meowdoku_model.hearts})
+		"loss":
+			_flash_feedback("爱心用尽 · 可以重开", RED)
+			_start_catalog_event("cat_loss", position, RED, 3, "爱心用尽", 0.92, {"semantic":"cat_error_loss", "hearts":0})
+			_capture("meowdoku_loss")
+		"complete":
+			_flash_feedback("所有猫咪都找到啦", GOLD)
+			_start_catalog_event("cat_complete", _meowdoku_board_rect().get_center(), GOLD, 4, "全员到齐", 1.18, {"semantic":"cat_complete"})
+			_capture("meowdoku_win")
+		"given":
+			_flash_feedback("这是题面提示猫", Color("a85c83"))
+		"occupied":
+			_flash_feedback("猫咪已经在这里", accent)
+		"empty":
+			_flash_feedback("这里没有可清除内容", Color("8d70bb"))
+	_log_event("meowdoku_%s" % event, {"cell":[cell.x, cell.y], "hearts":meowdoku_model.hearts, "status":meowdoku_model.status})
+
+
+func _persist_meowdoku_checkpoint() -> void:
+	if not meowdoku_recovery_enabled:
+		return
+	var checkpoint_text := JSON.stringify(meowdoku_model.checkpoint())
+	var file := FileAccess.open("user://meowdoku_v3_checkpoint.json", FileAccess.WRITE)
+	if file:
+		file.store_string(checkpoint_text)
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("window.localStorage.setItem(%s, %s)" % [JSON.stringify(MEOWDOKU_WEB_CHECKPOINT_KEY), JSON.stringify(checkpoint_text)])
+
+
+func _recover_meowdoku_checkpoint() -> bool:
+	if OS.has_feature("web"):
+		var stored: Variant = JavaScriptBridge.eval("window.localStorage.getItem(%s) || ''" % JSON.stringify(MEOWDOKU_WEB_CHECKPOINT_KEY), true)
+		if stored is String and not str(stored).is_empty():
+			var web_parsed: Variant = JSON.parse_string(str(stored))
+			if web_parsed is Dictionary and bool(meowdoku_model.restore_checkpoint(web_parsed).get("ok", false)):
+				return true
+	if not FileAccess.file_exists("user://meowdoku_v3_checkpoint.json"):
+		return false
+	var file := FileAccess.open("user://meowdoku_v3_checkpoint.json", FileAccess.READ)
+	if file == null:
+		return false
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	if not parsed is Dictionary:
+		return false
+	return bool(meowdoku_model.restore_checkpoint(parsed).get("ok", false))
+
+
+func _meowdoku_restore_checkpoint(checkpoint: Dictionary) -> Dictionary:
+	var result: Dictionary = meowdoku_model.restore_checkpoint(checkpoint)
+	if bool(result.get("ok", false)):
+		_sync_meowdoku_state()
+		meowdoku_presenter.reset(elapsed, meowdoku_model.selected)
+		_persist_meowdoku_checkpoint()
+		queue_redraw()
+	return result
+
+
+# -----------------------------------------------------------------------------
+# Classic numeric Sudoku
 # -----------------------------------------------------------------------------
 
 func _sudoku_solution() -> Array:
@@ -2772,6 +3089,9 @@ func _init_sudoku() -> void:
 		logic_game_presenter.reset(elapsed, Vector2i(0, 0))
 
 func _sudoku_tap(pos: Vector2) -> void:
+	if game_id == "meowdoku":
+		_meowdoku_pointer_action(pos, false)
+		return
 	var origin := Vector2(47, 236)
 	var cell := 49.5
 	if Rect2(origin, Vector2(cell * 9, cell * 9)).has_point(pos):
@@ -2840,50 +3160,10 @@ func _classic_sudoku_place(number: int) -> void:
 		_log_event("sudoku_place", {"x":x, "y":y, "value":number})
 
 func _meowdoku_place(number: int) -> void:
-	var selected: Array = state.get("selected", [0, 0])
-	var x := int(selected[0])
-	var y := int(selected[1])
-	var given: Array = state["given"]
-	if int(given[y][x]) != 0:
-		return
-	var solution: Array = state["solution"]
-	var cell := Vector2i(x, y)
-	var position := logic_game_presenter.cell_center(cell)
-	var block := int(y / 3) * 3 + int(x / 3)
-	var accent := Color("e16c9f")
-	if number != 0 and number != int(solution[y][x]):
-		state["mistakes"] = int(state["mistakes"]) + 1
-		_flash_feedback("这里不是 %d" % number, RED)
-		logic_game_presenter.present("logic_error", cell, block, number, 2, elapsed)
-		_start_catalog_event("logic_error", position, RED, 2, "猫爪提醒", 0.66, {"semantic":"logic_error"})
-		_log_event("sudoku_mistake", {"x":x, "y":y, "value":number})
-		return
-	state["board"][y][x] = number
-	state["moves"] = int(state["moves"]) + 1
-	var completed_block := _sudoku_block_complete(block)
-	var completed_all := _sudoku_complete()
-	if number == 0:
-		_flash_feedback("轻轻擦去", accent)
-		logic_game_presenter.present("logic_erase", cell, block, number, 1, elapsed)
-		_start_catalog_event("logic_erase", position, accent, 1, "轻轻擦去", 0.54, {"semantic":"logic_erase"})
-	elif completed_all:
-		_flash_feedback("整册完成", GOLD)
-		logic_game_presenter.present("logic_complete", cell, block, number, 4, elapsed)
-		_start_catalog_event("logic_complete", Vector2(270, 458), GOLD, 4, "整册完成", 1.18, {"semantic":"logic_complete"})
-	elif completed_block:
-		_flash_feedback("猫爪盖章", accent)
-		logic_game_presenter.present("logic_block_complete", cell, block, number, 3, elapsed)
-		_start_catalog_event("logic_block_complete", _sudoku_block_center(block), accent, 3, "猫爪盖章", 0.96, {"semantic":"logic_block_complete"})
-	else:
-		_flash_feedback("落子 %d" % number, accent)
-		logic_game_presenter.present("logic_correct", cell, block, number, 1, elapsed)
-		_start_catalog_event("logic_correct", position, accent, 1, "猫爪确认", 0.68, {"semantic":"logic_correct"})
-	if completed_all:
-		state["score"] = max(100, 1000 - int(state["mistakes"]) * 25)
-		state["status"] = "won"
-		_capture("meowdoku_win")
-	else:
-		_log_event("sudoku_place", {"x":x, "y":y, "value":number})
+	# Backward-compatible automation entry point. Numeric values are not part of
+	# the target rules; zero clears and any positive value invokes the same cat
+	# command as double-touch/Enter.
+	_meowdoku_command("erase" if number == 0 else "cat")
 
 func _sudoku_complete() -> bool:
 	for row in state["board"]:
@@ -2893,15 +3173,18 @@ func _sudoku_complete() -> bool:
 	return true
 
 func _draw_sudoku() -> void:
-	var meow := game_id == "meowdoku"
-	var accent := Color("e16c9f") if meow else Color("7566c7")
-	var ink := Color("67344d") if meow else Color("303745")
+	var accent := Color("7566c7")
+	var ink := Color("303745")
 	var detail := "选格后输入数字"
-	_draw_text_font(DISPLAY_FONT, "猫爪手账" if meow else "逻辑手册", Vector2(30, 207), 18, ink)
-	_draw_text(detail, Vector2(508 - UI_FONT.get_string_size(detail, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x, 205), 11, Color("80536a") if meow else Color("5d6170"))
+	_draw_text_font(DISPLAY_FONT, "逻辑手册", Vector2(30, 207), 18, ink)
+	_draw_text(detail, Vector2(508 - UI_FONT.get_string_size(detail, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x, 205), 11, Color("5d6170"))
 	draw_line(Vector2(30, 216), Vector2(510, 216), Color(accent, 0.44), 2.0)
 	logic_game_presenter.draw_board(self, game_id, state, elapsed, NUMBER_FONT)
-	_draw_text("同行、同列与九宫同步定位", Vector2(47, 706), 13, Color("73435b") if meow else Color("4f5665"))
+	_draw_text("同行、同列与九宫同步定位", Vector2(47, 706), 13, Color("4f5665"))
+
+
+func _draw_meowdoku() -> void:
+	meowdoku_presenter.draw_board(self, state, elapsed, UI_FONT, reduced_effects)
 
 func _sudoku_block_center(block: int) -> Vector2:
 	var bx := block % 3

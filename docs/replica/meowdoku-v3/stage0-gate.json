@@ -1,0 +1,39 @@
+{
+  "schema": "offline-games.replica-stage0.v1",
+  "game_id": "meowdoku",
+  "target": {
+    "package": "com.oakever.meowdoku",
+    "platform": "android",
+    "version": "1.14.0",
+    "package_sha256": "unknown",
+    "evidence_frozen_utc": "2026-08-20"
+  },
+  "baseline_commit": "3e561fb3c55f3b0b813da2b9ee9468cd4d290bae",
+  "identity_contradiction": "baseline is 9x9 numeric Sudoku; selected target is a region-cat logic puzzle",
+  "stage0_status": "passed",
+  "mechanics_authorized": true,
+  "art_production_authorized": true,
+  "blocking_gates": [
+    "renderer_free_model",
+    "three_authored_valid_fixtures",
+    "mechanics_probe",
+    "input_parity_probe",
+    "failure_restart_recovery_probe",
+    "classic_sudoku_non_regression"
+  ],
+  "gate_results": {
+    "renderer_free_model": "MEOWDOKU_MODEL_RESULT=PASS (49 probes)",
+    "three_authored_valid_fixtures": "5x5, 6x6, 7x7; unique under declared constraints and givens",
+    "mechanics_and_input": "MEOWDOKU_INTEGRATION_RESULT=PASS (36 probes; includes atomic browser mouse/touch double gestures)",
+    "catalog_rules": "RULES_RESULT=PASS (6 probes)",
+    "classic_sudoku_non_regression": "covered by integration probe"
+  },
+  "unknown_reference_facts": [
+    "package_sha256",
+    "single_tap_mark_semantics",
+    "automatic_x_mark_algorithm",
+    "question_cell_semantics",
+    "terminal_flow",
+    "motion_timing"
+  ]
+}
