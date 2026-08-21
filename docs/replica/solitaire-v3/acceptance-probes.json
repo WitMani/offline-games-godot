@@ -1,0 +1,27 @@
+{
+  "schema": "offline-games.solitaire.acceptance-probes.v1",
+  "target_evidence": "PARTIAL_EVIDENCE",
+  "contract_origin": "local_clean_room_decision_grounded_in_generic_klondike",
+  "target_rule_alignment_claimed": false,
+  "renderer_free_required": true,
+  "mechanics_gate": "PASS_LOCAL",
+  "mechanics_commit": "c26616e",
+  "gag_gate": "ELIGIBLE_FOR_FRESH_AUDIT",
+  "production_authorized": false,
+  "probes": [
+    {"id": "deal_topology", "covers": ["52_unique_cards", "tableau_heights_1_to_7", "28_tableau", "24_stock"], "status": "pass-renderer-free"},
+    {"id": "initial_face_state", "covers": ["only_tableau_top_face_up", "stock_hidden"], "status": "pass-renderer-free"},
+    {"id": "draw_one", "covers": ["stock_to_waste_order", "one_card", "move_count"], "status": "pass-model-and-shell"},
+    {"id": "draw_three", "covers": ["up_to_three_cards", "waste_top_order", "short_final_draw"], "status": "pass-renderer-free"},
+    {"id": "recycle", "covers": ["waste_to_stock_order", "finite_limit", "unlimited_mode", "reject_without_mutation"], "status": "pass-renderer-free"},
+    {"id": "tableau_descending_alternating", "covers": ["positive_move", "rank_reject", "color_reject", "face_down_reject"], "status": "pass-model-and-shell"},
+    {"id": "empty_column_king", "covers": ["king_stack_accept", "non_king_reject"], "status": "pass-renderer-free"},
+    {"id": "stack_move", "covers": ["ordered_face_up_suffix", "atomic_transfer", "new_top_flip"], "status": "pass-model-and-shell"},
+    {"id": "foundation_same_suit_ascending", "covers": ["ace_start", "next_rank", "wrong_suit_reject", "rank_gap_reject"], "status": "pass-model-and-shell"},
+    {"id": "auto_foundation", "covers": ["one_legal_move_max", "deterministic_priority", "safe_noop"], "status": "pass-model-and-shell"},
+    {"id": "legal_reject_atomicity", "covers": ["typed_reason", "serialized_state_unchanged"], "status": "pass-model-and-shell"},
+    {"id": "win_terminal_freeze", "covers": ["52_foundation_cards", "won_status", "all_later_commands_noop"], "status": "pass-model-and-shell"},
+    {"id": "restart_recovery", "covers": ["fresh_restart", "valid_live_restore", "invalid_schema_reject", "wrong_game_reject", "duplicate_card_reject", "terminal_snapshot_reject"], "status": "pass-model-and-shell;browser-pending"},
+    {"id": "input_parity", "covers": ["mouse", "touch", "keyboard", "same_model_command"], "status": "pass-shell;browser-pending"}
+  ]
+}

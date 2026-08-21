@@ -1,0 +1,208 @@
+{
+  "schema_version": "offline-games-gag-reuse-audit/v1",
+  "audited_at": "2026-08-20T20:10:00Z",
+  "scope": ["solitaire"],
+  "audit_mode": "read-only semantic search and runtime-byte verification; no generation",
+  "current_endpoint": {
+    "url": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+    "transport": "MCP Streamable HTTP",
+    "health": {
+      "status": "healthy",
+      "server": "game-assets-generator",
+      "version": "0.2.0",
+      "tools_count": 21
+    },
+    "system_probe": {
+      "gpu": "not detected",
+      "main_pytorch": "not installed",
+      "execution_mode_available": "pure API",
+      "enabled_providers": [
+        "gemini",
+        "doubao",
+        "mock",
+        "elevenlabs",
+        "removebg",
+        "fal",
+        "openrouter",
+        "tripo",
+        "codex"
+      ]
+    },
+    "version_boundary": "The v2 creation ledger records historical server 1.29.0. This fresh reuse audit observed 0.2.0 and does not rewrite historical generation provenance."
+  },
+  "semantic_searches": [
+    {
+      "id": "card-back-role",
+      "query": "premium friendly cartoon Klondike solitaire card back emerald botanical brass conservatory warm paper flat orthographic no text",
+      "kinds": ["image"],
+      "limit": 12,
+      "reviewed_candidates": [
+        {
+          "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/card_games/gag_v1/solitaire/generated_images__20260820_183911_FAL.ai.png",
+          "score": 0.4585047112432213,
+          "decision": "reuse",
+          "reason": "Exact emerald botanical/brass card-back source; the motif remains legible at stock and tableau sizes and contains no rule text."
+        },
+        {
+          "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/animations/20260109_012208_game_card_frame_bord_gemini.png",
+          "score": 0.4408463054613905,
+          "decision": "reject",
+          "reason": "Fantasy frame rather than a full-bleed card-back material."
+        },
+        {
+          "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/ui_and_icons/card-frame-n.png",
+          "score": 0.43210013178230544,
+          "decision": "reject",
+          "reason": "Sci-fi rarity frame with the wrong material and runtime role."
+        }
+      ],
+      "result": "reuse existing compatible source; no role gap"
+    },
+    {
+      "id": "card-settle-role",
+      "query": "soft tactile playing card paper flick felt settle warm brass tick short mobile game UI sound",
+      "kinds": ["audio"],
+      "limit": 12,
+      "reviewed_candidates": [
+        {
+          "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/audio/sfx_20251213_092835_sword_slash_whoosh_i_2.wav",
+          "score": 0.7157503370220932,
+          "decision": "reject",
+          "reason": "Weapon whoosh, not paper/felt contact."
+        },
+        {
+          "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/2048balls/v2/sfx/fruit_cascade_reward/v1/fruit_cascade_reward_01_master.wav",
+          "score": 0.7070593651425862,
+          "decision": "reject",
+          "reason": "Fruit reward cascade would over-promote routine card actions."
+        },
+        {
+          "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/audio/warning.wav",
+          "score": 0.7050820655289708,
+          "decision": "reject",
+          "reason": "Alarm semantics conflict with an ordinary settle."
+        }
+      ],
+      "result": "retain the historically generated Solitaire settle derivative; no better compatible indexed candidate"
+    },
+    {
+      "id": "reject-role",
+      "query": "cartoon solitaire illegal card move reject soft paper scrape muted felt tap short UI sound",
+      "kinds": ["audio"],
+      "limit": 12,
+      "top_candidate": {
+        "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/audio/sfx_20251213_095733_magic_spell_cast_spa_1.wav",
+        "score": 0.7092653371297312,
+        "decision": "reject",
+        "reason": "Magic spell semantics conflict with a bounded illegal-move cue."
+      },
+      "result": "no GAG role gap: bounded code-native red object shake plus the existing short generic reject tick remains semantically clearer"
+    },
+    {
+      "id": "completion-role",
+      "query": "premium cartoon solitaire completion flourish four foundations warm brass paper cards short game reward sound",
+      "kinds": ["audio"],
+      "limit": 12,
+      "top_candidate": {
+        "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/audio/music_20260330_002207_peaceful_ambient_exploration_m_loop.mp3",
+        "score": 0.650777308000755,
+        "decision": "reject",
+        "reason": "Ambient music is too long and does not describe the card-table completion impact."
+      },
+      "result": "no new asset: grade-four visual/haptic composition reuses the card-settle material without introducing a mismatched long reward"
+    },
+    {
+      "id": "historical-audio-exact-search",
+      "query": "solitaire_card_settle_gag_v1 crisp paper flick soft felt thump warm brushed brass tick",
+      "kinds": ["audio"],
+      "limit": 20,
+      "result": "the historical Solitaire source directory was not returned by the current semantic index",
+      "boundary": "No library re-index was performed because this task must not modify the GAG repository."
+    }
+  ],
+  "reused_assets": [
+    {
+      "id": "solitaire-card-back-gag-v1",
+      "kind": "image",
+      "role": "ordinary stable card-back material family",
+      "historical_generation": {
+        "source": "docs/art-direction/solitaire-v2.gag-asset-ledger.json",
+        "provider": "FAL.ai",
+        "model": "fal-ai/flux-pro/v1.1",
+        "prompt": "Full-bleed vertical playing-card back surface design for a premium friendly cartoon solitaire game. Emerald green woven felt and soft leather texture, a large simple symmetrical botanical vine medallion in warm brushed brass, four small ivory leaf accents, dark forest-green shadow channels, subtle hand-painted paper grain, broad readable shapes, clean soft bevels, restrained warm highlights. Fill the entire canvas edge-to-edge as a flat orthographic texture, centered and vertically symmetrical, readable at tiny mobile-card size. No card object, no surrounding scene, no mockup, no outside drop shadow, no letters, no numbers, no suit symbols, no UI text, no watermark, no photorealism.",
+        "route": "GAG generate_image pure API"
+      },
+      "source_master": {
+        "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/card_games/gag_v1/solitaire/generated_images__20260820_183911_FAL.ai.png",
+        "fresh_download_verification": true,
+        "sha256": "70814c1e196f38781c88e019ee1f48526a501e563f994be948ffd7af933d38b5",
+        "bytes": 543905,
+        "detected_format": "JPEG",
+        "dimensions": [768, 1024]
+      },
+      "derivation": {
+        "operations": "center crop 742x1024, Lanczos resize 290x400, libwebp quality 84",
+        "runtime_path": "assets/art/cards/solitaire_card_back_gag_v1.webp",
+        "fresh_runtime_sha256": "4854283217b75d6e719268b511dc76985122828b3cd899630be7a78b56ca729c",
+        "dimensions": [290, 400]
+      },
+      "runtime_reference": {
+        "preload": "main.gd::SOLITAIRE_CARD_BACK_TEXTURE",
+        "selection": "main.gd::_card_back_texture",
+        "draw": "main.gd::_draw_card_back",
+        "first_visible_beat": "legal opening deal before the first player action",
+        "opening_instances": 22,
+        "opening_instance_basis": "one stock back plus 21 face-down tableau cards in the 1..7 Klondike topology"
+      }
+    },
+    {
+      "id": "solitaire_card_settle_gag_v1",
+      "kind": "audio",
+      "role": "ordinary card-action material cadence with graded routing",
+      "historical_generation": {
+        "source": "docs/art-direction/solitaire-v2.gag-asset-ledger.json",
+        "provider": "ElevenLabs",
+        "model": "eleven_text_to_sound_v2",
+        "version": "v3",
+        "route": "GAG generate_audio pure API",
+        "prompt": "A polished full-bodied solitaire card-settle sound, around 0.75 seconds: crisp paper flick, soft felt thump, and a warm brushed-brass tick whose audible resonance fills the remaining tail. Tactile close-mic mobile game UI sound with even energy and balanced loudness, no long silence, no clipping, no music, no ambience, no voice."
+      },
+      "source_master": {
+        "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/card_games/gag_v1/solitaire/sfx/solitaire_card_settle_gag_v1/v3/solitaire_card_settle_gag_v1_master.wav",
+        "ledger_attested_sha256": "6a1ca73fe0424e7bf556b4904cede5b1035c718c7f9da9b737673603dbd85cdc",
+        "fresh_download_verification": false,
+        "reason": "The current semantic index did not expose this historical source path and the audit did not mutate the GAG index."
+      },
+      "derivation": {
+        "operations": "48 kHz mono OGG; +8 dB gain into -1.5 dB nominal look-ahead limiter; preserve 0.778 s cadence",
+        "runtime_path": "assets/audio/cards/solitaire_card_settle_gag_v1.ogg",
+        "fresh_runtime_sha256": "8e2033a3fad16f508f5faae4bb51c7a8477a8cc923c0177a71bdf67429ed55b9",
+        "duration_seconds": 0.778208,
+        "codec": "Vorbis",
+        "sample_rate_hz": 48000,
+        "channels": 1,
+        "fresh_measured_integrated_lufs": -17.3,
+        "fresh_measured_true_peak_dbtp": -1.3
+      },
+      "runtime_reference": {
+        "preload": "main.gd::SFX_SOLITAIRE_CARD_SETTLE",
+        "router": "main.gd::_catalog_event_sfx",
+        "events": ["card_draw", "card_recycle", "card_move", "foundation_place", "solitaire_win"],
+        "intensity": "event grade controls runtime gain and pitch"
+      }
+    }
+  ],
+  "decision": {
+    "generation_performed": false,
+    "role_gap": false,
+    "reason": "The card back is stable and high-frequency from the legal opening frame, and the settle sound covers all successful card contacts. Fresh search found no more compatible substitute or missing semantic role."
+  },
+  "claim_boundary": {
+    "assets_are_runtime_bound": true,
+    "source_image_freshly_verified": true,
+    "source_audio_master_freshly_verified": false,
+    "historical_provider_model_provenance": "ledger-attested",
+    "not_deployed": true,
+    "surpass_reference": "NOT_CLAIMED"
+  }
+}

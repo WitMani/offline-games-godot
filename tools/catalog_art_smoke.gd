@@ -90,8 +90,18 @@ func _first_sudoku_editable() -> Vector2i:
 
 func _test_solitaire_grade() -> void:
 	game._open_game("solitaire")
-	game.state["foundations"] = [1, 1, 1, 0]
-	game.state["tableau"] = [1, 0, 0, 0, 0, 0, 0]
+	var fixture: Dictionary = game.solitaire_model.snapshot()
+	fixture["stock"] = range(13, 52)
+	fixture["waste"] = [12]
+	fixture["tableau"] = [[], [], [], [], [], [], []]
+	fixture["foundations"] = [range(0, 12), [], [], []]
+	fixture["score"] = 0
+	fixture["moves"] = 0
+	fixture["recycles_used"] = 0
+	fixture["status"] = "playing"
+	if not game._restore_solitaire_snapshot(fixture):
+		failures.append("solitaire:fixture_restore")
+		return
 	game._solitaire_auto()
 	_expect_event("solitaire", "foundation_place", 3)
 

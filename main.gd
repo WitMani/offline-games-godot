@@ -81,6 +81,7 @@ const MERGE2048_RULES = preload("res://models/merge2048_model.gd")
 const WATERMELON_RULES = preload("res://models/watermelon_physics_model.gd")
 const MEOWDOKU_RULES = preload("res://models/meowdoku_model.gd")
 const SUDOKU_RULES = preload("res://models/sudoku_model.gd")
+const SOLITAIRE_RULES = preload("res://models/solitaire_model.gd")
 const MERGE2248_PRESENTATION = preload("res://presentation/merge2248_presenter.gd")
 const MERGE2248_SAVE_PATH := "user://offline_games_merge2248_v4.json"
 const MERGE2048_CLASSIC_PRESENTATION = preload("res://presentation/merge2048_classic_presenter.gd")
@@ -204,6 +205,7 @@ var meowdoku_fixture_id := "notebook_5"
 var meowdoku_recovery_enabled := true
 var meowdoku_skip_recovery_once := false
 var sudoku_model = SUDOKU_RULES.new()
+var solitaire_model = SOLITAIRE_RULES.new()
 var merge2248_presenter = MERGE2248_PRESENTATION.new()
 var merge2048_classic_presenter = MERGE2048_CLASSIC_PRESENTATION.new()
 var catalog_art_director = CATALOG_ART_DIRECTION.new()
@@ -310,6 +312,14 @@ var arena_knockout_started := -10.0
 var arena_knockout_world := Vector2.ZERO
 var arena_knockout_killer_id := -1
 var snakes_reduced_effects := false
+var solitaire_selection: Dictionary = {}
+var solitaire_focus_zone := "top"
+var solitaire_focus_index := 0
+var solitaire_focus_card_index := -1
+var solitaire_recovered_from_snapshot := false
+var solitaire_restart_requested := false
+var solitaire_reduced_effects := false
+var solitaire_haptic_emissions := 0
 
 func _ready() -> void:
 	set_process(true)
@@ -340,6 +350,7 @@ func _ready() -> void:
 	if action_executor:
 		action_executor.set_dimension_mode("2d")
 		action_executor.register_entity("Game", self, {})
+	_read_solitaire_effect_preference()
 	_setup_audio()
 	_build_home()
 	_play_sfx(SFX_CASE_OPEN, -11.0)
@@ -362,6 +373,7 @@ func _set_reduced_effects(value: bool) -> void:
 	reduced_effects_enabled = value
 	sudoku_reduced_effects = value
 	snakes_reduced_effects = value
+	solitaire_reduced_effects = value
 	haptics_enabled = not value
 	if reduced_effects:
 		catalog_fx.clear()
@@ -420,6 +432,10 @@ func _haptic(duration_ms: int) -> void:
 		return
 	if game_id == "snake_io" and snakes_reduced_effects:
 		return
+	if game_id == "solitaire":
+		if solitaire_reduced_effects:
+			return
+		solitaire_haptic_emissions += 1
 	haptic_requests_sent += 1
 	if OS.has_feature("web"):
 		JavaScriptBridge.eval("if (navigator.vibrate) navigator.vibrate(%d);" % duration_ms)
@@ -431,6 +447,10 @@ func _haptic_pattern(pattern: Array[int]) -> void:
 		return
 	if game_id == "snake_io" and snakes_reduced_effects:
 		return
+	if game_id == "solitaire":
+		if solitaire_reduced_effects:
+			return
+		solitaire_haptic_emissions += 1
 	haptic_requests_sent += 1
 	if OS.has_feature("web"):
 		JavaScriptBridge.eval("if (navigator.vibrate) navigator.vibrate(%s);" % JSON.stringify(pattern))
@@ -468,7 +488,10 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 	if game_id in ["merge2248", "snake_classic", "snake_io"]:
 		return
 	catalog_fx_serial += 1
-	var reduced := _merge2048_effects_reduced()
+	var reduced := reduced_effects or _merge2048_effects_reduced() or (game_id == "solitaire" and solitaire_reduced_effects)
+	var effective_duration := duration
+	if reduced:
+		effective_duration = minf(duration, 0.24)
 	var effect := {
 		"game_id": game_id,
 		"kind": kind,
@@ -477,13 +500,16 @@ func _start_catalog_event(kind: String, position: Vector2, color: Color, grade :
 		"grade": clampi(grade, 1, 4),
 		"label": label,
 		"started": elapsed,
-		"duration": minf(duration, 0.34) if reduced else duration,
+		"duration": effective_duration,
 		"seed": catalog_fx_serial,
 		"reduced": reduced,
 	}
-	if game_id in ["merge2048", "sudoku", "meowdoku", "mahjong", "tileclub", "amaze_go", "arrow_go"]:
+	if game_id in ["merge2048", "sudoku", "meowdoku", "solitaire", "mahjong", "tileclub", "amaze_go", "arrow_go"]:
 		effect["font_role"] = "ui_cjk"
 	effect.merge(metadata, true)
+	if game_id == "solitaire":
+		effect["reduced_effects"] = solitaire_reduced_effects
+		effect["motion_mode"] = "static_result" if solitaire_reduced_effects else "object_arc"
 	catalog_fx.append(effect)
 	# The fruit burst is a large transparent texture. Six concurrent envelopes
 	# preserve rapid taps and cascades while bounding overdraw on WebGL/Canvas.
@@ -614,7 +640,7 @@ func _prune_catalog_fx() -> void:
 	catalog_fx = active
 
 func _catalog_shake_offset() -> Vector2:
-	if reduced_effects or (game_id == "sudoku" and sudoku_reduced_effects):
+	if reduced_effects or (game_id == "sudoku" and sudoku_reduced_effects) or (game_id == "solitaire" and solitaire_reduced_effects):
 		return Vector2.ZERO
 	for index in range(catalog_fx.size() - 1, -1, -1):
 		var effect: Dictionary = catalog_fx[index]
@@ -623,7 +649,7 @@ func _catalog_shake_offset() -> Vector2:
 	return Vector2.ZERO
 
 func _catalog_result_overlay_ready() -> bool:
-	if reduced_effects or (game_id == "sudoku" and sudoku_reduced_effects):
+	if reduced_effects or (game_id == "sudoku" and sudoku_reduced_effects) or (game_id == "solitaire" and solitaire_reduced_effects):
 		return true
 	# Let the authoritative board consequence and its local event read before a
 	# terminal modal covers the playfield. Rules already ended the game; this is
@@ -632,7 +658,13 @@ func _catalog_result_overlay_ready() -> bool:
 		var effect: Dictionary = catalog_fx[index]
 		if str(effect.get("game_id", "")) != game_id:
 			continue
-		var visible_window := minf(0.82, float(effect.get("duration", 0.72)))
+		var effect_duration := float(effect.get("duration", 0.72))
+		var visible_window := minf(0.82, effect_duration)
+		if game_id == "solitaire":
+			# Preserve the final card's impact and settle before the conservatory
+			# result folio covers the table. Reduced-effects mode still resolves
+			# quickly because its event duration is capped at 0.24 s.
+			visible_window = effect_duration
 		if elapsed - float(effect.get("started", elapsed)) < visible_window:
 			return false
 		break
@@ -662,6 +694,10 @@ func _input(event: InputEvent) -> void:
 			return
 		if event.keycode in [KEY_DOWN, KEY_S, KEY_SPACE, KEY_ENTER]:
 			_watermelon_drop_current()
+			get_viewport().set_input_as_handled()
+			return
+	if event is InputEventKey and event.pressed and not event.echo and screen == "game" and game_id == "solitaire":
+		if _solitaire_key_input(event.keycode):
 			get_viewport().set_input_as_handled()
 			return
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -945,9 +981,13 @@ func _reset_current() -> void:
 	if game_id == "snake_io":
 		arena_restart_requested = true
 		_clear_snakes_web_snapshot()
+	if game_id == "solitaire":
+		solitaire_restart_requested = true
+		_clear_solitaire_web_snapshot()
 	_start_game_state(true)
 	sudoku_restart_requested = false
 	arena_restart_requested = false
+	solitaire_restart_requested = false
 	if game_id == "merge2048":
 		_build_game_buttons()
 	if game_id == "sudoku":
@@ -961,6 +1001,9 @@ func _reset_current() -> void:
 		arena_reset_started = elapsed
 		_play_sfx(SFX_CASE_OPEN, -12.0, 1.14)
 		_persist_snakes_progress()
+	elif game_id == "solitaire":
+		_persist_solitaire_progress()
+		_flash_feedback("新牌局已发好", GREEN)
 	else:
 		_flash_feedback("新局开始", GREEN)
 	queue_redraw()
@@ -1262,6 +1305,12 @@ func _save_snapshot(snapshot: Dictionary) -> void:
 			JavaScriptBridge.eval("window.localStorage.setItem('offline-games-snakes-v3', %s);" % JSON.stringify(arena_payload))
 		else:
 			_clear_snakes_web_snapshot()
+	if OS.has_feature("web") and str(snapshot.get("game_id", "")) == "solitaire":
+		if str(snapshot.get("status", "")) == "playing":
+			var solitaire_payload := JSON.stringify(snapshot)
+			JavaScriptBridge.eval("window.localStorage.setItem('offline-games-solitaire-v3', %s);" % JSON.stringify(solitaire_payload))
+		else:
+			_clear_solitaire_web_snapshot()
 
 func _load_sudoku_web_snapshot() -> Dictionary:
 	if not OS.has_feature("web"):
@@ -1311,6 +1360,30 @@ func _persist_snakes_progress() -> void:
 	snapshot["shell_tick"] = tick
 	_save_snapshot(snapshot)
 
+func _load_solitaire_web_snapshot() -> Dictionary:
+	if not OS.has_feature("web"):
+		return {}
+	var raw: Variant = JavaScriptBridge.eval("window.localStorage.getItem('offline-games-solitaire-v3') || '';" )
+	if not raw is String or str(raw).is_empty():
+		return {}
+	var parsed: Variant = JSON.parse_string(str(raw))
+	if parsed is Dictionary and str(parsed.get("game_id", "")) == "solitaire" and str(parsed.get("schema", "")) == "solitaire-state/v1":
+		return parsed
+	return {}
+
+func _clear_solitaire_web_snapshot() -> void:
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("window.localStorage.removeItem('offline-games-solitaire-v3');")
+
+func _persist_solitaire_progress() -> void:
+	if game_id != "solitaire":
+		return
+	var snapshot := state.duplicate(true)
+	snapshot["game_id"] = game_id
+	snapshot["screen"] = screen
+	snapshot["shell_tick"] = tick
+	_save_snapshot(snapshot)
+
 func _load_snake_gb_web_recovery() -> Dictionary:
 	if not OS.has_feature("web"):
 		return {}
@@ -1331,6 +1404,20 @@ func _restore_snake_gb_snapshot(candidate: Dictionary) -> bool:
 func _clear_snake_gb_web_recovery() -> void:
 	if OS.has_feature("web"):
 		JavaScriptBridge.eval("try { localStorage.removeItem(%s); true; } catch (_error) { false; }" % JSON.stringify(SNAKE_GB_WEB_STORAGE_KEY))
+
+func _read_solitaire_effect_preference() -> void:
+	if OS.has_feature("web"):
+		var reduced: Variant = JavaScriptBridge.eval("window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : 0", true)
+		solitaire_reduced_effects = reduced_effects or int(reduced) == 1
+	else:
+		solitaire_reduced_effects = reduced_effects
+
+func _set_solitaire_reduced_effects(enabled: bool) -> void:
+	solitaire_reduced_effects = enabled
+	if game_id == "solitaire":
+		_sync_solitaire_state()
+		_publish_web_state()
+		queue_redraw()
 
 func _capture(reason: String) -> void:
 	if logger:
@@ -1566,7 +1653,10 @@ func _draw_catalog_fx() -> void:
 		return
 	for effect in catalog_fx:
 		if str(effect.get("game_id", "")) == game_id:
-			catalog_art_director.draw_event_fx(self, effect, elapsed, DISPLAY_FONT, SYMBOL_FONT)
+			if game_id == "solitaire" and bool(effect.get("reduced_effects", false)):
+				continue
+			var event_label_font: Font = UI_FONT if game_id == "solitaire" else DISPLAY_FONT
+			catalog_art_director.draw_event_fx(self, effect, elapsed, event_label_font, SYMBOL_FONT)
 
 func _draw_score_panel() -> void:
 	if game_id == "meowdoku":
@@ -1633,7 +1723,7 @@ func _objective_status() -> String:
 		"meowdoku": return "猫咪 %d / %d" % [int(state.get("placed", 0)), int(state.get("required", 0))]
 		"snake_classic": return "长度 %d · 无尽模式" % int(state.get("score", 4))
 		"snake_io": return "位次 #%d · 体量 %.1f" % [max(1, int(state.get("rank", 1))), float(state.get("mass", 0.0))]
-		"solitaire": return "牌库 %d" % int(state.get("stock", 0))
+		"solitaire": return "牌库 %d · 归位 %d/52" % [state.get("stock", []).size(), int(state.get("foundation_total", 0))]
 		"tripeaks": return "余牌 %d" % int(state.get("stock", 0))
 		"mahjong": return "待配 %d" % (20 - int(state.get("removed", []).size()))
 		"tileclub": return "槽位 %d / 7" % int(state.get("tray", []).size())
@@ -1750,6 +1840,32 @@ func _draw_result_overlay(won: bool) -> void:
 		_draw_center_font(UI_FONT, "得分 %d · 步数 %d" % [int(state.get("score", 0)), int(state.get("moves", 0))], Vector2(270, 504), 16, Color(night_ink, 0.88))
 		_draw_center_font(UI_FONT, "点击右上角“重开”继续挑战", Vector2(270, 548), 13, Color(night_ink, 0.66))
 		return
+	if game_id == "solitaire":
+		var emerald_ink := Color("164538")
+		var brass := Color("c9a34f")
+		draw_rect(Rect2(0, 112, 540, 848), Color("03150f", 0.74))
+		_draw_panel(Rect2(55, 345, 430, 258), Color("020b08", 0.42), Color.TRANSPARENT, 18, 0)
+		_draw_panel(Rect2(48, 338, 444, 258), Color("fff5dd"), brass, 16, 3)
+		draw_line(Vector2(72, 360), Vector2(468, 360), Color("ffffff", 0.82), 2.0, true)
+		for suit in range(4):
+			var card_rect := Rect2(167 + suit * 54, 366 + absf(1.5 - float(suit)) * 3.0, 44, 60)
+			_draw_playing_card(card_rect, 13, GOLD, suit, 0.34)
+		for side in [-1.0, 1.0]:
+			var stem_start := Vector2(270 + side * 90.0, 438)
+			var stem_end := Vector2(270 + side * 160.0, 392)
+			draw_line(stem_start, stem_end, Color(brass, 0.64), 2.5, true)
+			for leaf in range(3):
+				var leaf_t := (float(leaf) + 1.0) / 4.0
+				var leaf_center := stem_start.lerp(stem_end, leaf_t)
+				draw_colored_polygon(PackedVector2Array([
+					leaf_center + Vector2(-5 * side, 0),
+					leaf_center + Vector2(5 * side, -7),
+					leaf_center + Vector2(7 * side, 4),
+				]), Color("78a873", 0.72))
+		_draw_center_font(UI_FONT, "四组归位 · 牌局完成", Vector2(270, 468), 25, emerald_ink)
+		_draw_center_font(UI_FONT, "得分 %d · 步数 %d" % [int(state.get("score", 0)), int(state.get("moves", 0))], Vector2(270, 512), 16, Color(emerald_ink, 0.88))
+		_draw_center_font(UI_FONT, "点击右上角“重开”继续挑战", Vector2(270, 557), 13, Color(emerald_ink, 0.66))
+		return
 	draw_rect(Rect2(0, 112, 540, 848), Color(COAL, 0.72))
 	var color := GREEN if won else RED
 	_draw_panel(Rect2(48, 338, 444, 238), Color("111a2e", 0.985), Color(color, 0.82), 18, 2)
@@ -1864,6 +1980,8 @@ func _card_object_reject_offset(object_index: int) -> Vector2:
 	var effect := _latest_card_effect()
 	if effect.is_empty() or "reject" not in str(effect.get("kind", "")):
 		return Vector2.ZERO
+	if game_id == "solitaire" and bool(effect.get("reduced_effects", false)):
+		return Vector2.ZERO
 	if int(effect.get("card_index", effect.get("column", -1))) != object_index:
 		return Vector2.ZERO
 	var t := _card_event_progress(effect)
@@ -1875,6 +1993,8 @@ func _draw_card_game_object_fx() -> void:
 		return
 	for effect in catalog_fx:
 		if str(effect.get("game_id", "")) != game_id or not effect.has("from") or not effect.has("to"):
+			continue
+		if game_id == "solitaire" and bool(effect.get("reduced_effects", false)):
 			continue
 		var kind := str(effect.get("kind", ""))
 		if "reject" in kind or "select" in kind:
@@ -5465,175 +5585,471 @@ func _draw_snake() -> void:
 # -----------------------------------------------------------------------------
 
 func _init_solitaire() -> void:
-	state["stock"] = 24
-	state["waste"] = 0
-	state["foundations"] = [0, 0, 0, 0]
-	state["tableau"] = [5, 4, 3, 2, 1, 0, 0]
-	state["selected_col"] = -1
-	state["score"] = 0
+	solitaire_model.reset(abs("solitaire_klondike".hash()) + 17, SOLITAIRE_RULES.DRAW_ONE, SOLITAIRE_RULES.UNLIMITED_RECYCLES)
+	solitaire_recovered_from_snapshot = false
+	if not solitaire_restart_requested:
+		var saved := _load_solitaire_web_snapshot()
+		if not saved.is_empty():
+			solitaire_recovered_from_snapshot = solitaire_model.restore(saved)
+			if not solitaire_recovered_from_snapshot:
+				_clear_solitaire_web_snapshot()
+	solitaire_selection.clear()
+	solitaire_focus_zone = "top"
+	solitaire_focus_index = 0
+	solitaire_focus_card_index = -1
+	_sync_solitaire_state()
+
+func _sync_solitaire_state() -> void:
+	state = solitaire_model.snapshot()
+	state["game_id"] = game_id
+	state["recovered"] = solitaire_recovered_from_snapshot
+	state["selection"] = solitaire_selection.duplicate(true)
+	state["selected_col"] = int(solitaire_selection.get("column", -1)) if str(solitaire_selection.get("kind", "")) == "tableau" else -1
+	state["keyboard_zone"] = solitaire_focus_zone
+	state["keyboard_index"] = solitaire_focus_index
+	state["keyboard_card_index"] = solitaire_focus_card_index
+	state["reduced_effects"] = solitaire_reduced_effects
+
+func _restore_solitaire_snapshot(saved: Dictionary) -> bool:
+	if not solitaire_model.restore(saved):
+		return false
+	solitaire_recovered_from_snapshot = true
+	solitaire_selection.clear()
+	solitaire_focus_zone = "top"
+	solitaire_focus_index = 0
+	solitaire_focus_card_index = -1
+	_sync_solitaire_state()
+	queue_redraw()
+	return true
 
 func _solitaire_draw() -> void:
 	if game_id != "solitaire" or state.get("status") != "playing":
 		return
-	if int(state["stock"]) > 0:
-		state["stock"] = int(state["stock"]) - 1
-		state["waste"] = int(state["waste"]) + 1
-		state["moves"] = int(state["moves"]) + 1
-		var rank := 1 + int(state["waste"]) % 13
-		var suit := int(state["waste"]) % 4
-		_flash_feedback("翻开一张牌", AMBER)
-		_start_catalog_event("card_draw", Vector2(168, 304), AMBER, 1, "新牌入场", 0.72, {
-			"from": Vector2(74, 304), "to": Vector2(168, 304),
-			"rank": rank, "suit": suit, "card_size": Vector2(72, 100), "flip": true,
-		})
-		_log_event("solitaire_draw", {"stock":state["stock"], "waste":state["waste"]})
-	else:
-		var recycled := int(state["waste"])
-		state["stock"] = int(state["waste"])
-		state["waste"] = 0
-		_start_catalog_event("card_recycle", Vector2(76, 304), CYAN, 1, "牌库重整", 0.76, {
-			"from": Vector2(168, 304), "to": Vector2(74, 304),
-			"rank": maxi(1, 1 + recycled % 13), "suit": recycled % 4,
-			"card_size": Vector2(72, 100), "back": true,
-		})
+	_solitaire_clear_selection(false)
+	var result: Dictionary = solitaire_model.draw()
+	_sync_solitaire_state()
+	_solitaire_emit_result(result, Vector2(74, 306), Vector2(168, 306))
 
 func _solitaire_auto() -> void:
 	if game_id != "solitaire" or state.get("status") != "playing":
 		return
-	var tableau: Array = state["tableau"]
-	for i in range(tableau.size()):
-		if tableau[i] > 0:
-			var previous_count := int(tableau[i])
-			var moved_rank := 13 - previous_count + 1
-			tableau[i] -= 1
-			var foundations: Array = state["foundations"]
-			var suit := i % 4
-			foundations[suit] = min(13, int(foundations[suit]) + 1)
-			state["score"] = int(state["score"]) + 25
-			state["moves"] = int(state["moves"]) + 1
-			var foundation_total := _solitaire_foundation_total()
-			var won := foundation_total >= 8
-			var milestone := foundation_total % 4 == 0
-			var event_grade := 4 if won else 3 if milestone else 2
-			var event_kind := "solitaire_win" if won else "foundation_place"
-			var event_label := "牌局完成" if won else "四牌归位" if milestone else "归位 · +25"
-			_flash_feedback(event_label, GOLD)
-			_start_catalog_event(event_kind, Vector2(320 + suit * 54, 289), GOLD, event_grade, event_label, 1.18 if won else 0.90, {
-				"from": _solitaire_tableau_top_center(i, previous_count),
-				"to": Vector2(320 + suit * 54, 289),
-				"rank": moved_rank, "suit": suit, "card_size": Vector2(50, 68),
-				"foundation_total": foundation_total,
-				"label_position": Vector2(320 + suit * 54, 356),
-			})
-			break
-	if _solitaire_foundation_total() >= 8:
-		state["status"] = "won"
-		_capture("solitaire_win")
-	_log_event("solitaire_auto_move", {"foundations":state["foundations"]})
+	var source := _solitaire_auto_source_center()
+	var result: Dictionary = solitaire_model.auto_foundation()
+	_solitaire_clear_selection(false)
+	_sync_solitaire_state()
+	var suit := int(result.get("foundation_suit", 0))
+	_solitaire_emit_result(result, source, _solitaire_foundation_rect(suit).get_center())
 
 func _solitaire_tap(pos: Vector2) -> void:
 	if game_id != "solitaire" or state.get("status") != "playing":
 		return
-	var origin := Vector2(34, 330)
-	var col := int((pos.x - origin.x) / 68.0)
-	if col < 0 or col >= 7 or pos.y < origin.y or pos.y > 720:
+	var stock_rect := Rect2(38, 256, 72, 100)
+	var waste_rect := Rect2(132, 256, 72, 100)
+	if stock_rect.has_point(pos):
+		solitaire_focus_zone = "top"
+		solitaire_focus_index = 0
+		_solitaire_draw()
 		return
-	var tableau: Array = state["tableau"]
-	if int(state["selected_col"]) < 0:
-		if tableau[col] > 0:
-			state["selected_col"] = col
-			_flash_feedback("已选中牌列 %d" % (col + 1), CYAN)
-			_start_catalog_event("card_select", _solitaire_tableau_top_center(col, int(tableau[col])), CYAN, 1, "", 0.46, {"column": col})
-		else:
-			_flash_feedback("这里没有可移动的牌", RED)
-			_start_catalog_event("card_reject_empty", Vector2(63 + col * 68, 456), RED, 1, "", 0.54, {"column": col})
+	if waste_rect.has_point(pos):
+		solitaire_focus_zone = "top"
+		solitaire_focus_index = 1
+		_solitaire_activate_waste()
+		return
+	for suit in range(4):
+		if _solitaire_foundation_rect(suit).has_point(pos):
+			solitaire_focus_zone = "top"
+			solitaire_focus_index = suit + 2
+			_solitaire_activate_foundation(suit)
+			return
+	var hit := _solitaire_tableau_hit(pos)
+	if hit.is_empty():
+		return
+	var column := int(hit["column"])
+	var card_index := int(hit["card_index"])
+	solitaire_focus_zone = "tableau"
+	solitaire_focus_index = column
+	solitaire_focus_card_index = card_index
+	_solitaire_activate_tableau(column, card_index)
+
+func _solitaire_activate_waste() -> void:
+	if solitaire_model.waste.is_empty():
+		_solitaire_reject("waste_empty", Vector2(168, 306), -1)
+		return
+	if str(solitaire_selection.get("kind", "")) == "waste":
+		_solitaire_clear_selection()
+		return
+	_solitaire_select({"kind":"waste", "card":int(solitaire_model.waste.back())}, Vector2(168, 306))
+
+func _solitaire_activate_foundation(suit: int) -> void:
+	if solitaire_selection.is_empty():
+		var foundation: Array = solitaire_model.foundations[suit]
+		if foundation.is_empty():
+			_solitaire_reject("foundation_empty", _solitaire_foundation_rect(suit).get_center(), suit)
+			return
+		_solitaire_select({"kind":"foundation", "suit":suit, "card":int(foundation.back())}, _solitaire_foundation_rect(suit).get_center())
+		return
+	if str(solitaire_selection.get("kind", "")) == "foundation" and int(solitaire_selection.get("suit", -1)) == suit:
+		_solitaire_clear_selection()
+		return
+	_solitaire_execute_to_foundation(suit)
+
+func _solitaire_activate_tableau(column: int, card_index: int) -> void:
+	var pile: Array = solitaire_model.tableau[column]
+	if solitaire_selection.is_empty():
+		if card_index < 0 or card_index >= pile.size():
+			_solitaire_reject("tableau_empty", Vector2(63 + column * 68, 450), column)
+			return
+		if not bool(pile[card_index].get("face_up", false)):
+			_solitaire_reject("face_down", _solitaire_card_rect(column, card_index).get_center(), column)
+			return
+		_solitaire_select({
+			"kind":"tableau", "column":column, "card_index":card_index,
+			"card":int(pile[card_index]["card"]),
+		}, _solitaire_card_rect(column, card_index).get_center())
+		return
+	if str(solitaire_selection.get("kind", "")) == "tableau" and int(solitaire_selection.get("column", -1)) == column:
+		if card_index == int(solitaire_selection.get("card_index", -2)):
+			_solitaire_clear_selection()
+		elif card_index >= 0 and card_index < pile.size() and bool(pile[card_index].get("face_up", false)):
+			_solitaire_select({
+				"kind":"tableau", "column":column, "card_index":card_index,
+				"card":int(pile[card_index]["card"]),
+			}, _solitaire_card_rect(column, card_index).get_center())
+		return
+	_solitaire_execute_to_tableau(column)
+
+func _solitaire_execute_to_tableau(column: int) -> void:
+	var kind := str(solitaire_selection.get("kind", ""))
+	var from := _solitaire_selection_center()
+	var result: Dictionary
+	match kind:
+		"tableau":
+			result = solitaire_model.move_tableau_to_tableau(
+				int(solitaire_selection.get("column", -1)),
+				int(solitaire_selection.get("card_index", -1)),
+				column
+			)
+		"waste": result = solitaire_model.move_waste_to_tableau(column)
+		"foundation": result = solitaire_model.move_foundation_to_tableau(int(solitaire_selection.get("suit", -1)), column)
+		_: return
+	if bool(result.get("changed", false)):
+		_solitaire_clear_selection(false)
+	_sync_solitaire_state()
+	var destination: Array = solitaire_model.tableau[column]
+	var to := _solitaire_tableau_top_center(column, destination.size())
+	_solitaire_emit_result(result, from, to, column)
+
+func _solitaire_execute_to_foundation(suit: int) -> void:
+	var kind := str(solitaire_selection.get("kind", ""))
+	var from := _solitaire_selection_center()
+	var result: Dictionary
+	match kind:
+		"tableau": result = solitaire_model.move_tableau_to_foundation(int(solitaire_selection.get("column", -1)), suit)
+		"waste": result = solitaire_model.move_waste_to_foundation(suit)
+		_:
+			_solitaire_reject("wrong_destination", _solitaire_foundation_rect(suit).get_center(), suit)
+			return
+	if bool(result.get("changed", false)):
+		_solitaire_clear_selection(false)
+	_sync_solitaire_state()
+	_solitaire_emit_result(result, from, _solitaire_foundation_rect(suit).get_center(), suit)
+
+func _solitaire_select(selection: Dictionary, position: Vector2) -> void:
+	solitaire_selection = selection.duplicate(true)
+	_sync_solitaire_state()
+	var card := int(selection.get("card", 0))
+	_flash_feedback("已拿起 %s%s" % [_card_rank(solitaire_model.card_rank(card)), ["♠", "♥", "♣", "♦"][solitaire_model.card_suit(card)]], CYAN)
+	_start_catalog_event("card_select", position, CYAN, 1, "", 0.44, {
+		"column":int(selection.get("column", -1)),
+		"card_index":int(selection.get("card_index", -1)),
+		"rank":solitaire_model.card_rank(card), "suit":solitaire_model.card_suit(card),
+	})
+
+func _solitaire_clear_selection(sync_state := true) -> void:
+	solitaire_selection.clear()
+	if sync_state and game_id == "solitaire":
+		_sync_solitaire_state()
+
+func _solitaire_selection_center() -> Vector2:
+	match str(solitaire_selection.get("kind", "")):
+		"waste": return Vector2(168, 306)
+		"foundation": return _solitaire_foundation_rect(int(solitaire_selection.get("suit", 0))).get_center()
+		"tableau": return _solitaire_card_rect(int(solitaire_selection.get("column", 0)), int(solitaire_selection.get("card_index", 0))).get_center()
+	return Vector2(270, 480)
+
+func _solitaire_auto_source_center() -> Vector2:
+	if not solitaire_model.waste.is_empty():
+		var waste_card := int(solitaire_model.waste.back())
+		var waste_suit := solitaire_model.card_suit(waste_card)
+		if solitaire_model.card_rank(waste_card) == solitaire_model.foundations[waste_suit].size() + 1:
+			return Vector2(168, 306)
+	for column in range(7):
+		var pile: Array = solitaire_model.tableau[column]
+		if pile.is_empty():
+			continue
+		var card := int(pile.back()["card"])
+		var suit := solitaire_model.card_suit(card)
+		if solitaire_model.card_rank(card) == solitaire_model.foundations[suit].size() + 1:
+			return _solitaire_card_rect(column, pile.size() - 1).get_center()
+	return Vector2(270, 704)
+
+func _solitaire_emit_result(result: Dictionary, from: Vector2, to: Vector2, object_index := -1) -> void:
+	if not bool(result.get("changed", false)):
+		_solitaire_reject(str(result.get("reason", "invalid_move")), to, object_index)
+		return
+	var kind := str(result.get("kind", ""))
+	var event_kind := "card_move"
+	var label := "牌列衔接"
+	var color := CYAN
+	var grade := 1
+	var duration := 0.72
+	var card := int(result.get("card", -1))
+	if result.get("cards", []) is Array and not result.get("cards", []).is_empty():
+		card = int(result.get("cards", []).back())
+	match kind:
+		"draw":
+			event_kind = "card_draw"
+			label = "翻开 %d 张" % result.get("cards", []).size()
+			color = AMBER
+		"recycle":
+			event_kind = "card_recycle"
+			label = "牌库重整"
+			color = CYAN
+			if not solitaire_model.stock.is_empty():
+				card = int(solitaire_model.stock.back())
+		"foundation", "auto_foundation":
+			event_kind = "foundation_place"
+			var total := int(result.get("foundation_total", solitaire_model.foundation_total()))
+			grade = 3 if total in [13, 26, 39] else 2
+			label = "整组归位" if grade == 3 else "归位 · +10"
+			color = GOLD
+			duration = 0.92 if grade == 3 else 0.82
+		"win":
+			event_kind = "solitaire_win"
+			label = "四组归位 · 牌局完成"
+			color = GOLD
+			grade = 4
+			duration = 1.42
+		"foundation_to_tableau":
+			label = "取回牌桌"
+			color = AMBER
+		_:
+			label = "牌列衔接"
+	var rank := solitaire_model.card_rank(card) if card >= 0 else 1
+	var suit := solitaire_model.card_suit(card) if card >= 0 else 0
+	_flash_feedback(label, color)
+	_start_catalog_event(event_kind, to, color, grade, label, duration, {
+		"from":from, "to":to, "rank":rank, "suit":suit,
+		"card_size":Vector2(58, 80), "flip":kind == "draw", "back":kind == "recycle",
+		"foundation_total":int(result.get("foundation_total", solitaire_model.foundation_total())),
+		"label_position":Vector2(to.x, minf(764.0, to.y + 68.0)),
+	})
+	_log_event("solitaire_%s" % kind, result)
+	if str(solitaire_model.status) == "won":
+		_capture("solitaire_win")
+	_persist_solitaire_progress()
+
+func _solitaire_reject(reason: String, position: Vector2, object_index := -1) -> void:
+	var labels := {
+		"waste_empty":"废牌区还是空的", "tableau_empty":"这里没有牌", "foundation_empty":"归位区还是空的",
+		"face_down":"这张牌还未翻开", "tableau_rule":"需按红黑交替、点数递减衔接",
+		"wrong_suit":"花色不对应", "foundation_sequence":"归位区需从 A 同花顺排",
+		"recycle_limit":"本局不可再回收", "stock_and_waste_empty":"没有可摸的牌",
+		"no_legal_foundation_move":"当前没有可自动归位的牌", "same_column":"已在这一列",
+		"wrong_destination":"不能放到这里", "game_finished":"牌局已经完成",
+	}
+	var label := str(labels.get(reason, "这一步不符合牌桌规则"))
+	_flash_feedback(label, RED)
+	_start_catalog_event("card_reject_%s" % reason, position, RED, 1, "", 0.56, {
+		"column":object_index, "card_index":object_index, "reason":reason,
+	})
+	_log_event("solitaire_reject", {"reason":reason, "object":object_index})
+
+func _solitaire_key_input(keycode: Key) -> bool:
+	if keycode == KEY_M:
+		_solitaire_draw()
+		return true
+	if keycode == KEY_F:
+		_solitaire_auto()
+		return true
+	if keycode in [KEY_ENTER, KEY_SPACE]:
+		_solitaire_keyboard_activate()
+		return true
+	var direction := Vector2i.ZERO
+	if keycode in [KEY_LEFT, KEY_A]:
+		direction = Vector2i.LEFT
+	elif keycode in [KEY_RIGHT, KEY_D]:
+		direction = Vector2i.RIGHT
+	elif keycode in [KEY_UP, KEY_W]:
+		direction = Vector2i.UP
+	elif keycode in [KEY_DOWN, KEY_S]:
+		direction = Vector2i.DOWN
 	else:
-		var from := int(state["selected_col"])
-		if from != col and tableau[from] > 0:
-			var source_count := int(tableau[from])
-			var target_count := int(tableau[col])
-			var moved_rank := 13 - source_count + 1
-			tableau[from] -= 1
-			tableau[col] += 1
-			state["score"] = int(state["score"]) + 10
-			state["moves"] = int(state["moves"]) + 1
-			var target_center := _solitaire_tableau_top_center(col, target_count + 1)
-			_start_catalog_event("card_move", target_center, CYAN, 1, "牌列衔接", 0.72, {
-				"from": _solitaire_tableau_top_center(from, source_count), "to": target_center,
-				"rank": moved_rank, "suit": from % 4, "card_size": Vector2(58, 80),
-			})
-			if _solitaire_foundation_total() >= 8:
-				state["status"] = "won"
-				_capture("solitaire_win")
-			_log_event("solitaire_move", {"from":from, "to":col})
-		state["selected_col"] = -1
+		return false
+	_solitaire_keyboard_move(direction)
+	return true
+
+func _solitaire_keyboard_move(direction: Vector2i) -> void:
+	if solitaire_focus_zone == "top":
+		if direction.x != 0:
+			solitaire_focus_index = posmod(solitaire_focus_index + direction.x, 6)
+		elif direction.y > 0:
+			var top_to_tableau := [0, 1, 3, 4, 5, 6]
+			solitaire_focus_zone = "tableau"
+			solitaire_focus_index = int(top_to_tableau[solitaire_focus_index])
+			solitaire_focus_card_index = _solitaire_focus_top_card(solitaire_focus_index)
+	else:
+		if direction.x != 0:
+			solitaire_focus_index = posmod(solitaire_focus_index + direction.x, 7)
+			solitaire_focus_card_index = _solitaire_focus_top_card(solitaire_focus_index)
+		elif direction.y < 0:
+			var first_face_up := _solitaire_first_face_up(solitaire_focus_index)
+			if solitaire_focus_card_index > first_face_up:
+				solitaire_focus_card_index -= 1
+			else:
+				var tableau_to_top := [0, 1, 1, 2, 3, 4, 5]
+				solitaire_focus_zone = "top"
+				solitaire_focus_index = int(tableau_to_top[solitaire_focus_index])
+				solitaire_focus_card_index = -1
+		elif direction.y > 0:
+			var top_card := _solitaire_focus_top_card(solitaire_focus_index)
+			if solitaire_focus_card_index < top_card:
+				solitaire_focus_card_index += 1
+	_sync_solitaire_state()
+	queue_redraw()
+
+func _solitaire_keyboard_activate() -> void:
+	if solitaire_focus_zone == "top":
+		match solitaire_focus_index:
+			0: _solitaire_draw()
+			1: _solitaire_activate_waste()
+			_: _solitaire_activate_foundation(solitaire_focus_index - 2)
+		return
+	_solitaire_activate_tableau(solitaire_focus_index, solitaire_focus_card_index)
+
+func _solitaire_focus_top_card(column: int) -> int:
+	var pile: Array = solitaire_model.tableau[column]
+	return pile.size() - 1
+
+func _solitaire_first_face_up(column: int) -> int:
+	var pile: Array = solitaire_model.tableau[column]
+	for index in range(pile.size()):
+		if bool(pile[index].get("face_up", false)):
+			return index
+	return -1
+
+func _solitaire_tableau_hit(pos: Vector2) -> Dictionary:
+	if pos.y < 400.0 or pos.y > 786.0:
+		return {}
+	var column := int(floor((pos.x - 31.0) / 68.0))
+	if column < 0 or column >= 7:
+		return {}
+	var lane := Rect2(31 + column * 68, 400, 64, 386)
+	if not lane.has_point(pos):
+		return {}
+	var pile: Array = solitaire_model.tableau[column]
+	for index in range(pile.size() - 1, -1, -1):
+		if _solitaire_card_rect(column, index).has_point(pos):
+			return {"column":column, "card_index":index}
+	return {"column":column, "card_index":-1}
+
+func _solitaire_tableau_spacing(count: int) -> float:
+	if count <= 1:
+		return 38.0
+	return clampf(262.0 / float(count - 1), 14.0, 38.0)
+
+func _solitaire_card_rect(column: int, card_index: int) -> Rect2:
+	var pile: Array = solitaire_model.tableau[column] if column >= 0 and column < solitaire_model.tableau.size() else []
+	var count := maxi(1, pile.size())
+	var spacing := _solitaire_tableau_spacing(count)
+	return Rect2(34 + column * 68, 408 + maxi(0, card_index) * spacing, 58, 80)
+
+func _solitaire_foundation_rect(suit: int) -> Rect2:
+	return Rect2(296 + suit * 54, 256, 48, 66)
 
 func _solitaire_tableau_top_center(column: int, count: int) -> Vector2:
-	var origin := Vector2(34, 408)
-	var row := maxi(0, count - 1)
-	return Vector2(origin.x + float(column) * 68.0 + 29.0, origin.y + float(row) * 42.0 + 40.0)
+	return _solitaire_card_rect(column, maxi(0, count - 1)).get_center()
 
 func _solitaire_foundation_total() -> int:
-	var total := 0
-	for value in state["foundations"]:
-		total += int(value)
-	return total
+	return solitaire_model.foundation_total()
 
 func _draw_solitaire() -> void:
-	_draw_section_heading("翡翠牌桌", "点选牌列，再点目标列", AMBER)
+	_draw_section_heading("翡翠温室牌桌", "点牌拿起 · 点目标落牌", AMBER)
 	_draw_panel(Rect2(24, 225, 492, 568), Color("062d24", 0.56), Color("d5b85d", 0.34), 15, 1)
 	draw_line(Vector2(40, 392), Vector2(500, 392), Color("e1c875", 0.18), 1.0, true)
 	_draw_text("牌库", Vector2(38, 246), 12, Color("f0dda5"))
 	var stock_rect := Rect2(38, 256, 72, 100)
-	if int(state["stock"]) > 0:
+	var stock: Array = state.get("stock", [])
+	var waste: Array = state.get("waste", [])
+	if not stock.is_empty():
 		_draw_card_back(stock_rect, Color("d3aa52"))
 	else:
 		_draw_panel(stock_rect, Color("f8edcc", 0.035), Color("f8edcc", 0.26), 7, 2)
 		_draw_center_font(SYMBOL_FONT, "↻", stock_rect.get_center() + Vector2(0, 5), 22, Color("f2d47d", 0.52))
-	_draw_status_badge(str(state["stock"]), Vector2(42, 362), AMBER, true, 64)
+	_draw_status_badge(str(stock.size()), Vector2(42, 362), AMBER, not stock.is_empty(), 64)
 	_draw_text("废牌", Vector2(132, 246), 12, Color("f0dda5"))
-	if int(state["waste"]) > 0:
-		_draw_playing_card(Rect2(132, 256, 72, 100), 1 + int(state["waste"]) % 13, AMBER, int(state["waste"]) % 4, 0.18)
+	if not waste.is_empty():
+		var waste_card := int(waste.back())
+		var waste_selected := str(solitaire_selection.get("kind", "")) == "waste"
+		_draw_playing_card(Rect2(132, 256 - (7 if waste_selected else 0), 72, 100), solitaire_model.card_rank(waste_card), AMBER, solitaire_model.card_suit(waste_card), 0.54 if waste_selected else 0.18)
 	else:
 		_draw_panel(Rect2(132, 256, 72, 100), Color("f8edcc", 0.035), Color("f8edcc", 0.26), 7, 2)
 		_draw_center_font(SYMBOL_FONT, "♦", Vector2(168, 311), 18, Color("f2d47d", 0.34))
 	_draw_text("归位区", Vector2(292, 246), 12, Color("f0dda5"))
-	var suits := ["♠", "♦", "♣", "♥"]
+	var suits := ["♠", "♥", "♣", "♦"]
+	var foundations: Array = state.get("foundations", [])
 	for i in range(4):
-		var rect := Rect2(296 + i * 54, 256, 48, 66)
-		var foundation_value := int(state["foundations"][i])
+		var rect := _solitaire_foundation_rect(i)
+		var foundation: Array = foundations[i]
+		var foundation_value := foundation.size()
 		var foundation_color := GREEN if foundation_value > 0 else Color("f8edcc", 0.25)
 		_draw_panel(Rect2(rect.position + Vector2(0, 3), rect.size), Color("020a08", 0.24), Color.TRANSPARENT, 7, 0)
-		_draw_panel(rect, Color("0f4738", 0.74), foundation_color, 7, 2)
-		_draw_center_font(SYMBOL_FONT, suits[i], rect.get_center() + Vector2(0, 3), 18, Color("ce3f57") if i % 2 == 1 else Color("e9eee4"))
 		if foundation_value > 0:
-			_draw_center_font(NUMBER_FONT, str(foundation_value), rect.get_center() + Vector2(0, 23), 10, GREEN)
-			draw_arc(rect.get_center(), 28.0, -PI * 0.82, -PI * 0.82 + TAU * clampf(float(foundation_value) / 13.0, 0.0, 1.0), 20, Color("f2cf74", 0.72), 2.0, true)
+			var foundation_card := int(foundation.back())
+			var foundation_selected := str(solitaire_selection.get("kind", "")) == "foundation" and int(solitaire_selection.get("suit", -1)) == i
+			_draw_playing_card(rect.grow(2 if foundation_selected else 0), solitaire_model.card_rank(foundation_card), GOLD, solitaire_model.card_suit(foundation_card), 0.46 if foundation_selected else 0.16)
+		else:
+			_draw_panel(rect, Color("0f4738", 0.74), foundation_color, 7, 2)
+			_draw_center_font(SYMBOL_FONT, suits[i], rect.get_center() + Vector2(0, 3), 18, Color("ce3f57") if i % 2 == 1 else Color("e9eee4"))
+		draw_arc(rect.get_center(), 28.0, -PI * 0.82, -PI * 0.82 + TAU * clampf(float(foundation_value) / 13.0, 0.0, 1.0), 20, Color("f2cf74", 0.72), 2.0, true)
 	var origin := Vector2(34, 408)
-	var selected := int(state["selected_col"])
+	var tableau: Array = state.get("tableau", [])
+	var selected_column := int(solitaire_selection.get("column", -1)) if str(solitaire_selection.get("kind", "")) == "tableau" else -1
+	var selected_index := int(solitaire_selection.get("card_index", -1))
 	for col in range(7):
-		var count := int(state["tableau"][col])
+		var pile: Array = tableau[col]
+		var count := pile.size()
 		var lane := Rect2(origin.x + col * 68 - 3, origin.y - 5, 64, 318)
-		var target_hint := selected >= 0 and selected != col
+		var target_hint := not solitaire_selection.is_empty() and selected_column != col
 		_draw_panel(lane, Color("082b24", 0.20), Color("f0d578", 0.22 if target_hint else 0.10), 9, 1)
 		if target_hint:
 			draw_circle(Vector2(lane.get_center().x, lane.end.y - 13), 3.0, Color("f0d578", 0.62))
 		var column_offset := _card_object_reject_offset(col)
-		var lift := -10.0 if selected == col else 0.0
 		for row in range(max(1, count)):
-			var rect := Rect2(origin.x + col * 68, origin.y + row * 42 + lift, 58, 80)
+			var selected_card := selected_column == col and row >= selected_index and selected_index >= 0
+			var lift := -7.0 if selected_card else 0.0
+			var rect := _solitaire_card_rect(col, row) if count > 0 else Rect2(origin.x + col * 68, origin.y, 58, 80)
+			rect.position.y += lift
 			rect.position += column_offset
-			if row == count - 1 and count > 0:
-				_draw_playing_card(rect, 13 - count + 1, AMBER if selected == col else Color("8dbda3"), col % 4, 0.54 if selected == col else 0.08)
-			else:
-				if count > 0:
-					_draw_card_back(rect, Color("77a78f"))
+			if count > 0:
+				var card_entry: Dictionary = pile[row]
+				if bool(card_entry.get("face_up", false)):
+					var card := int(card_entry["card"])
+					_draw_playing_card(rect, solitaire_model.card_rank(card), AMBER if selected_card else Color("8dbda3"), solitaire_model.card_suit(card), 0.52 if selected_card else 0.08)
 				else:
-					_draw_panel(rect, Color("f7e9c7", 0.025), Color("f7e9c7", 0.18), 7, 1)
-		if selected == col and count > 0:
-			var selected_center := _solitaire_tableau_top_center(col, count) + Vector2(0, lift)
+					_draw_card_back(rect, Color("77a78f"))
+			else:
+				_draw_panel(rect, Color("f7e9c7", 0.025), Color("f7e9c7", 0.18), 7, 1)
+		if selected_column == col and count > 0:
+			var selected_center := _solitaire_card_rect(col, selected_index).get_center() + Vector2(0, -7)
 			draw_arc(selected_center, 41.0, -PI * 0.92, PI * 0.18, 24, Color("f8d978", 0.78), 3.0, true)
-	_draw_center("将 8 张牌送入归位区即可完成", Vector2(270, 778), 13, Color("f1dfb6"))
+	if solitaire_focus_zone == "top":
+		var focus_rect := stock_rect if solitaire_focus_index == 0 else Rect2(132, 256, 72, 100) if solitaire_focus_index == 1 else _solitaire_foundation_rect(solitaire_focus_index - 2)
+		draw_rect(focus_rect.grow(4), Color("fff1a6", 0.82), false, 2.0)
+	elif solitaire_focus_index >= 0 and solitaire_focus_index < 7:
+		var focus_card_rect := _solitaire_card_rect(solitaire_focus_index, solitaire_focus_card_index)
+		draw_rect(focus_card_rect.grow(3), Color("fff1a6", 0.76), false, 2.0)
+	_draw_center("同花 A→K 归位 · 空列仅接 K · M 摸牌 · F 自动", Vector2(270, 778), 12, Color("f1dfb6"))
 
 func _init_tripeaks() -> void:
 	state["cards"] = [2, 5, 8, 3, 6, 9, 12, 4, 7, 10, 13, 1, 5, 8, 11]

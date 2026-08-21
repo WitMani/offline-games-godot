@@ -1,0 +1,41 @@
+{
+  "schema": "offline-games.solitaire.mechanics-gate.v2",
+  "exact_baseline": "3e561fb3c55f3b0b813da2b9ee9468cd4d290bae",
+  "stage0_commit": "101b1bf",
+  "model_commit": "8ace6fa",
+  "mechanics_commit": "c26616e",
+  "contract_scope": "local_clean_room_klondike_decision",
+  "target_version_rule_alignment": "PARTIAL_NOT_ESTABLISHED",
+  "results": {
+    "renderer_free_contract_cases": 13,
+    "renderer_free_contract_result": "PASS",
+    "shell_runtime_cases": 8,
+    "shell_runtime_result": "PASS",
+    "presentation_assertions": 106,
+    "presentation_result": "PASS",
+	"catalog_art_cases": 10,
+	"catalog_art_result": "PASS",
+    "catalog_games": 14,
+    "catalog_result": "PASS",
+    "shared_rule_cases": 6,
+    "shared_rule_result": "PASS",
+    "font_assertions": 65,
+    "font_result": "PASS",
+    "home_routes": 14,
+    "home_result": "PASS"
+  },
+  "commands": [
+    "/home/ubuntu/stage/godot --headless --path . --script res://tools/solitaire_v3_contract_smoke.gd",
+    "/home/ubuntu/stage/godot --headless --path . --script res://tools/solitaire_v3_runtime_smoke.gd",
+    "/home/ubuntu/stage/godot --headless --path . --script res://tools/solitaire_presentation_smoke.gd",
+    "/home/ubuntu/stage/godot --headless --path . --script res://tools/smoke.gd",
+    "/home/ubuntu/stage/godot --headless --path . --script res://tools/rules_smoke.gd",
+    "/home/ubuntu/stage/godot --headless --path . --script res://tools/font_coverage_smoke.gd",
+    "/home/ubuntu/stage/godot --headless --path . --script res://tools/home_buttons_smoke.gd"
+  ],
+  "known_warning_debt": "Some scene-owning headless suites exit 0 after PASS but emit inherited Godot ObjectDB/resource-in-use shutdown warnings.",
+  "gag_gate": "PASS_REUSE_AUDIT_NO_GENERATION",
+  "browser_gate": "PASS_CLEAN_FINGERPRINTED_PCK_607e32e",
+  "production_authorized": false,
+  "surpass_claim": "NOT_CLAIMED"
+}

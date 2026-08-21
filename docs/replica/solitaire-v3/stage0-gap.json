@@ -1,0 +1,42 @@
+{
+  "schema": "offline-games.replica-stage0.v1",
+  "game_id": "solitaire",
+  "research_date": "2026-08-20",
+  "exact_baseline": "3e561fb3c55f3b0b813da2b9ee9468cd4d290bae",
+  "target": {
+    "title": "Offline Games - No Wifi Games / Solitaire",
+    "apple_track_id": "6448104157",
+    "apple_bundle_id": "com.JindoBlu.OfflineGamesIOS",
+    "apple_version": "3.14.1",
+    "android_package": "com.JindoBlu.OfflineGames",
+    "internal_resource_id": null,
+    "package_sha256": null,
+    "evidence_status": "PARTIAL_EVIDENCE"
+  },
+  "claims": {
+    "target_contains_solitaire": "verified",
+    "target_offline_promise": "verified",
+    "target_gameplay_visible": false,
+    "target_rules_frozen": false,
+    "generic_klondike_used_as_target_fact": false,
+    "surpass_claim": "NOT_CLAIMED"
+  },
+  "baseline": {
+    "imported_resources": 94,
+    "solitaire_presentation_assertions": 67,
+    "catalog_games": 14,
+    "shared_rules_cases": 6,
+    "font_assertions": 65,
+    "shutdown_warning_debt": "inherited Godot ObjectDB/resource-in-use warnings",
+    "mechanics_gap": "count-only decorative model without card identity or Klondike legality"
+  },
+  "gates": {
+    "identity": "PARTIAL_EVIDENCE",
+    "baseline_regression": "PASS_BOUNDED",
+    "mechanics": "FAIL",
+    "gag": "CLOSED",
+    "presentation": "BLOCKED",
+    "web_delivery": "NOT_STARTED",
+    "production_authorized": false
+  }
+}
