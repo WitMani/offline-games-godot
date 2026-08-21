@@ -1,0 +1,193 @@
+{
+  "schema": "offline-games/gag-runtime-audit/v3",
+  "game_id": "snake_classic",
+  "target": "com.JindoBlu.OfflineGames 3.14.1 (3204) / 79_SNAKE2",
+  "audited_at": "2026-08-20T22:43:05Z",
+  "decision": "reuse_existing_family_no_generation",
+  "role_gap": false,
+  "service": {
+    "endpoint": "https://desktop-youyuan-wsl.tail17a64.ts.net:11443/mcp",
+    "host": "HOME-WSL",
+    "transport": "streamable HTTP MCP over Tailscale HTTPS",
+    "server_name": "game-assets-generator",
+    "server_version": "1.29.0",
+    "protocol_version": "2024-11-05",
+    "fresh_initialize_succeeded": true,
+    "fresh_system_info": {
+      "gpu_detected": false,
+      "main_service_pytorch": "not installed",
+      "pure_api_available": true,
+      "available_relevant_providers": [
+        "gemini",
+        "fal",
+        "elevenlabs",
+        "removebg",
+        "openrouter"
+      ]
+    }
+  },
+  "fresh_semantic_search": [
+    {
+      "query": "复古军绿色掌机 LCD 单色像素蛇头 双食物诱饵 野外标本记录 蛇形黄铜徽章 透明背景 游戏主体",
+      "kinds": ["image"],
+      "limit": 20,
+      "selected_hits": [
+        {
+          "name": "generated_images__20260820_235159_FAL.ai.png",
+          "role": "head master",
+          "score": 0.44907286275153097
+        },
+        {
+          "name": "generated_images__20260820_235233_FAL.ai.png",
+          "role": "field seal master",
+          "score": 0.4484325194475251
+        }
+      ],
+      "rejected_examples": [
+        {
+          "name": "scrap_circuit.png",
+          "score": 0.4252589876665424,
+          "reason": "adjacent material but wrong gameplay role"
+        },
+        {
+          "name": "enemy_cobra_idle_spritesheet_cropped.png",
+          "score": 0.40327191665079015,
+          "reason": "combat cobra palette, scale, and silhouette do not fit the LCD grid role"
+        }
+      ]
+    },
+    {
+      "query": "single monochrome LCD pixel seed beetle food lure central diamond cutout no badge",
+      "scope": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/snake_games/gag-v2/gb_snake",
+      "kinds": ["image"],
+      "limit": 10,
+      "index_repair": {
+        "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/snake_games/gag-v2/gb_snake/generated_images__20260820_235620_FAL.ai.png",
+        "result": "indexed 1, failed 0"
+      },
+      "selected": {
+        "name": "generated_images__20260820_235620_FAL.ai.png",
+        "score": 0.4563076969105832,
+        "reason": "single readable seed-beetle lure, no plate, text, or extra object"
+      },
+      "rejected": {
+        "name": "generated_images__20260820_235217_FAL.ai.png",
+        "score": 0.44638300314441565,
+        "reason": "baked oval plate and pseudo-writing violate the stable food-token role"
+      }
+    },
+    {
+      "query": "retro handheld LCD snake specimen collect click scanner beep field record register clack short game sound",
+      "kinds": ["audio"],
+      "limit": 20,
+      "global_review": "rejected generic exploration music, warnings, magic, and economy cues because they are long-form or semantically mismatched",
+      "archive_reindex": {
+        "path": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/snake_games/gag-v2/gb_snake",
+        "result": "indexed 7, skipped 4, failed 4",
+        "effect": "the four published PCM masters became searchable; unsupported delivery artifacts remained outside semantic results"
+      },
+      "selected_hits": [
+        {
+          "name": "gb_snake_specimen_collect_02_master.wav",
+          "score": 0.5204226903288102,
+          "role": "frequent forage"
+        },
+        {
+          "name": "gb_snake_field_log_complete_02_master.wav",
+          "score": 0.5436243618928219,
+          "role": "nonterminal field-record acknowledgement"
+        }
+      ]
+    }
+  ],
+  "production_lineage": [
+    {
+      "role": "snake head",
+      "provider": "fal",
+      "model": "fal-ai/flux-pro/v1.1",
+      "source_master": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/snake_games/gag-v2/gb_snake/generated_images__20260820_235159_FAL.ai.png",
+      "source_container": "JPEG payload",
+      "source_dimensions": [1024, 1024],
+      "source_sha256_fresh_download": "7d67f62afe64248c3c807e18b19a6858e54c7e148a3f94f7c6a14d50177accfc",
+      "prompt_record": "One isolated production-ready monochrome LCD pixel glyph: a friendly field-serpent head, strict one-object/no-text/no-UI constraints.",
+      "review": "source points left and has a long neck; deterministic crop and horizontal repair are explicit",
+      "derivation": "Remove.bg API; crop; horizontal flip; nearest-neighbor scale",
+      "runtime_path": "res://assets/art/snakes/gag/gb_snake_head_gag_v2.png",
+      "runtime_sha256": "b31eb852f4844151fc5be6ce85408c079290526292be8feffc9ef7836c57f3d5",
+      "runtime_dimensions": [64, 44],
+      "ordinary_visibility": "every live frame as the authoritative head; also turn/reject/crash response"
+    },
+    {
+      "role": "food lure",
+      "provider": "fal",
+      "model": "fal-ai/flux-pro/v1.1",
+      "source_master": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/snake_games/gag-v2/gb_snake/generated_images__20260820_235620_FAL.ai.png",
+      "source_container": "JPEG payload",
+      "source_dimensions": [1024, 1024],
+      "source_sha256_fresh_download": "809752407e0f67ab68bf4119e834cbde67ecd0f100c02528b85f1f0fde638537",
+      "prompt_record": "One isolated tiny retro LCD food token: a seed pod shaped like a beetle, central diamond cutout, no badge/text/UI.",
+      "review": "clean single-token silhouette selected over the plated first attempt",
+      "derivation": "Remove.bg API; crop; nearest-neighbor scale",
+      "runtime_path": "res://assets/art/snakes/gag/gb_snake_lure_gag_v2.png",
+      "runtime_sha256": "0c2ab2985a5007f23b785d32ec20d8001489bd0c9d5b09f0e9f9d017432a1607",
+      "runtime_dimensions": [48, 64],
+      "ordinary_visibility": "both simultaneous authoritative food objects on every ordinary live frame; forage contraction at the eaten slot"
+    },
+    {
+      "role": "field seal",
+      "provider": "fal",
+      "model": "fal-ai/flux-pro/v1.1",
+      "source_master": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/snake_games/gag-v2/gb_snake/generated_images__20260820_235233_FAL.ai.png",
+      "source_container": "JPEG payload",
+      "source_dimensions": [1024, 1024],
+      "source_sha256_fresh_download": "31d917c33289f6a19e78a5c42490d5b021414dea93ec17b68c177ef0e6e66f49",
+      "prompt_record": "One isolated aged-brass field-herpetology instrument seal with olive enamel and serpent silhouette; no text/UI/logo.",
+      "review": "eight studs differ from the requested four, but identity, material, and small-scale silhouette fit the approved pillar",
+      "derivation": "Remove.bg API; crop; Lanczos scale",
+      "runtime_path": "res://assets/art/snakes/gag/gb_snake_field_seal_gag_v2.png",
+      "runtime_sha256": "8b078efc3ccf496cde71f05bfc55a9b6cf1cc6cafe630a6f53def5fe2a5ec47e",
+      "runtime_dimensions": [192, 192],
+      "ordinary_visibility": "54 by 54 pixels above the LCD on every live frame; semantic pulse for logs and record"
+    },
+    {
+      "role": "forage sound",
+      "provider": "elevenlabs",
+      "mode": "sfx",
+      "asset_id": "gb_snake_specimen_collect",
+      "version": "v1",
+      "delivery_digest": "3d11cfaf2bcbb9d25a27016f86a5dee12b3210e850e2408cee20ab182d841d23",
+      "prompt": "A very short tactile retro handheld specimen-collect sound: one dry LCD pixel click, a tiny seed capsule pluck, then two restrained low-bit field-scanner beeps with a warm miniature speaker character. Fast clean attack and decay, satisfying but subtle enough for frequent Snake food pickups, no voice, no speech, no music, no ambience, no long reverb.",
+      "selected_master": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/snake_games/gag-v2/gb_snake/sfx/sfx/gb_snake_specimen_collect/v1/gb_snake_specimen_collect_02_master.wav",
+      "selected_master_sha256_fresh_download": "691d404c980ca3c5cf89c2d743507e2351b1e9a78e667841566a0faa71095c59",
+      "selected_master_format": "PCM S16LE, 48000 Hz, mono, 0.438708 seconds",
+      "published_source_ogg_sha256": "79a11aa489325361da0e45b8c101de41c97b84d7b28cbca0446108b56bc9a7ac",
+      "runtime_path": "res://assets/audio/snake/gag/gb_snake_specimen_collect_gag_v2.ogg",
+      "runtime_sha256": "35d0d69c32474ab5ba1ca65d2b6a458c0b3a5604adbf8ecda480aaf6c967b861",
+      "runtime_binding": "grade-2 forage and grade-3 decade log"
+    },
+    {
+      "role": "field-record sound",
+      "provider": "elevenlabs",
+      "mode": "sfx",
+      "asset_id": "gb_snake_field_log_complete",
+      "version": "v1",
+      "delivery_digest": "73f07b1a3a0a7ac250febce24c7cf4eaf363435443c7ba8f55fe916a2f8d8eb6",
+      "prompt": "A compact triumphant retro handheld field-recorder completion cue: a firm mechanical register clack, a quick rising three-step low-bit telemetry chirp, a warm aged-brass seal stamp, then one short glassy phosphor ping. Premium tactile pocket instrument, clear terminal reward and clean decay, no voice, no speech, no melody bed, no ambience, no long reverb.",
+      "semantic_correction": "the original prompt called the cue terminal; v3 routes the same perceptual reward only to a nonterminal length-120 field record",
+      "selected_master": "/home/youyuan/GAME_AI/GameAssetsGenerator/AI_generated_assets/offline_games/snake_games/gag-v2/gb_snake/sfx/sfx/gb_snake_field_log_complete/v1/gb_snake_field_log_complete_02_master.wav",
+      "selected_master_sha256_fresh_download": "0059fb1ce1ab8f2385a399da2f0cc27468691c34c5e69948b71b0f6724ce3737",
+      "selected_master_format": "PCM S16LE, 48000 Hz, mono, 0.913708 seconds",
+      "published_source_ogg_sha256": "4a9cf16c31f60ccdb1e17bf3f94a2b832bfc1d99cbba734bc308d841a5085bc3",
+      "runtime_path": "res://assets/audio/snake/gag/gb_snake_field_log_complete_gag_v2.ogg",
+      "runtime_sha256": "49e2f9b89d473b69adc31d06d6234268521332fb3a5718780ca473824b609aff",
+      "runtime_binding": "grade-4 nonterminal field-record acknowledgement"
+    }
+  ],
+  "runtime_decision": {
+    "reason_no_generation": "The family already fills every high-value role: stable head, both high-frequency foods, persistent hardware identity, frequent forage audio, and a clearly routed hero record cue. New generation would add stylistic variance without solving a role gap.",
+    "source_masters_in_repository": 0,
+    "rejected_candidates_in_repository": 0,
+    "runtime_derivatives_in_repository": 5,
+    "original_reference_assets_shipped": 0
+  }
+}

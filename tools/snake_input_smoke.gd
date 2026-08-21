@@ -2,7 +2,7 @@ extends SceneTree
 
 const GB_ID := "snake_classic"
 const ARENA_ID := "snake_io"
-const EXPECTED_CASES := 8
+const EXPECTED_CASES := 11
 
 var game: Control
 var failures: Array[String] = []
@@ -25,6 +25,9 @@ func _run() -> void:
 
 	_test_gb_hardware_dpad_routes_a_turn()
 	_test_gb_keyboard_routes_a_turn()
+	_test_gb_touch_swipe_routes_before_release()
+	_test_gb_held_finger_does_not_prebuffer_future_corner()
+	_test_gb_held_finger_can_turn_again_after_tick()
 	_test_arena_moves_continuously_through_shell_update()
 	_test_arena_screen_pointer_steers_and_releases()
 	_test_arena_keyboard_sets_a_cardinal_aim()
@@ -111,6 +114,63 @@ func _test_gb_keyboard_routes_a_turn() -> void:
 		and int(applied.get("moves", -1)) == 1
 	)
 	_record("gb_keyboard_turn", passed, JSON.stringify({"queued":queued, "applied":applied}))
+
+
+func _test_gb_touch_swipe_routes_before_release() -> void:
+	_open_mode(GB_ID)
+	game._unhandled_input(_touch_event(Vector2(300, 500), true))
+	game._unhandled_input(_drag_event(Vector2(300, 454), Vector2(0, -46)))
+	var before_release: Dictionary = game.state.duplicate(true)
+	var active_before_release: bool = bool(game.snake_drag_active)
+	game._unhandled_input(_touch_event(Vector2(300, 454), false))
+	game._snake_gb_step()
+	var applied: Dictionary = game.state.duplicate(true)
+	var passed: bool = (
+		active_before_release
+		and before_release.get("turn_queue", []) == [[0, -1]]
+		and not bool(game.snake_drag_active)
+		and applied.get("direction", []) == [0, -1]
+		and applied.get("segments", [])[0] == [7, 10]
+	)
+	_record("gb_touch_before_release", passed, JSON.stringify({"before_release":before_release, "applied":applied}))
+
+
+func _test_gb_held_finger_does_not_prebuffer_future_corner() -> void:
+	_open_mode(GB_ID)
+	game._unhandled_input(_touch_event(Vector2(300, 500), true))
+	game._unhandled_input(_drag_event(Vector2(300, 454), Vector2(0, -46)))
+	var first_queue: Array = game.state.get("turn_queue", []).duplicate(true)
+	game.elapsed += 0.10
+	game._unhandled_input(_drag_event(Vector2(249, 454), Vector2(-51, 0)))
+	var after_future_corner: Dictionary = game.state.duplicate(true)
+	game._unhandled_input(_touch_event(Vector2(249, 454), false))
+	var passed: bool = (
+		first_queue == [[0, -1]]
+		and after_future_corner.get("turn_queue", []) == [[0, -1]]
+		and after_future_corner.get("direction", []) == [1, 0]
+	)
+	_record("gb_no_future_corner_prebuffer", passed, JSON.stringify(after_future_corner))
+
+
+func _test_gb_held_finger_can_turn_again_after_tick() -> void:
+	_open_mode(GB_ID)
+	game._unhandled_input(_touch_event(Vector2(300, 500), true))
+	game._unhandled_input(_drag_event(Vector2(300, 454), Vector2(0, -46)))
+	game._snake_gb_step()
+	var after_first: Dictionary = game.state.duplicate(true)
+	game.elapsed += 0.10
+	game._unhandled_input(_drag_event(Vector2(249, 454), Vector2(-51, 0)))
+	var second_queue: Dictionary = game.state.duplicate(true)
+	game._unhandled_input(_touch_event(Vector2(249, 454), false))
+	game._snake_gb_step()
+	var after_second: Dictionary = game.state.duplicate(true)
+	var passed: bool = (
+		after_first.get("direction", []) == [0, -1]
+		and second_queue.get("turn_queue", []) == [[-1, 0]]
+		and after_second.get("direction", []) == [-1, 0]
+		and after_second.get("segments", [])[0] == [6, 10]
+	)
+	_record("gb_held_finger_second_turn", passed, JSON.stringify({"after_first":after_first, "second_queue":second_queue, "after_second":after_second}))
 
 
 func _test_arena_moves_continuously_through_shell_update() -> void:
@@ -252,6 +312,22 @@ func _key_event(keycode: Key, pressed: bool) -> InputEventKey:
 	event.keycode = keycode
 	event.pressed = pressed
 	event.echo = false
+	return event
+
+
+func _touch_event(position: Vector2, pressed: bool) -> InputEventScreenTouch:
+	var event := InputEventScreenTouch.new()
+	event.index = 0
+	event.position = position
+	event.pressed = pressed
+	return event
+
+
+func _drag_event(position: Vector2, relative: Vector2) -> InputEventScreenDrag:
+	var event := InputEventScreenDrag.new()
+	event.index = 0
+	event.position = position
+	event.relative = relative
 	return event
 
 

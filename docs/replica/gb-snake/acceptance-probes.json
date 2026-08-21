@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "model": "SnakeGbModel",
+  "renderer_free": true,
+  "required_probes": [
+    {"id": "entry", "asserts": ["15x23 board", "length 4", "heading right", "playing", "two legal unique foods"]},
+    {"id": "auto_tick", "asserts": ["head advances without input", "tail advances", "score remains materialized length"]},
+    {"id": "turn_queue", "asserts": ["one perpendicular turn accepted", "future corner not buffered", "queued turn applied on next tick"]},
+    {"id": "reverse_reject", "asserts": ["opposite current direction rejected", "invalid and duplicate intents rejected"]},
+    {"id": "food_placement", "asserts": ["two food slots", "not on snake", "not overlapping", "deterministic seed", "legal replacement"]},
+    {"id": "eat", "asserts": ["either food slot is edible", "only eaten slot is replaced", "ate and spawn events identify slot"]},
+    {"id": "growth", "asserts": ["one eat queues two segments", "visible length advances 4 to 5 to 6", "growth is not terminal"]},
+    {"id": "wall_collision", "asserts": ["loss reason wall", "terminal event emitted once"]},
+    {"id": "self_collision", "asserts": ["body impact loses", "moving into a vacating tail remains legal when not growing"]},
+    {"id": "terminal_freeze", "asserts": ["ticks and turns after loss cannot mutate run state"]},
+    {"id": "restart", "asserts": ["same seed restores deterministic entry", "new seed yields deterministic alternate legal food"]},
+    {"id": "recovery", "asserts": ["valid snapshot round-trips state and RNG", "malformed or illegal snapshot is rejected atomically"]},
+    {"id": "progression", "asserts": ["length 120 is nonterminal", "milestone is semantic presentation data only"]},
+    {"id": "input_parity", "asserts": ["keyboard and D-pad route same direction intent", "touch swipe routes same direction intent", "held-finger future corner is not buffered"]}
+  ],
+  "runtime_followups": [
+    "actual D-pad click",
+    "actual keyboard turn",
+    "actual touch swipe before release",
+    "restart control",
+    "reload restoration",
+    "reduced-effects and haptic suppression"
+  ]
+}

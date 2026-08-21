@@ -1,6 +1,6 @@
 extends SceneTree
 
-const OUTPUT := "res://docs/audit/gb-snake-v2/candidate/performance.json"
+const OUTPUT := "res://docs/audit/gb-snake-v3/candidate/performance.json"
 
 var game: Control
 
@@ -27,6 +27,12 @@ func _run() -> void:
 	game.snake_gb_object_fx.clear()
 	game.snake_fx_kind = ""
 	var busy := await _collect(180, true)
+	game.reduced_effects = true
+	game.snake_pixels.clear()
+	game.snake_float_labels.clear()
+	game.snake_gb_object_fx.clear()
+	game.snake_fx_kind = ""
+	var reduced_busy := await _collect(120, true)
 	var report := {
 		"game_id":"snake_classic",
 		"runtime":"Godot %s / Xvfb llvmpipe" % Engine.get_version_info().get("string", "4.6"),
@@ -34,8 +40,10 @@ func _run() -> void:
 		"viewport":[int(game.size.x), int(game.size.y)],
 		"stable":stable,
 		"busy":busy,
-		"stable_case":"119 authoritative body cells plus ordinary-visible GAG head, lure and external field seal",
-		"busy_case":"grade-4 completion sweep, pulsing GAG seal, 22 capped phosphor pixels and the same 119-cell board retriggered every 60 frames",
+		"reduced_busy":reduced_busy,
+		"stable_case":"119 authoritative body cells plus ordinary-visible GAG head, two food lures, and external field seal",
+		"busy_case":"grade-4 nonterminal field-record sweep, pulsing GAG seal, 22 capped phosphor pixels and the same 119-cell board retriggered every 60 frames",
+		"reduced_busy_case":"same semantic field record with zero pixels, zero shake and short bounded envelope",
 		"note":"Software-renderer regression trace; not a physical-device FPS claim.",
 	}
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUTPUT.get_base_dir()))
@@ -43,6 +51,13 @@ func _run() -> void:
 	file.store_string(JSON.stringify(report, "  ") + "\n")
 	file.close()
 	print("GB_SNAKE_PERFORMANCE=%s" % ProjectSettings.globalize_path(OUTPUT))
+	for player in game.sfx_players:
+		if is_instance_valid(player):
+			player.stop()
+			player.stream = null
+	game.free()
+	await process_frame
+	await process_frame
 	quit()
 
 
@@ -63,7 +78,7 @@ func _pose_near_target_body() -> void:
 	game.snake_gb_model.segments = segments
 	game.snake_gb_model.direction = Vector2i.RIGHT
 	game.snake_gb_model.food = Vector2i(14, 22)
-	game.snake_gb_model.foods.assign([game.snake_gb_model.food])
+	game.snake_gb_model.foods.assign([game.snake_gb_model.food, Vector2i(13, 22)])
 	game.snake_gb_model.score = 119
 	game.snake_gb_model.pending_growth = 0
 	game.snake_gb_model.phase = game.snake_gb_model.RUNNING
@@ -102,11 +117,12 @@ func _collect(frame_count: int, busy: bool) -> Dictionary:
 
 
 func _emit_busy_completion() -> void:
-	game.snake_fx_kind = "win"
+	game.snake_fx_kind = "complete"
 	game.snake_fx_started = game.elapsed
 	game.snake_fx_cell = game.snake_gb_model.segments[0]
 	game.snake_gb_object_fx = {
 		"kind":"complete", "grade":4, "started":game.elapsed,
-		"duration":1.56, "cell":game.snake_fx_cell, "score":120,
+		"duration":game._snake_gb_effect_duration(1.56, 0.26),
+		"cell":game.snake_fx_cell, "score":120, "nonterminal":true,
 	}
-	game._snake_gb_emit_pixels(game.snake_fx_cell, 22, "win")
+	game._snake_gb_emit_pixels(game.snake_fx_cell, 22, "complete")

@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "stage": "stage_0_contract_freeze",
+  "target": "com.JindoBlu.OfflineGames 3.14.1 (3204) / 79_SNAKE2 / pathID 40489",
+  "production_authorized": true,
+  "gag_authorized": true,
+  "blocking_mismatches_at_baseline": [
+    {
+      "area": "food_population",
+      "baseline": "one food",
+      "target": "two simultaneous foods"
+    },
+    {
+      "area": "growth",
+      "baseline": "one queued segment per eat",
+      "target": "two queued segments per eat"
+    },
+    {
+      "area": "terminal_progression",
+      "baseline": "terminal win at length 120",
+      "target": "endless; wall and self collision are terminal"
+    },
+    {
+      "area": "touch_input",
+      "baseline": "GB-specific probe covers keyboard and D-pad only",
+      "target": "full-play-surface held-finger swipe behavior"
+    },
+    {
+      "area": "recovery",
+      "baseline": "no renderer-free state restoration contract",
+      "target": "local robustness decision requires validated, deterministic recovery"
+    }
+  ],
+  "superseded_local_claims": [
+    "docs/art-direction/gb-snake-v2.md length-120 terminal contract",
+    "docs/audit/gb-snake-v2/gates.json one-food and +1-growth gates",
+    "docs/audit/gb-snake-v2/review.md assertion that those rules were frozen"
+  ],
+  "gate_to_open_mechanics": [
+    "renderer-free probes cover entry, automatic tick, turn semantics, food legality, eat, two-step growth, collision, terminal freeze, restart, recovery, endless progression, and input intent",
+    "GB integration no longer exposes a terminal length target",
+    "runtime draws and routes both food objects"
+  ],
+  "gate_to_open_gag": [
+    "all mechanics gates pass",
+    "HOME-WSL MCP health is freshly verified",
+    "existing GAG masters and runtime derivatives have matching provenance and hashes"
+  ],
+  "closure": {
+    "mechanics_commit": "c3e452e",
+    "runtime_commit": "868c435",
+    "presentation_commit": "8a23180",
+    "browser_tool_commit": "be9bd69",
+    "renderer_free_model": "16/16 PASS",
+    "integration": "7/7 PASS",
+    "input": "11/11 PASS",
+    "gag": "fresh HOME-WSL pure-API initialization, semantic searches and source/runtime SHA verification PASS; role_gap=false; no v3 generation",
+    "clean_web": "fingerprinted index.84d7135c7597.pck plus Chrome D-pad, keyboard, touch-before-release, restart, active-run reload, reduced-motion and transfer gates PASS",
+    "blocking_mismatches_remaining": []
+  },
+  "claim_boundary": [
+    "Exact first-food coordinates remain unknown and are not claimed.",
+    "Keyboard, D-pad, local persistence and field-record presentation are local decisions, not recovered original behavior.",
+    "Matched original visual parity and visual superiority remain NOT_CLAIMED."
+  ]
+}

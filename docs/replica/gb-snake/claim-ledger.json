@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "target": {
+    "package": "com.JindoBlu.OfflineGames",
+    "version_name": "3.14.1",
+    "version_code": 3204,
+    "resource_key": "79_snake2",
+    "serialized_object": "79_SNAKE2",
+    "path_id": 40489
+  },
+  "claims": [
+    {
+      "id": "target-identity",
+      "kind": "collection_fact",
+      "confidence": "high",
+      "claim": "The fidelity target is 79_SNAKE2, not the distinct 136_SNAKES arena game.",
+      "evidence": ["xapk-manifest", "resource-manager", "catalog-metadata"]
+    },
+    {
+      "id": "medium-grid",
+      "kind": "collection_fact",
+      "confidence": "high",
+      "claim": "Medium mode uses a 15 by 23 board, starts at length 4 facing right, and ticks at 7.5 moves per second.",
+      "evidence": ["serialized-prefab", "forensic-notebook"]
+    },
+    {
+      "id": "two-foods",
+      "kind": "collection_fact",
+      "confidence": "high",
+      "claim": "Exactly two food objects are active in medium mode.",
+      "evidence": ["serialized-prefab", "forensic-notebook"]
+    },
+    {
+      "id": "growth-two",
+      "kind": "collection_fact",
+      "confidence": "high",
+      "claim": "One food queues two growth segments, materialized over later ticks.",
+      "evidence": ["il2cpp-metadata", "forensic-notebook"]
+    },
+    {
+      "id": "endless-terminal",
+      "kind": "collection_fact",
+      "confidence": "high",
+      "claim": "79_SNAKE2 is endless and terminates on wall or self collision; length 120 is not a win condition.",
+      "evidence": ["il2cpp-metadata", "forensic-notebook"]
+    },
+    {
+      "id": "swipe-contract",
+      "kind": "collection_fact",
+      "confidence": "high",
+      "claim": "Full-surface swipe input can resolve before release, has a 40 px base threshold and 0.3 s time threshold, and does not buffer a second future corner.",
+      "evidence": ["serialized-prefab", "il2cpp-metadata", "forensic-notebook"]
+    },
+    {
+      "id": "first-food-layout",
+      "kind": "unknown",
+      "confidence": "low",
+      "claim": "The exact original random seed and initial food coordinates are not established.",
+      "consequence": "Use a deterministic, legal local sequence and do not claim coordinate parity."
+    },
+    {
+      "id": "desktop-controls",
+      "kind": "decision",
+      "confidence": "high",
+      "claim": "Keyboard and D-pad controls are accessibility additions beside the matched touch gesture path."
+    },
+    {
+      "id": "reload-recovery",
+      "kind": "decision",
+      "confidence": "high",
+      "claim": "Validated local snapshots provide Web reload recovery; they do not represent a recovered original save format."
+    },
+    {
+      "id": "visual-metaphor",
+      "kind": "decision",
+      "confidence": "high",
+      "claim": "LCD field-recorder styling and semantic telemetry are deliberate presentation strengthening."
+    },
+    {
+      "id": "record-120",
+      "kind": "decision",
+      "confidence": "high",
+      "claim": "Length 120 may trigger a nonterminal field-record presentation, but the run must continue."
+    }
+  ],
+  "claim_boundary": {
+    "mechanics_alignment": "PASS for the evidence-backed medium-mode contract; renderer-free model 16/16 and shell integration 7/7",
+    "input_alignment": "PASS for source-backed touch semantics; renderer-free/input probes 11/11 and real browser swipe-before-release; keyboard and D-pad remain explicit local additions",
+    "visual_alignment": "not_claimed",
+    "visual_superiority": "not_claimed",
+    "gag_gate": "PASS after mechanics; existing family freshly searched and verified through HOME-WSL MCP pure API; no role gap and no new generation",
+    "clean_web": "PASS for fresh archive be9bd691 / index.84d7135c7597.pck; no deployment was run"
+  }
+}

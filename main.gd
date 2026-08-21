@@ -9,6 +9,8 @@ const MEOWDOKU_WEB_CHECKPOINT_KEY := "offline-games.meowdoku.v3.checkpoint"
 const HEADER_H := 104.0
 const BOARD_TOP := 164.0
 const SNAKE_STEP_INTERVAL := 0.36
+const SNAKE_GB_STEP_INTERVAL := 1.0 / 7.5
+const SNAKE_GB_WEB_STORAGE_KEY := "offline-games:snake-gb:v3"
 const BG := Color("0b1021")
 const SURFACE := Color("151d38")
 const SURFACE_2 := Color("1d2747")
@@ -123,7 +125,7 @@ var catalog: Array = [
 	{"id":"watermelon", "title":"2048 Balls", "subtitle":"合成大西瓜", "group":"数字", "accent":Color("ff6b8a"), "desc":"落下水果，让相同水果合体"},
 	{"id":"meowdoku", "title":"Meowdoku", "subtitle":"猫咪领地", "group":"逻辑", "accent":Color("f39ac7"), "desc":"每行、每列、每个色区各找一只猫"},
 	{"id":"sudoku", "title":"Sudoku", "subtitle":"传统数独", "group":"数独", "accent":Color("a78bfa"), "desc":"经典逻辑推理，支持错误提示"},
-	{"id":"snake_classic", "title":"GB Snake", "subtitle":"掌机贪食蛇", "group":"街机", "accent":Color("a8b883"), "desc":"实体方向键操控，成长到长度 120"},
+	{"id":"snake_classic", "title":"GB Snake", "subtitle":"掌机贪食蛇", "group":"街机", "accent":Color("a8b883"), "desc":"滑动或方向键转向，双食物无尽生长"},
 	{"id":"snake_io", "title":"Snakes", "subtitle":"蛇群竞技", "group":"街机", "accent":Color("06ddea"), "desc":"自由转向、冲刺截击，争夺竞技场第一名"},
 	{"id":"solitaire", "title":"Solitaire", "subtitle":"经典接龙", "group":"纸牌", "accent":Color("ffcf70"), "desc":"翻牌、移动牌列，逐步清空桌面"},
 	{"id":"tripeaks", "title":"TriPeaks", "subtitle":"三峰纸牌", "group":"纸牌", "accent":Color("e89dff"), "desc":"按相邻点数消牌，清掉三座牌峰"},
@@ -152,6 +154,9 @@ var tick := 0
 var elapsed := 0.0
 var web_publish_next_at := -1.0
 var snapshot_save_next_at := -1.0
+var reduced_effects := false
+var haptics_enabled := true
+var haptic_requests_sent := 0
 var snake_clock := 0.0
 var selected_cell := Vector2i(-1, -1)
 var pointer_down := Vector2(-1, -1)
@@ -198,7 +203,6 @@ var catalog_art_director = CATALOG_ART_DIRECTION.new()
 var watermelon_presenter = WATERMELON_PRESENTATION.new()
 var logic_game_presenter = LOGIC_GAME_PRESENTATION.new()
 var meowdoku_presenter = MEOWDOKU_PRESENTATION.new()
-var reduced_effects := false
 var sudoku_restart_requested := false
 var sudoku_reduced_effects := false
 var mahjong_object_fx: Dictionary = {}
@@ -302,9 +306,7 @@ func _ready() -> void:
 	# the node enters the tree.
 	if merge2048_save_path == MERGE2048_SAVE_PATH and _merge2048_tool_runtime():
 		merge2048_persistence_enabled = false
-	_detect_reduced_effects()
-	reduced_effects_enabled = reduced_effects
-	sudoku_reduced_effects = reduced_effects
+	_setup_accessibility_preferences()
 	var cjk_font := UI_FONT as FontFile
 	if cjk_font:
 		cjk_font.fallbacks = [LATIN_FONT, SYMBOL_FONT]
@@ -340,7 +342,9 @@ func _detect_reduced_effects() -> void:
 
 func _set_reduced_effects(value: bool) -> void:
 	reduced_effects = value
+	reduced_effects_enabled = value
 	sudoku_reduced_effects = value
+	haptics_enabled = not value
 	if reduced_effects:
 		catalog_fx.clear()
 	queue_redraw()
@@ -394,19 +398,18 @@ func _play_sfx(stream: AudioStream, volume_db := -7.0, pitch := 1.0) -> void:
 	player.play()
 
 func _haptic(duration_ms: int) -> void:
-	if reduced_effects or _merge2048_effects_reduced():
+	if reduced_effects or _merge2048_effects_reduced() or not haptics_enabled:
 		return
+	haptic_requests_sent += 1
 	if OS.has_feature("web"):
 		JavaScriptBridge.eval("if (navigator.vibrate) navigator.vibrate(%d);" % duration_ms)
 	else:
 		Input.vibrate_handheld(duration_ms)
 
 func _haptic_pattern(pattern: Array[int]) -> void:
-	if _merge2048_effects_reduced() or pattern.is_empty():
+	if pattern.is_empty() or reduced_effects or _merge2048_effects_reduced() or not haptics_enabled:
 		return
-	if reduced_effects:
-		_haptic(4)
-		return
+	haptic_requests_sent += 1
 	if OS.has_feature("web"):
 		JavaScriptBridge.eval("if (navigator.vibrate) navigator.vibrate(%s);" % JSON.stringify(pattern))
 	else:
@@ -414,6 +417,12 @@ func _haptic_pattern(pattern: Array[int]) -> void:
 		for interval in pattern:
 			total_ms += interval
 		Input.vibrate_handheld(mini(total_ms, 180))
+
+func _setup_accessibility_preferences() -> void:
+	_detect_reduced_effects()
+	reduced_effects_enabled = reduced_effects
+	sudoku_reduced_effects = reduced_effects
+	haptics_enabled = not reduced_effects
 
 func _impact(position: Vector2, color: Color, strength := 1.0) -> void:
 	impact_position = position
@@ -718,6 +727,8 @@ func _gui_input(event: InputEvent) -> void:
 				meowdoku_double_action_consumed = true
 			elif screen == "game" and game_id == "merge2248" and _merge2248_begin_at(event.position):
 				merge2248_drag_active = true
+			elif screen == "game" and game_id == "snake_classic":
+				_snake_begin_drag(event.position)
 			elif screen == "game" and game_id == "snake_io":
 				_snakes_arena_begin_pointer(event.position)
 			elif screen == "game" and game_id == "watermelon" and _watermelon_board_rect().has_point(event.position):
@@ -730,6 +741,8 @@ func _gui_input(event: InputEvent) -> void:
 				_merge2248_extend_at(event.position)
 				_merge2248_release()
 				merge2248_drag_active = false
+			elif game_id == "snake_classic" and snake_drag_active:
+				_snake_end_drag(event.position)
 			elif game_id == "snake_io":
 				_snakes_arena_end_pointer(event.position)
 			elif game_id == "watermelon" and _watermelon_board_rect().has_point(pointer_down):
@@ -745,6 +758,8 @@ func _gui_input(event: InputEvent) -> void:
 	elif event is InputEventMouseMotion:
 		if merge2248_drag_active and game_id == "merge2248":
 			_merge2248_extend_at(event.position)
+		elif snake_drag_active and game_id == "snake_classic":
+			_snake_drag_to(event.position)
 		elif arena_pointer_active and game_id == "snake_io":
 			_snakes_arena_aim_at_screen(event.position)
 		elif game_id == "watermelon" and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and _watermelon_board_rect().has_point(pointer_down):
@@ -758,6 +773,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			meowdoku_double_action_consumed = true
 		elif screen == "game" and game_id == "merge2248" and _merge2248_begin_at(event.position):
 			merge2248_drag_active = true
+		elif screen == "game" and game_id == "snake_classic":
+			_snake_begin_drag(event.position)
 		elif screen == "game" and game_id == "snake_io":
 			_snakes_arena_begin_pointer(event.position)
 		elif screen == "game" and game_id == "watermelon" and _watermelon_board_rect().has_point(event.position):
@@ -769,6 +786,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_merge2248_extend_at(event.position)
 			_merge2248_release()
 			merge2248_drag_active = false
+		elif game_id == "snake_classic" and snake_drag_active:
+			_snake_end_drag(event.position)
 		elif game_id == "snake_io":
 			_snakes_arena_end_pointer(event.position)
 		elif game_id == "watermelon" and _watermelon_board_rect().has_point(pointer_down):
@@ -786,6 +805,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventScreenDrag:
 		if game_id == "merge2248" and merge2248_drag_active:
 			_merge2248_extend_at(event.position)
+		elif game_id == "snake_classic" and snake_drag_active:
+			_snake_drag_to(event.position)
 		elif game_id == "snake_io":
 			_snakes_arena_aim_at_screen(event.position)
 		elif game_id == "watermelon" and _watermelon_board_rect().has_point(pointer_down):
@@ -897,6 +918,8 @@ func _reset_current() -> void:
 	if game_id == "sudoku":
 		sudoku_restart_requested = true
 		_clear_sudoku_web_snapshot()
+	if game_id == "snake_classic":
+		_clear_snake_gb_web_recovery()
 	_start_game_state(true)
 	sudoku_restart_requested = false
 	if game_id == "merge2048":
@@ -1200,6 +1223,9 @@ func _save_snapshot(snapshot: Dictionary) -> void:
 	if OS.has_feature("web") and str(snapshot.get("game_id", "")) == "sudoku":
 		var payload := JSON.stringify(snapshot)
 		JavaScriptBridge.eval("window.localStorage.setItem('offline-games-sudoku-v3', %s);" % JSON.stringify(payload))
+	if OS.has_feature("web") and str(snapshot.get("game_id", "")) == "snake_classic":
+		var encoded := JSON.stringify(snapshot)
+		JavaScriptBridge.eval("try { localStorage.setItem(%s, %s); true; } catch (_error) { false; }" % [JSON.stringify(SNAKE_GB_WEB_STORAGE_KEY), JSON.stringify(encoded)])
 
 func _load_sudoku_web_snapshot() -> Dictionary:
 	if not OS.has_feature("web"):
@@ -1224,6 +1250,27 @@ func _persist_sudoku_progress() -> void:
 	snapshot["screen"] = screen
 	snapshot["tick"] = tick
 	_save_snapshot(snapshot)
+
+func _load_snake_gb_web_recovery() -> Dictionary:
+	if not OS.has_feature("web"):
+		return {}
+	var raw: Variant = JavaScriptBridge.eval("(function(){ try { return localStorage.getItem(%s) || ''; } catch (_error) { return ''; } })()" % JSON.stringify(SNAKE_GB_WEB_STORAGE_KEY))
+	if not raw is String or str(raw).is_empty():
+		return {}
+	var parsed: Variant = JSON.parse_string(str(raw))
+	if parsed is Dictionary and str(parsed.get("game_id", "")) == "snake_classic":
+		return parsed
+	return {}
+
+func _restore_snake_gb_snapshot(candidate: Dictionary) -> bool:
+	if candidate.is_empty() or not snake_gb_model.restore(candidate):
+		return false
+	_sync_snake_gb_state()
+	return true
+
+func _clear_snake_gb_web_recovery() -> void:
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("try { localStorage.removeItem(%s); true; } catch (_error) { false; }" % JSON.stringify(SNAKE_GB_WEB_STORAGE_KEY))
 
 func _capture(reason: String) -> void:
 	if logger:
@@ -1524,7 +1571,7 @@ func _objective_status() -> String:
 		"merge2048": return "最佳 %d · 目标 2048" % int(state.get("best", 0))
 		"watermelon": return "目标 %d" % int(state.get("target_value", 256))
 		"meowdoku": return "猫咪 %d / %d" % [int(state.get("placed", 0)), int(state.get("required", 0))]
-		"snake_classic": return "长度 %d / %d" % [int(state.get("score", 4)), int(state.get("target_length", 120))]
+		"snake_classic": return "长度 %d · 无尽模式" % int(state.get("score", 4))
 		"snake_io": return "位次 #%d · 体量 %.1f" % [max(1, int(state.get("rank", 1))), float(state.get("mass", 0.0))]
 		"solitaire": return "牌库 %d" % int(state.get("stock", 0))
 		"tripeaks": return "余牌 %d" % int(state.get("stock", 0))
@@ -3385,6 +3432,7 @@ func _draw_paw(center: Vector2, color: Color, scale := 1.0) -> void:
 func _init_snake_gb() -> void:
 	snake_clock = 0.0
 	snake_gb_model.reset(abs("snake_gb".hash()) + 17)
+	var recovered := _restore_snake_gb_snapshot(_load_snake_gb_web_recovery())
 	_sync_snake_gb_state()
 	snake_ghosts.clear()
 	snake_pixels.clear()
@@ -3399,7 +3447,12 @@ func _init_snake_gb() -> void:
 	snake_button_direction = Vector2i.ZERO
 	snake_button_until = -1.0
 	snake_reject_until = -1.0
+	snake_drag_active = false
+	snake_drag_samples.clear()
+	snake_last_swipe_at = -10.0
 	snake_reset_started = elapsed
+	if recovered and state.get("status", "playing") == "over":
+		snake_result_ready_at = elapsed
 
 func _sync_snake_gb_state() -> void:
 	state = snake_gb_model.snapshot()
@@ -3407,9 +3460,9 @@ func _sync_snake_gb_state() -> void:
 
 func _snake_gb_update(delta: float) -> void:
 	snake_clock += delta
-	if snake_clock < 0.18:
+	if snake_clock < SNAKE_GB_STEP_INTERVAL:
 		return
-	snake_clock = fmod(snake_clock, 0.18)
+	snake_clock = fmod(snake_clock, SNAKE_GB_STEP_INTERVAL)
 	_snake_gb_step()
 
 func _snake_gb_step() -> void:
@@ -3428,7 +3481,7 @@ func _snake_gb_dispatch(events: Array[Dictionary]) -> void:
 				snake_button_until = elapsed + 0.11
 				snake_gb_object_fx = {
 					"kind":"turn_accepted", "grade":1, "started":elapsed,
-					"duration":0.28, "direction":snake_button_direction
+					"duration":_snake_gb_effect_duration(0.28), "direction":snake_button_direction
 				}
 				_play_sfx(SFX_SNAKE_KEY, -10.0, 0.90 + float(posmod(snake_gb_model.step_index, 4)) * 0.035)
 				_haptic(8)
@@ -3437,10 +3490,11 @@ func _snake_gb_dispatch(events: Array[Dictionary]) -> void:
 				snake_reject_until = elapsed + 0.14
 				snake_gb_object_fx = {
 					"kind":"turn_rejected", "grade":1, "started":elapsed,
-					"duration":0.28, "direction":snake_reject_direction,
+					"duration":_snake_gb_effect_duration(0.28), "direction":snake_reject_direction,
 					"reason":str(event.get("reason", "invalid"))
 				}
 				_play_sfx(SFX_SNAKE_REJECT, -14.0, 0.78)
+				_haptic(6)
 			"moved":
 				if bool(event.get("tail_vacated", false)):
 					snake_ghosts.append({"cell":event.get("tail", Vector2i.ZERO), "until":elapsed + 0.10})
@@ -3450,32 +3504,37 @@ func _snake_gb_dispatch(events: Array[Dictionary]) -> void:
 				snake_fx_cell = _snake_vector(event.get("at", Vector2i.ZERO))
 				snake_gb_object_fx = {
 					"kind":"forage", "grade":2, "started":elapsed,
-					"duration":0.54, "cell":snake_fx_cell,
-					"pending_growth":int(event.get("pending_growth", 1))
+					"duration":_snake_gb_effect_duration(0.54, 0.18), "cell":snake_fx_cell,
+					"pending_growth":int(event.get("pending_growth", 2))
 				}
-				snake_lcd_flash_until = elapsed + 0.09
-				snake_score_bump_until = elapsed + 0.22
+				snake_lcd_flash_until = elapsed + (0.04 if reduced_effects else 0.09)
+				snake_score_bump_until = elapsed + (0.08 if reduced_effects else 0.22)
 				_snake_gb_emit_pixels(snake_fx_cell, 10, "eat")
-				snake_float_labels.append({"cell":snake_fx_cell, "started":elapsed, "text":"+1"})
+				snake_float_labels.append({
+					"cell":snake_fx_cell, "started":elapsed, "text":"+2",
+					"duration":_snake_gb_effect_duration(0.72, 0.18),
+				})
 				_play_sfx(SFX_SNAKE_GB_GAG_COLLECT, -6.5, 0.98 + float(posmod(int(state.get("score", 4)), 3)) * 0.025)
 				_haptic(18)
-				_log_event("snake_gb_food", {"length":int(state.get("score", 4))})
+				_log_event("snake_gb_food", {"length":int(state.get("score", 4)), "growth_queued":int(event.get("growth_queued", 2))})
 			"growth_materialized":
 				snake_score_bump_until = elapsed + 0.24
+			"length_milestone":
 				var reached_length := int(event.get("score", state.get("score", 4)))
-				if reached_length < int(state.get("target_length", 120)) and reached_length % 10 == 0:
-					snake_fx_kind = "milestone"
-					snake_fx_started = elapsed
-					snake_fx_cell = _snake_vector(event.get("at", snake_gb_model.segments.back()))
-					snake_gb_object_fx = {
-						"kind":"field_log", "grade":3, "started":elapsed,
-						"duration":0.82, "cell":snake_fx_cell, "score":reached_length
-					}
-					_snake_gb_emit_pixels(snake_fx_cell, 16, "milestone")
-					_play_sfx(SFX_SNAKE_GB_GAG_COLLECT, -4.5, 0.78)
-					_play_sfx(SFX_SNAKE_KEY, -9.0, 1.16)
-					_haptic(28)
-					_log_event("snake_gb_field_log", {"length":reached_length, "grade":3})
+				snake_fx_kind = "milestone"
+				snake_fx_started = elapsed
+				snake_fx_cell = snake_gb_model.segments.back()
+				snake_gb_object_fx = {
+					"kind":"field_log", "grade":3, "started":elapsed,
+					"duration":_snake_gb_effect_duration(0.82, 0.22),
+					"cell":snake_fx_cell, "score":reached_length,
+					"nonterminal":true,
+				}
+				_snake_gb_emit_pixels(snake_fx_cell, 16, "milestone")
+				_play_sfx(SFX_SNAKE_GB_GAG_COLLECT, -4.5, 0.78)
+				_play_sfx(SFX_SNAKE_KEY, -9.0, 1.16)
+				_haptic(28)
+				_log_event("snake_gb_field_log", {"length":reached_length, "grade":3, "nonterminal":true})
 			"wall_hit", "self_hit":
 				snake_fx_kind = "crash"
 				snake_fx_started = elapsed
@@ -3483,7 +3542,7 @@ func _snake_gb_dispatch(events: Array[Dictionary]) -> void:
 				snake_fx_direction = snake_gb_model.direction
 				snake_gb_object_fx = {
 					"kind":"crash", "grade":4, "started":elapsed,
-					"duration":0.78, "cell":snake_fx_cell,
+					"duration":_snake_gb_effect_duration(0.78, 0.18), "cell":snake_fx_cell,
 					"direction":snake_fx_direction, "reason":kind
 				}
 				snake_result_ready_at = elapsed + 0.62
@@ -3491,22 +3550,26 @@ func _snake_gb_dispatch(events: Array[Dictionary]) -> void:
 				_play_sfx(SFX_SNAKE_CRASH, -5.0, 0.82)
 				_haptic(50)
 				_capture("snake_gb_%s" % kind)
-			"length_won":
-				snake_fx_kind = "win"
+			"field_record_complete":
+				snake_fx_kind = "complete"
 				snake_fx_started = elapsed
-				snake_fx_cell = _snake_vector(event.get("at", snake_gb_model.segments[0]))
+				snake_fx_cell = snake_gb_model.segments[0]
 				snake_gb_object_fx = {
 					"kind":"complete", "grade":4, "started":elapsed,
-					"duration":1.56, "cell":snake_fx_cell,
-					"score":int(event.get("score", 120))
+					"duration":_snake_gb_effect_duration(1.56, 0.26), "cell":snake_fx_cell,
+					"score":int(event.get("score", 120)), "nonterminal":true,
 				}
-				snake_result_ready_at = elapsed + 0.72
-				_snake_gb_emit_pixels(snake_fx_cell, 22, "win")
+				_snake_gb_emit_pixels(snake_fx_cell, 22, "complete")
 				_play_sfx(SFX_SNAKE_GB_GAG_COMPLETE, -3.5, 1.0)
 				_haptic(82)
-				_capture("snake_gb_win")
+				_capture("snake_gb_field_record")
+
+func _snake_gb_effect_duration(full_duration: float, reduced_duration := 0.12) -> float:
+	return reduced_duration if reduced_effects else full_duration
 
 func _snake_gb_emit_pixels(cell: Vector2i, count: int, kind: String) -> void:
+	if reduced_effects:
+		return
 	for index in range(count):
 		var angle := TAU * float(index) / maxf(1.0, float(count)) + float(index % 3) * 0.12
 		var speed := 32.0 + float(index % 5) * 12.0
@@ -3790,6 +3853,8 @@ func _snake_events_have_kind(events: Array[Dictionary], expected_kind: String) -
 	return false
 
 func _snake_begin_drag(position: Vector2) -> void:
+	if screen != "game" or game_id != "snake_classic" or state.get("status", "playing") != "playing":
+		return
 	snake_drag_active = true
 	snake_drag_origin = position
 	snake_drag_anchor = position
@@ -3848,18 +3913,6 @@ func _snake_end_drag(position: Vector2) -> void:
 	if not snake_drag_active:
 		return
 	_snake_drag_to(position)
-	var tap_delta := position - snake_drag_origin
-	if tap_delta.length() < 18.0:
-		var from_center := position - Vector2(270, 500)
-		if from_center.length() > 34.0:
-			var tap_direction := Vector2i.ZERO
-			if absf(from_center.x) > absf(from_center.y):
-				tap_direction = Vector2i.RIGHT if from_center.x > 0.0 else Vector2i.LEFT
-			else:
-				tap_direction = Vector2i.DOWN if from_center.y > 0.0 else Vector2i.UP
-			var current_direction := _snake_vector(state.get("direction", [1, 0]))
-			if tap_direction.x != current_direction.x and tap_direction.y != current_direction.y:
-				_set_snake_direction(tap_direction)
 	snake_drag_active = false
 	snake_drag_samples.clear()
 
@@ -3902,7 +3955,7 @@ func _snake_update(delta: float) -> void:
 		_snake_step()
 
 func _snake_step_interval() -> float:
-	return 1.0 / 7.5 if game_id == "snake_classic" else SNAKE_STEP_INTERVAL
+	return SNAKE_GB_STEP_INTERVAL if game_id == "snake_classic" else SNAKE_STEP_INTERVAL
 
 func _sync_snake_state() -> void:
 	if game_id == "snake_classic":
@@ -3975,7 +4028,7 @@ func _snake_prune_fx() -> void:
 		if elapsed - float(snake_pixels[index].get("started", 0.0)) >= float(snake_pixels[index].get("life", 0.2)):
 			snake_pixels.remove_at(index)
 	for index in range(snake_float_labels.size() - 1, -1, -1):
-		if elapsed - float(snake_float_labels[index].get("started", 0.0)) >= 0.72:
+		if elapsed - float(snake_float_labels[index].get("started", 0.0)) >= float(snake_float_labels[index].get("duration", 0.72)):
 			snake_float_labels.remove_at(index)
 	if elapsed >= snake_blink_started + 0.12:
 		snake_blink_started = elapsed + 2.1 + rng.randf_range(0.0, 2.4)
@@ -4070,6 +4123,8 @@ func _snake_gb_object_fx_age() -> float:
 	return elapsed - float(snake_gb_object_fx.get("started", -10.0))
 
 func _snake_gb_feedback_offset() -> Vector2:
+	if reduced_effects:
+		return Vector2.ZERO
 	var kind := str(snake_gb_object_fx.get("kind", ""))
 	var age := _snake_gb_object_fx_age()
 	match kind:
@@ -4107,10 +4162,11 @@ func _draw_snake_gb_field_seal(offset: Vector2) -> void:
 	var kind := str(snake_gb_object_fx.get("kind", ""))
 	var age := _snake_gb_object_fx_age()
 	var pulse := 0.0
-	if kind == "field_log" and age >= 0.0 and age < 0.82:
-		pulse = sin(clampf(age / 0.82, 0.0, 1.0) * PI) * 0.12
-	elif kind == "complete" and age >= 0.0 and age < 1.56:
-		pulse = sin(clampf(age / 1.56, 0.0, 1.0) * PI) * 0.18
+	var duration := maxf(0.01, float(snake_gb_object_fx.get("duration", 0.82)))
+	if not reduced_effects and kind == "field_log" and age >= 0.0 and age < duration:
+		pulse = sin(clampf(age / duration, 0.0, 1.0) * PI) * 0.12
+	elif not reduced_effects and kind == "complete" and age >= 0.0 and age < duration:
+		pulse = sin(clampf(age / duration, 0.0, 1.0) * PI) * 0.18
 	var center := Vector2(270, 105) + offset * 0.58
 	var size_value := Vector2.ONE * 54.0 * (1.0 + pulse)
 	if pulse > 0.015:
@@ -4132,10 +4188,10 @@ func _draw_snake_gb_experience() -> void:
 	_draw_snake_gb_fx(shake)
 	var status := str(state.get("status", "playing"))
 	if status != "playing" and snake_result_ready_at > 0.0 and elapsed >= snake_result_ready_at:
-		_draw_snake_gb_terminal(status == "won")
+		_draw_snake_gb_terminal()
 	elif elapsed - snake_reset_started < 4.6:
 		var prompt_alpha := clampf(1.0 - maxf(0.0, elapsed - snake_reset_started - 3.4) / 1.2, 0.0, 1.0)
-		_draw_center("实体方向键转向 · 长度达到 120", Vector2(270, 758), 13, Color("d8c995", 0.82 * prompt_alpha))
+		_draw_center("滑动或方向键转向 · 吃食物长两格", Vector2(270, 758), 13, Color("d8c995", 0.82 * prompt_alpha))
 
 func _draw_snake_gb_lcd(offset: Vector2) -> void:
 	var metrics := _snake_gb_metrics()
@@ -4148,7 +4204,7 @@ func _draw_snake_gb_lcd(offset: Vector2) -> void:
 		draw_rect(screen_rect.grow(-2.0), Color("e0e7af", 0.38))
 	var length_scale := 1.0 + 0.16 * clampf((snake_score_bump_until - elapsed) / 0.24, 0.0, 1.0)
 	_draw_text_font(NUMBER_FONT, "LEN %03d" % int(state.get("score", 4)), Vector2(122, 176) + offset, int(11 * length_scale), lcd_ink)
-	_draw_center_font(NUMBER_FONT, "TARGET %03d" % int(state.get("target_length", 120)), Vector2(270, 175) + offset, 10, Color(lcd_ink, 0.88))
+	_draw_center_font(NUMBER_FONT, "FIELD 120", Vector2(270, 175) + offset, 10, Color(lcd_ink, 0.88))
 	var move_text := "%04d" % int(state.get("moves", 0))
 	var move_width := NUMBER_FONT.get_string_size(move_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x
 	_draw_text_font(NUMBER_FONT, move_text, Vector2(418 - move_width, 176) + offset, 10, lcd_ink)
@@ -4166,19 +4222,24 @@ func _draw_snake_gb_lcd(offset: Vector2) -> void:
 		var ghost_cell := _snake_vector(ghost.get("cell", Vector2i.ZERO))
 		var alpha := clampf((float(ghost.get("until", elapsed)) - elapsed) / 0.10, 0.0, 1.0)
 		draw_rect(Rect2(origin + Vector2(ghost_cell) * cell + Vector2(2, 2) + offset, Vector2(cell - 4, cell - 4)), Color(lcd_ink, alpha * 0.18))
-	var food_cell := _snake_vector(state.get("food", [11, 11]))
-	var food_center := _snake_gb_cell_center(food_cell) + offset
-	var food_pulse := 0.88 + (sin(elapsed * 6.6) + 1.0) * 0.055
-	var food_scale := 1.0 + sin(elapsed * 6.6) * 0.045
-	_draw_snake_gb_lure(food_center, food_scale, food_pulse)
-	var lock_alpha := 0.20 + (sin(elapsed * 3.8) + 1.0) * 0.055
-	for corner in [Vector2(-1, -1), Vector2(1, -1), Vector2(1, 1), Vector2(-1, 1)]:
-		var anchor: Vector2 = food_center + Vector2(corner) * 8.7
-		draw_line(anchor, anchor - Vector2(corner.x, 0) * 3.2, Color(lcd_mid, lock_alpha), 1.0)
-		draw_line(anchor, anchor - Vector2(0, corner.y) * 3.2, Color(lcd_mid, lock_alpha), 1.0)
+	var active_foods: Array = state.get("foods", [])
+	var food_wave := 0.0 if reduced_effects else sin(elapsed * 6.6)
+	var lock_wave := 0.0 if reduced_effects else sin(elapsed * 3.8)
+	for food_index in range(active_foods.size()):
+		var food_cell := _snake_vector(active_foods[food_index])
+		var food_center := _snake_gb_cell_center(food_cell) + offset
+		var phase_offset := -1.0 if food_index % 2 == 1 else 1.0
+		var food_pulse := 0.935 + food_wave * 0.055 * phase_offset
+		var food_scale := 1.0 + food_wave * 0.045 * phase_offset
+		_draw_snake_gb_lure(food_center, food_scale, food_pulse)
+		var lock_alpha := 0.255 + lock_wave * 0.055 * phase_offset
+		for corner in [Vector2(-1, -1), Vector2(1, -1), Vector2(1, 1), Vector2(-1, 1)]:
+			var anchor: Vector2 = food_center + Vector2(corner) * 8.7
+			draw_line(anchor, anchor - Vector2(corner.x, 0) * 3.2, Color(lcd_mid, lock_alpha), 1.0)
+			draw_line(anchor, anchor - Vector2(0, corner.y) * 3.2, Color(lcd_mid, lock_alpha), 1.0)
 	var segments: Array = state.get("segments", [])
-	var move_progress := clampf((elapsed - snake_move_started) / 0.18, 0.0, 1.0)
-	var phosphor_progress := floorf(move_progress * 3.0) / 3.0
+	var move_progress := clampf((elapsed - snake_move_started) / SNAKE_GB_STEP_INTERVAL, 0.0, 1.0)
+	var phosphor_progress := 1.0 if reduced_effects else floorf(move_progress * 3.0) / 3.0
 	var visual_head_center := Vector2.ZERO
 	for index in range(segments.size() - 1, -1, -1):
 		var segment := _snake_vector(segments[index])
@@ -4250,7 +4311,7 @@ func _draw_snake_gb_controls(offset := Vector2.ZERO) -> void:
 		var rejected_center: Vector2 = direction_centers[snake_reject_direction] - Vector2(snake_reject_direction) * kick
 		draw_arc(rejected_center, 22.0, 0, TAU, 28, Color("d35f51", 0.72), 2.0)
 		draw_line(rejected_center - Vector2(6, 6), rejected_center + Vector2(6, 6), Color("d35f51", 0.64), 2.0)
-	var action_glow := 0.08 + (sin(elapsed * 2.4) + 1.0) * 0.025
+	var action_glow := 0.08 if reduced_effects else 0.08 + (sin(elapsed * 2.4) + 1.0) * 0.025
 	draw_circle(Vector2(410, 610) + offset, 32.0, Color("c76855", action_glow))
 	draw_circle(Vector2(330, 647) + offset, 29.0, Color("c76855", action_glow * 0.72))
 
@@ -4263,28 +4324,30 @@ func _draw_snake_gb_fx(offset: Vector2) -> void:
 		var base := _snake_gb_impact_point(pixel.get("cell", Vector2i.ZERO)) if kind == "gb_crash" else _snake_gb_cell_center(pixel.get("cell", Vector2i.ZERO))
 		var p := base + Vector2(pixel.get("velocity", Vector2.ZERO)) * age + offset
 		var size_value := float(pixel.get("size", 2.0)) * (1.0 - progress * 0.5)
-		var color := Color("29351f") if kind != "gb_win" else Color("e8dfa7")
+		var color := Color("e8dfa7") if kind == "gb_complete" else Color("29351f")
 		draw_rect(Rect2(p - Vector2.ONE * size_value * 0.5, Vector2.ONE * size_value), Color(color, 1.0 - progress))
 	if snake_fx_kind == "eat":
 		var age := elapsed - snake_fx_started
-		if age >= 0.0 and age < 0.54:
+		var duration := maxf(0.01, float(snake_gb_object_fx.get("duration", 0.54)))
+		if age >= 0.0 and age < duration:
 			var p := _snake_gb_cell_center(snake_fx_cell) + offset
-			var progress := clampf(age / 0.54, 0.0, 1.0)
-			if age < 0.18:
-				var contract := 1.0 - age / 0.18
+			var progress := clampf(age / duration, 0.0, 1.0)
+			if progress < 0.34:
+				var contract := 1.0 - progress / 0.34
 				_draw_snake_gb_lure(p, 0.36 + contract * 0.82, contract * 0.86)
 				for corner in [Vector2(-1, -1), Vector2(1, -1), Vector2(1, 1), Vector2(-1, 1)]:
 					var anchor: Vector2 = p + Vector2(corner) * lerpf(11.0, 6.2, 1.0 - contract)
 					draw_line(anchor, anchor - Vector2(corner.x, 0) * 4.0, Color("27321e", contract * 0.84), 1.4)
 					draw_line(anchor, anchor - Vector2(0, corner.y) * 4.0, Color("27321e", contract * 0.84), 1.4)
-			var scan_progress := clampf((age - 0.08) / 0.36, 0.0, 1.0)
+			var scan_progress := clampf((progress - 0.15) / 0.67, 0.0, 1.0)
 			if scan_progress > 0.0 and scan_progress < 1.0:
 				draw_arc(p, lerpf(5.0, 24.0, scan_progress), 0, TAU, 28, Color("27321e", (1.0 - scan_progress) * 0.92), 2.0)
 				draw_line(p + Vector2(-22.0, lerpf(-9.0, 11.0, scan_progress)), p + Vector2(22.0, lerpf(-9.0, 11.0, scan_progress)), Color("536342", (1.0 - progress) * 0.48), 1.0)
 	elif snake_fx_kind == "milestone":
 		var age := elapsed - snake_fx_started
-		if age >= 0.0 and age < 0.82:
-			var progress := clampf(age / 0.82, 0.0, 1.0)
+		var duration := maxf(0.01, float(snake_gb_object_fx.get("duration", 0.82)))
+		if age >= 0.0 and age < duration:
+			var progress := clampf(age / duration, 0.0, 1.0)
 			var screen_rect := Rect2(111, 157, 318, 346)
 			var sweep_y := lerpf(screen_rect.position.y + 18.0, screen_rect.end.y - 16.0, clampf(progress * 1.32, 0.0, 1.0))
 			var sweep_alpha := sin(progress * PI) * 0.72
@@ -4294,9 +4357,10 @@ func _draw_snake_gb_fx(offset: Vector2) -> void:
 			_draw_center_font(NUMBER_FONT, "FIELD LOG %03d" % score_value, Vector2(270, 211) + offset + Vector2(0, -5.0 * (1.0 - progress)), 12, Color("27321e", sweep_alpha))
 	elif snake_fx_kind == "crash":
 		var age := elapsed - snake_fx_started
-		if age >= 0.0 and age < 0.36:
+		var duration := maxf(0.01, minf(0.36, float(snake_gb_object_fx.get("duration", 0.36))))
+		if age >= 0.0 and age < duration:
 			var p := _snake_gb_impact_point(snake_fx_cell) + offset
-			var progress := clampf(age / 0.36, 0.0, 1.0)
+			var progress := clampf(age / duration, 0.0, 1.0)
 			var direction := snake_fx_direction if snake_fx_direction != Vector2i.ZERO else Vector2i.RIGHT
 			_draw_snake_gb_head(p - Vector2(direction) * progress * 4.0, direction, (1.0 - progress) * 0.72, 1.10, Vector2(1.0 - progress * 0.46, 1.0 + progress * 0.38))
 			for smear in range(3):
@@ -4304,11 +4368,12 @@ func _draw_snake_gb_fx(offset: Vector2) -> void:
 				var from := p - Vector2(direction) * (5.0 + smear * 5.0) + side * (float(smear) - 1.0) * 3.0
 				draw_line(from, from - Vector2(direction) * (13.0 + smear * 4.0), Color("27321e", (1.0 - progress) * (0.62 - smear * 0.12)), 2.0)
 			for ring in range(3):
-				draw_arc(p, 6.0 + age * (52.0 + ring * 18.0), 0, TAU, 24, Color("27321e", (1.0 - age / 0.36) * (0.86 - ring * 0.18)), 2.0)
-	elif snake_fx_kind == "win":
+				draw_arc(p, 6.0 + progress * duration * (52.0 + ring * 18.0), 0, TAU, 24, Color("27321e", (1.0 - progress) * (0.86 - ring * 0.18)), 2.0)
+	elif snake_fx_kind == "complete":
 		var age := elapsed - snake_fx_started
-		if age >= 0.0 and age < 1.56:
-			var progress := clampf(age / 1.56, 0.0, 1.0)
+		var duration := maxf(0.01, float(snake_gb_object_fx.get("duration", 1.56)))
+		if age >= 0.0 and age < duration:
+			var progress := clampf(age / duration, 0.0, 1.0)
 			var screen_rect := Rect2(111, 157, 318, 346)
 			for sweep in range(3):
 				var local_progress := clampf(progress * 1.58 - float(sweep) * 0.14, 0.0, 1.0)
@@ -4319,17 +4384,17 @@ func _draw_snake_gb_fx(offset: Vector2) -> void:
 				_draw_center_font(NUMBER_FONT, "FIELD RECORD 120", Vector2(270, 225) + offset, 14, Color("27321e", sin(clampf(progress / 0.74, 0.0, 1.0) * PI)))
 	for label in snake_float_labels:
 		var age := elapsed - float(label.get("started", elapsed))
-		var progress := clampf(age / 0.72, 0.0, 1.0)
+		var progress := clampf(age / maxf(0.01, float(label.get("duration", 0.72))), 0.0, 1.0)
 		var p := _snake_gb_cell_center(label.get("cell", Vector2i.ZERO)) + Vector2(0, -9.0 - 18.0 * progress) + offset
-		_draw_center_font(NUMBER_FONT, str(label.get("text", "+1")), p, 12, Color("27321e", 1.0 - progress))
+		_draw_center_font(NUMBER_FONT, str(label.get("text", "+2")), p, 12, Color("27321e", 1.0 - progress))
 
-func _draw_snake_gb_terminal(won: bool) -> void:
+func _draw_snake_gb_terminal() -> void:
 	var panel := Rect2(130, 291, 280, 126)
 	_draw_panel(panel, Color("8e9d6d", 0.94), Color("27321e", 0.92), 3, 3)
 	for y in range(int(panel.position.y + 4), int(panel.end.y - 4), 4):
 		draw_line(Vector2(panel.position.x + 5, y), Vector2(panel.end.x - 5, y), Color("27321e", 0.035), 1.0)
-	_draw_center_font(NUMBER_FONT, "TARGET CLEAR" if won else "GAME OVER", Vector2(270, 326), 20, Color("27321e"))
-	var reason := "LENGTH 120" if won else ("SELF HIT" if str(state.get("terminal_reason", "")) == "self" else "WALL HIT")
+	_draw_center_font(NUMBER_FONT, "GAME OVER", Vector2(270, 326), 20, Color("27321e"))
+	var reason := "SELF HIT" if str(state.get("terminal_reason", "")) == "self" else "WALL HIT"
 	_draw_center_font(NUMBER_FONT, reason, Vector2(270, 354), 12, Color("3e4b30"))
 	_draw_center_font(NUMBER_FONT, "LEN %03d   STEP %04d" % [int(state.get("score", 4)), int(state.get("moves", 0))], Vector2(270, 383), 11, Color("27321e"))
 	_draw_center("按右上角重开", Vector2(270, 405), 10, Color("3e4b30"))

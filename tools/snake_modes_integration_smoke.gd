@@ -2,7 +2,7 @@ extends SceneTree
 
 const GB_ID := "snake_classic"
 const ARENA_ID := "snake_io"
-const EXPECTED_CASES := 5
+const EXPECTED_CASES := 7
 
 var game: Control
 var failures: Array[String] = []
@@ -21,9 +21,11 @@ func _run() -> void:
 	_disable_shell_audio()
 	await process_frame
 
-	_test_gb_shell_exposes_one_food_contract()
-	_test_gb_food_materializes_exactly_one_growth()
-	_test_gb_length_win_delays_result_and_restart_recovers()
+	_test_gb_shell_exposes_authoritative_contract()
+	_test_gb_shell_ticks_at_medium_speed()
+	_test_gb_food_materializes_exactly_two_growth()
+	_test_gb_field_record_is_nonterminal_and_restart_recovers()
+	_test_gb_shell_recovery_round_trip()
 	_test_arena_shell_adapts_continuous_state()
 	_test_arena_player_death_delays_result_and_regenerates()
 
@@ -73,7 +75,7 @@ func _open_mode(id: String) -> void:
 	game._open_game(id)
 
 
-func _test_gb_shell_exposes_one_food_contract() -> void:
+func _test_gb_shell_exposes_authoritative_contract() -> void:
 	_open_mode(GB_ID)
 	var snapshot: Dictionary = game.state.duplicate(true)
 	var passed: bool = (
@@ -83,19 +85,38 @@ func _test_gb_shell_exposes_one_food_contract() -> void:
 		and int(snapshot.get("width", 0)) == 15
 		and int(snapshot.get("height", 0)) == 23
 		and snapshot.get("segments", []).size() == 4
-		and snapshot.get("foods", []).size() == 1
+		and snapshot.get("foods", []).size() == 2
+		and snapshot.get("foods", [])[0] != snapshot.get("foods", [])[1]
 		and snapshot.get("foods", [])[0] == snapshot.get("food", [])
-		and int(snapshot.get("target_length", 0)) == 120
+		and bool(snapshot.get("endless", false))
+		and not snapshot.has("target_length")
+		and is_equal_approx(float(game.SNAKE_GB_STEP_INTERVAL), 1.0 / 7.5)
 	)
-	_record("gb_single_food_shell_contract", passed, JSON.stringify(snapshot))
+	_record("gb_authoritative_shell_contract", passed, JSON.stringify(snapshot))
 
 
-func _test_gb_food_materializes_exactly_one_growth() -> void:
+func _test_gb_shell_ticks_at_medium_speed() -> void:
+	_open_mode(GB_ID)
+	var before: Dictionary = game.state.duplicate(true)
+	game._snake_gb_update(float(game.SNAKE_GB_STEP_INTERVAL) - 0.001)
+	var held: Dictionary = game.state.duplicate(true)
+	game._snake_gb_update(0.0011)
+	var advanced: Dictionary = game.state.duplicate(true)
+	var passed: bool = (
+		held.get("segments", []) == before.get("segments", [])
+		and int(held.get("moves", -1)) == 0
+		and advanced.get("segments", [])[0] == [8, 11]
+		and int(advanced.get("moves", -1)) == 1
+	)
+	_record("gb_medium_tick_rate", passed, JSON.stringify({"before":before, "held":held, "advanced":advanced}))
+
+
+func _test_gb_food_materializes_exactly_two_growth() -> void:
 	_open_mode(GB_ID)
 	var model = game.snake_gb_model
 	var next: Vector2i = model.segments[0] + model.direction
+	model.foods.assign([next, Vector2i(2, 2)])
 	model.food = next
-	model.foods.assign([next])
 	game._sync_snake_gb_state()
 
 	game._snake_gb_step()
@@ -104,59 +125,102 @@ func _test_gb_food_materializes_exactly_one_growth() -> void:
 	if not game.snake_float_labels.is_empty():
 		eat_feedback = str(game.snake_float_labels.back().get("text", ""))
 	game._snake_gb_step()
-	var after_growth: Dictionary = game.state.duplicate(true)
+	var after_growth_one: Dictionary = game.state.duplicate(true)
+	game._snake_gb_step()
+	var after_growth_two: Dictionary = game.state.duplicate(true)
 	var passed: bool = (
 		after_eat.get("status") == "playing"
 		and after_eat.get("segments", []).size() == 4
 		and int(after_eat.get("score", -1)) == 4
-		and int(after_eat.get("pending_growth", -1)) == 1
-		and after_eat.get("foods", []).size() == 1
-		and eat_feedback == "+1"
-		and after_growth.get("segments", []).size() == 5
-		and int(after_growth.get("score", -1)) == 5
-		and int(after_growth.get("pending_growth", -1)) == 0
+		and int(after_eat.get("pending_growth", -1)) == 2
+		and after_eat.get("foods", []).size() == 2
+		and eat_feedback == "+2"
+		and after_growth_one.get("segments", []).size() == 5
+		and int(after_growth_one.get("score", -1)) == 5
+		and int(after_growth_one.get("pending_growth", -1)) == 1
+		and after_growth_two.get("segments", []).size() == 6
+		and int(after_growth_two.get("score", -1)) == 6
+		and int(after_growth_two.get("pending_growth", -1)) == 0
 	)
-	_record("gb_one_growth_materializes", passed, JSON.stringify({"after_eat":after_eat, "after_growth":after_growth, "feedback":eat_feedback}))
+	_record("gb_two_growth_materialize", passed, JSON.stringify({"after_eat":after_eat, "after_growth_one":after_growth_one, "after_growth_two":after_growth_two, "feedback":eat_feedback}))
 
 
-func _test_gb_length_win_delays_result_and_restart_recovers() -> void:
+func _test_gb_field_record_is_nonterminal_and_restart_recovers() -> void:
 	_open_mode(GB_ID)
 	var model = game.snake_gb_model
-	model.target_length = 5
-	var next: Vector2i = model.segments[0] + model.direction
-	model.food = next
-	model.foods.assign([next])
+	var tail_to_head: Array[Vector2i] = []
+	for y in range(7):
+		if y % 2 == 0:
+			for x in range(15):
+				tail_to_head.append(Vector2i(x, y))
+		else:
+			for x in range(14, -1, -1):
+				tail_to_head.append(Vector2i(x, y))
+	for x in range(14, 0, -1):
+		tail_to_head.append(Vector2i(x, 7))
+	var head_to_tail: Array[Vector2i] = tail_to_head.duplicate()
+	head_to_tail.reverse()
+	model.segments.assign(head_to_tail)
+	model.direction = Vector2i.DOWN
+	model.turn_queue.clear()
+	model.foods.assign([Vector2i(12, 20), Vector2i(13, 21)])
+	model.food = model.foods[0]
+	model.score = 119
+	model.moves = 115
+	model.step_index = 115
+	model.pending_growth = 1
 	game._sync_snake_gb_state()
 	game._snake_gb_step()
-	var trigger_elapsed: float = game.elapsed
+	var record: Dictionary = game.state.duplicate(true)
+	var record_fx_kind: String = str(game.snake_fx_kind)
+	var record_object_fx: Dictionary = game.snake_gb_object_fx.duplicate(true)
+	var record_result_ready: float = float(game.snake_result_ready_at)
 	game._snake_gb_step()
-	var won: Dictionary = game.state.duplicate(true)
-	var win_fx_kind: String = str(game.snake_fx_kind)
-	var delay: float = float(game.snake_result_ready_at) - trigger_elapsed
-	var delayed: bool = game.snake_result_ready_at > game.elapsed and is_equal_approx(delay, 0.72)
+	var continued: Dictionary = game.state.duplicate(true)
 
-	# target_length is configuration, not round state. Restore the production
-	# contract before exercising the player's real restart button.
-	model.target_length = 120
 	var restart_button := _find_button_with_text("重开")
 	if restart_button:
 		restart_button.pressed.emit()
 	var restarted: Dictionary = game.state.duplicate(true)
 	var passed: bool = (
-		won.get("phase") == "won"
-		and won.get("status") == "won"
-		and int(won.get("score", -1)) == 5
-		and win_fx_kind == "win"
-		and delayed
+		record.get("phase") == "running"
+		and record.get("status") == "playing"
+		and int(record.get("score", -1)) == 120
+		and record_fx_kind == "complete"
+		and str(record_object_fx.get("kind", "")) == "complete"
+		and bool(record_object_fx.get("nonterminal", false))
+		and record_result_ready < 0.0
+		and continued.get("status") == "playing"
+		and int(continued.get("moves", -1)) == 117
 		and restart_button != null
 		and restarted.get("status") == "playing"
 		and restarted.get("segments", []).size() == 4
-		and restarted.get("foods", []).size() == 1
-		and int(restarted.get("target_length", 0)) == 120
+		and restarted.get("foods", []).size() == 2
+		and not restarted.has("target_length")
 		and float(game.snake_result_ready_at) < 0.0
 		and game.snake_fx_kind == ""
 	)
-	_record("gb_length_win_delay_restart", passed, JSON.stringify({"won":won, "win_fx_kind":win_fx_kind, "delay":delay, "restarted":restarted}))
+	_record("gb_record_nonterminal_restart", passed, JSON.stringify({"record":record, "record_fx_kind":record_fx_kind, "record_object_fx":record_object_fx, "continued":continued, "restarted":restarted}))
+
+
+func _test_gb_shell_recovery_round_trip() -> void:
+	_open_mode(GB_ID)
+	game._set_snake_direction(Vector2i.UP)
+	game._snake_gb_step()
+	var saved: Dictionary = game.state.duplicate(true)
+	game._reset_current()
+	var reset_state: Dictionary = game.state.duplicate(true)
+	var accepted: bool = game._restore_snake_gb_snapshot(saved)
+	var restored: Dictionary = game.state.duplicate(true)
+	var passed: bool = (
+		accepted
+		and restored == saved
+		and reset_state != saved
+		and restored.get("direction", []) == [0, -1]
+		and int(restored.get("moves", -1)) == 1
+		and restored.get("foods", []).size() == 2
+	)
+	_record("gb_shell_recovery_round_trip", passed, JSON.stringify({"saved":saved, "reset":reset_state, "restored":restored}))
 
 
 func _test_arena_shell_adapts_continuous_state() -> void:

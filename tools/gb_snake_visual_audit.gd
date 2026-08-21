@@ -1,10 +1,12 @@
 extends SceneTree
 
-const OUTPUT := "res://docs/audit/gb-snake-v2/candidate"
-const TURN_MOTION := "user://gb-snake-v2-turn-motion"
-const FORAGE_MOTION := "user://gb-snake-v2-forage-motion"
-const MILESTONE_MOTION := "user://gb-snake-v2-milestone-motion"
-const COMPLETE_MOTION := "user://gb-snake-v2-complete-motion"
+const OUTPUT := "res://docs/audit/gb-snake-v3/candidate"
+const TURN_MOTION := "user://gb-snake-v3-turn-motion"
+const REJECT_MOTION := "user://gb-snake-v3-reject-motion"
+const FORAGE_MOTION := "user://gb-snake-v3-forage-motion"
+const MILESTONE_MOTION := "user://gb-snake-v3-milestone-motion"
+const CRASH_MOTION := "user://gb-snake-v3-crash-motion"
+const COMPLETE_MOTION := "user://gb-snake-v3-complete-motion"
 const FIXED_SEED := 1362026
 
 var game: Control
@@ -17,7 +19,7 @@ func _init() -> void:
 func _run() -> void:
 	game = load("res://main.tscn").instantiate()
 	root.add_child(game)
-	for folder in [OUTPUT, TURN_MOTION, FORAGE_MOTION, MILESTONE_MOTION, COMPLETE_MOTION]:
+	for folder in [OUTPUT, TURN_MOTION, REJECT_MOTION, FORAGE_MOTION, MILESTONE_MOTION, CRASH_MOTION, COMPLETE_MOTION]:
 		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))
 	await _wait(0.30)
 	game.set_process(false)
@@ -29,15 +31,27 @@ func _run() -> void:
 	await _capture_milestone()
 	await _capture_crash()
 	await _capture_completion()
+	await _capture_reduced()
 	print("GB_SNAKE_VISUAL_AUDIT=%s" % ProjectSettings.globalize_path(OUTPUT))
 	print("GB_SNAKE_TURN_MOTION=%s" % ProjectSettings.globalize_path(TURN_MOTION))
+	print("GB_SNAKE_REJECT_MOTION=%s" % ProjectSettings.globalize_path(REJECT_MOTION))
 	print("GB_SNAKE_FORAGE_MOTION=%s" % ProjectSettings.globalize_path(FORAGE_MOTION))
 	print("GB_SNAKE_MILESTONE_MOTION=%s" % ProjectSettings.globalize_path(MILESTONE_MOTION))
+	print("GB_SNAKE_CRASH_MOTION=%s" % ProjectSettings.globalize_path(CRASH_MOTION))
 	print("GB_SNAKE_COMPLETE_MOTION=%s" % ProjectSettings.globalize_path(COMPLETE_MOTION))
+	for player in game.sfx_players:
+		if is_instance_valid(player):
+			player.stop()
+			player.stream = null
+	game.free()
+	await process_frame
+	await process_frame
 	quit()
 
 
 func _prepare() -> void:
+	game.reduced_effects = false
+	game.haptics_enabled = true
 	game._open_game("snake_classic")
 	game.has_transitioned = false
 	game.snake_gb_model.reset(FIXED_SEED)
@@ -98,21 +112,24 @@ func _capture_rejection() -> void:
 			await _save_frame("06-reject-ghost")
 		elif frame == 11:
 			await _save_frame("07-reject-recovery")
+		await _save_motion_frame(REJECT_MOTION, frame)
 
 
 func _capture_forage() -> void:
 	await _prepare()
 	var head: Vector2i = game.snake_gb_model.segments[0]
 	game.snake_gb_model.food = head + Vector2i.RIGHT
-	game.snake_gb_model.foods.assign([game.snake_gb_model.food])
+	game.snake_gb_model.foods.assign([game.snake_gb_model.food, Vector2i(2, 2)])
 	game._sync_snake_gb_state()
 	await _save_frame("08-forage-intent")
 	game._snake_gb_step()
 	_save_state("forage-contact-state")
 	var started := float(game.snake_gb_object_fx.get("started", game.elapsed))
-	for frame in range(20):
+	for frame in range(24):
 		game.elapsed = started + float(frame) / 30.0
 		if frame == 6:
+			game._snake_gb_step()
+		elif frame == 10:
 			game._snake_gb_step()
 		game._snake_prune_fx()
 		game.queue_redraw()
@@ -125,7 +142,7 @@ func _capture_forage() -> void:
 			await _save_frame("11-forage-scan")
 		elif frame == 13:
 			await _save_frame("12-forage-growth")
-		elif frame == 19:
+		elif frame == 23:
 			await _save_frame("13-forage-settle")
 		await _save_motion_frame(FORAGE_MOTION, frame)
 	_save_state("forage-settle-state")
@@ -140,7 +157,7 @@ func _capture_milestone() -> void:
 	game.snake_gb_model.direction = Vector2i.RIGHT
 	game.snake_gb_model.turn_queue.clear()
 	game.snake_gb_model.food = Vector2i(2, 2)
-	game.snake_gb_model.foods.assign([game.snake_gb_model.food])
+	game.snake_gb_model.foods.assign([game.snake_gb_model.food, Vector2i(3, 3)])
 	game.snake_gb_model.pending_growth = 1
 	game.snake_gb_model.score = 9
 	game._sync_snake_gb_state()
@@ -172,7 +189,7 @@ func _capture_crash() -> void:
 	game.snake_gb_model.direction = Vector2i.RIGHT
 	game.snake_gb_model.turn_queue.clear()
 	game.snake_gb_model.food = Vector2i(3, 3)
-	game.snake_gb_model.foods.assign([game.snake_gb_model.food])
+	game.snake_gb_model.foods.assign([game.snake_gb_model.food, Vector2i(4, 4)])
 	game.snake_gb_model.score = 4
 	game._sync_snake_gb_state()
 	await _save_frame("20-crash-intent")
@@ -194,41 +211,31 @@ func _capture_crash() -> void:
 			await _save_frame("24-crash-result")
 		elif frame == 27:
 			await _save_frame("25-crash-settle")
+		await _save_motion_frame(CRASH_MOTION, frame)
 
 
 func _capture_completion() -> void:
 	await _prepare()
-	var win_segments: Array[Vector2i] = []
-	for column in range(game.snake_gb_model.width):
-		var start_y: int = 0 if column == 0 else 1
-		var end_y: int = game.snake_gb_model.height - 1
-		var step_y := 1
-		if column % 2 == 1:
-			start_y = game.snake_gb_model.height - 1
-			end_y = 1
-			step_y = -1
-		var y := start_y
-		while (y <= end_y if step_y > 0 else y >= end_y) and win_segments.size() < 119:
-			win_segments.append(Vector2i(column, y))
-			y += step_y
-	game.snake_gb_model.segments = win_segments
-	game.snake_gb_model.direction = Vector2i.RIGHT
+	game.snake_gb_model.segments.assign(_record_segments())
+	game.snake_gb_model.direction = Vector2i.DOWN
 	game.snake_gb_model.turn_queue.clear()
-	game.snake_gb_model.food = Vector2i(1, 0)
-	game.snake_gb_model.foods.assign([game.snake_gb_model.food])
+	game.snake_gb_model.food = Vector2i(12, 20)
+	game.snake_gb_model.foods.assign([game.snake_gb_model.food, Vector2i(13, 21)])
 	game.snake_gb_model.score = 119
-	game.snake_gb_model.pending_growth = 0
+	game.snake_gb_model.moves = 115
+	game.snake_gb_model.step_index = 115
+	game.snake_gb_model.pending_growth = 1
 	game.snake_gb_model.phase = game.snake_gb_model.RUNNING
 	game.snake_gb_model.terminal_reason = ""
 	game._sync_snake_gb_state()
 	await _save_frame("26-complete-intent")
 	game._snake_gb_step()
-	game.elapsed += 0.18
-	game._snake_gb_step()
 	_save_state("complete-state")
 	var started := float(game.snake_gb_object_fx.get("started", game.elapsed))
 	for frame in range(48):
 		game.elapsed = started + float(frame) / 30.0
+		if frame == 38:
+			game._snake_gb_step()
 		game._snake_prune_fx()
 		game.queue_redraw()
 		await process_frame
@@ -245,6 +252,54 @@ func _capture_completion() -> void:
 		elif frame == 47:
 			await _save_frame("32-complete-recovery")
 		await _save_motion_frame(COMPLETE_MOTION, frame)
+	_save_state("complete-recovery-state")
+
+
+func _record_segments() -> Array[Vector2i]:
+	var tail_to_head: Array[Vector2i] = []
+	for y in range(7):
+		if y % 2 == 0:
+			for x in range(15):
+				tail_to_head.append(Vector2i(x, y))
+		else:
+			for x in range(14, -1, -1):
+				tail_to_head.append(Vector2i(x, y))
+	for x in range(14, 0, -1):
+		tail_to_head.append(Vector2i(x, 7))
+	tail_to_head.reverse()
+	return tail_to_head
+
+
+func _capture_reduced() -> void:
+	await _prepare()
+	game.reduced_effects = true
+	game.haptics_enabled = true
+	game.haptic_requests_sent = 0
+	await _save_frame("33-reduced-stable")
+	var head: Vector2i = game.snake_gb_model.segments[0]
+	game.snake_gb_model.foods.assign([head + Vector2i.RIGHT, Vector2i(2, 2)])
+	game.snake_gb_model.food = game.snake_gb_model.foods[0]
+	game._sync_snake_gb_state()
+	game._snake_gb_step()
+	game.elapsed += 0.08
+	game.queue_redraw()
+	await process_frame
+	await _save_frame("34-reduced-forage")
+	_save_state("reduced-forage-state")
+	game.snake_gb_model.segments.assign([Vector2i(14, 8), Vector2i(13, 8), Vector2i(12, 8), Vector2i(11, 8)])
+	game.snake_gb_model.direction = Vector2i.RIGHT
+	game.snake_gb_model.turn_queue.clear()
+	game.snake_gb_model.foods.assign([Vector2i(3, 3), Vector2i(4, 4)])
+	game.snake_gb_model.food = game.snake_gb_model.foods[0]
+	game.snake_gb_model.pending_growth = 0
+	game.snake_gb_model.score = 4
+	game._sync_snake_gb_state()
+	game._snake_gb_step()
+	game.elapsed += 0.08
+	game.queue_redraw()
+	await process_frame
+	await _save_frame("35-reduced-crash")
+	_save_state("reduced-crash-state")
 
 
 func _wait(seconds: float) -> void:
@@ -283,8 +338,12 @@ func _save_state(stem: String) -> void:
 		"direction":game.state.get("direction", []),
 		"turn_queue":game.state.get("turn_queue", []),
 		"food":game.state.get("food", []),
+		"foods":game.state.get("foods", []),
 		"pending_growth":game.state.get("pending_growth", 0),
 		"terminal_reason":game.state.get("terminal_reason", ""),
+		"endless":game.state.get("endless", false),
+		"reduced_effects":game.reduced_effects,
+		"haptic_requests_sent":game.haptic_requests_sent,
 		"object_fx":object_fx,
 		"visual_kind":game.snake_fx_kind,
 	}
